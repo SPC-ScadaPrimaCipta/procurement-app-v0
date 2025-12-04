@@ -1,13 +1,13 @@
-// inside dashboard/page.tsx
-import { LogoutButton } from "@/components/logout-button";
-
 export default function DashboardPage() {
 	return (
-		<div className="p-6">
-			<div className="flex justify-between">
-				<h1 className="text-3xl font-bold">Dashboard</h1>
-				<LogoutButton />
-			</div>
+		<div className="space-y-4">
+			<h1 className="text-2xl font-semibold">
+				Welcome to your Dashboard
+			</h1>
+
+			<p className="text-muted-foreground">
+				This is where your main analytics or content will appear.
+			</p>
 		</div>
 	);
 }
