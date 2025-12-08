@@ -10,6 +10,11 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -35,12 +40,19 @@ export function UserMenu() {
 
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger>
-				<Avatar className="cursor-pointer">
-					<AvatarImage src={user?.image || ""} />
-					<AvatarFallback>{initials}</AvatarFallback>
-				</Avatar>
-			</DropdownMenuTrigger>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<DropdownMenuTrigger>
+						<Avatar className="cursor-pointer">
+							<AvatarImage src={user?.image || ""} />
+							<AvatarFallback>{initials}</AvatarFallback>
+						</Avatar>
+					</DropdownMenuTrigger>
+				</TooltipTrigger>
+				<TooltipContent>
+					<p>User Menu</p>
+				</TooltipContent>
+			</Tooltip>
 
 			<DropdownMenuContent align="end" className="w-56">
 				<DropdownMenuLabel>

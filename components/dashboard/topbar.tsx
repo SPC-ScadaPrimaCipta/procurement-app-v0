@@ -3,8 +3,8 @@
 import { Menu } from "lucide-react";
 import { useSidebar } from "./sidebar-context";
 import { UserMenu } from "./user-menu";
-import { ThemeSwitcher } from "../theme-switcher";
 import { ThemeSelector } from "../theme-selector";
+import { ThemeSwitcher } from "../theme-switcher";
 
 export function Topbar() {
 	const { toggle } = useSidebar();

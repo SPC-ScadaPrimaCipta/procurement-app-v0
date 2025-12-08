@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-// import { signUp } from "@/lib/auth-client";
+
+import { Eye, EyeOff } from "lucide-react";
 
 export default function RegisterPage() {
 	const router = useRouter();
@@ -16,13 +17,23 @@ export default function RegisterPage() {
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
 
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
+	const [showPassword, setShowPassword] = useState(false);
+	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
 	async function handleRegister() {
-		setLoading(true);
 		setError(null);
+
+		if (password !== confirmPassword) {
+			setError("Passwords do not match.");
+			return;
+		}
+
+		setLoading(true);
 
 		const res = await authClient.signUp.email({
 			name,
@@ -32,7 +43,6 @@ export default function RegisterPage() {
 
 		if (res.error) {
 			const msg = res.error.message || "Registration failed.";
-
 			setError(msg);
 			setLoading(false);
 			return;
@@ -77,13 +87,61 @@ export default function RegisterPage() {
 					{/* Password */}
 					<div className="space-y-1">
 						<Label>Password</Label>
-						<Input
-							type="password"
-							placeholder="••••••••"
-							value={password}
-							onChange={(e) => setPassword(e.target.value)}
-							disabled={loading}
-						/>
+
+						<div className="relative">
+							<Input
+								type={showPassword ? "text" : "password"}
+								placeholder="Password"
+								value={password}
+								onChange={(e) => setPassword(e.target.value)}
+								disabled={loading}
+								className="pr-10"
+							/>
+
+							<button
+								type="button"
+								className="absolute right-3 top-2.5 text-muted-foreground"
+								onClick={() => setShowPassword(!showPassword)}
+							>
+								{showPassword ? (
+									<EyeOff className="h-5 w-5" />
+								) : (
+									<Eye className="h-5 w-5" />
+								)}
+							</button>
+						</div>
+					</div>
+
+					{/* Confirm Password */}
+					<div className="space-y-1">
+						<Label>Confirm Password</Label>
+
+						<div className="relative">
+							<Input
+								type={showConfirmPassword ? "text" : "password"}
+								placeholder="Confirm your password"
+								value={confirmPassword}
+								onChange={(e) =>
+									setConfirmPassword(e.target.value)
+								}
+								disabled={loading}
+								className="pr-10"
+							/>
+
+							<button
+								type="button"
+								className="absolute right-3 top-2.5 text-muted-foreground"
+								onClick={() =>
+									setShowConfirmPassword(!showConfirmPassword)
+								}
+							>
+								{showConfirmPassword ? (
+									<EyeOff className="h-5 w-5" />
+								) : (
+									<Eye className="h-5 w-5" />
+								)}
+							</button>
+						</div>
 					</div>
 
 					{/* Error Message */}

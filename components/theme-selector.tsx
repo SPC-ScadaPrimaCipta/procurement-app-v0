@@ -9,6 +9,11 @@ import {
 } from "@/components/ui/popover";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useTheme } from "next-themes";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function ThemeSelector() {
 	const {
@@ -21,15 +26,23 @@ export function ThemeSelector() {
 
 	return (
 		<Popover>
-			<PopoverTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon"
-					aria-label="Select theme color"
-				>
-					<Palette className="h-5 w-5" />
-				</Button>
-			</PopoverTrigger>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<PopoverTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon"
+							aria-label="Select theme color"
+							className="rounded-full"
+						>
+							<Palette className="h-5 w-5" />
+						</Button>
+					</PopoverTrigger>
+				</TooltipTrigger>
+				<TooltipContent side="bottom">
+					Select color theme
+				</TooltipContent>
+			</Tooltip>
 			<PopoverContent className="w-64" align="end">
 				<div className="space-y-3">
 					<h4 className="font-medium text-sm text-foreground">
