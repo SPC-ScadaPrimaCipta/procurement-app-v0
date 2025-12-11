@@ -31,6 +31,8 @@ export default function ProfilePage() {
 	const [newPassword, setNewPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 
+	const [sessionData, setSessionData] = useState<any>(null);
+
 	// ------------------------------
 	// Load user profile on mount
 	// ------------------------------
@@ -40,6 +42,7 @@ export default function ProfilePage() {
 
 			if (!data?.user) return;
 
+			setSessionData(data);
 			setName(data.user.name || "");
 			setEmail(data.user.email || "");
 			setInitialEmail(data.user.email || "");
@@ -137,6 +140,41 @@ export default function ProfilePage() {
 		}
 	}
 
+	// ------------------------------
+	// Admin Check Logic
+	// ------------------------------
+	const [adminCheckResult, setAdminCheckResult] = useState<{
+		status: string;
+		data: any;
+	} | null>(null);
+
+	async function checkAdminAccess() {
+		setAdminCheckResult(null);
+		try {
+			const { data, error } = await authClient.admin.listUsers({
+				query: {
+					limit: 100,
+					offset: 100,
+					sortBy: "name",
+					sortDirection: "desc",
+				},
+			});
+
+			if (error) {
+				setAdminCheckResult({ status: "error", data: error });
+				toast.error("Admin check failed: Forbidden or Error");
+			} else {
+				setAdminCheckResult({ status: "success", data: data });
+				toast.success("Admin check passed!");
+			}
+		} catch (err: any) {
+			setAdminCheckResult({
+				status: "error",
+				data: { message: err.message },
+			});
+		}
+	}
+
 	if (!profileLoaded) {
 		return <ProfileSkeleton />;
 	}
@@ -230,6 +268,64 @@ export default function ProfilePage() {
 					>
 						{loadingPassword ? "Updating..." : "Update Password"}
 					</Button>
+				</CardContent>
+			</Card>
+			{/* Session Details (Debug) */}
+			<Card>
+				<CardHeader>
+					<CardTitle>Session Details</CardTitle>
+					<CardDescription>
+						View your current session data, including roles and
+						permissions.
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<div className="bg-muted p-4 rounded-lg overflow-auto max-h-96 text-xs font-mono">
+						<pre>
+							{sessionData
+								? JSON.stringify(sessionData, null, 2)
+								: "No session data available"}
+						</pre>
+					</div>
+
+					<div className="border-t pt-4 mt-4">
+						<Label className="text-sm font-semibold mb-2 block">
+							Admin Access Checker
+						</Label>
+						<p className="text-xs text-muted-foreground mb-4">
+							Click below to test if you can list users via the
+							admin API.
+						</p>
+						<Button
+							onClick={checkAdminAccess}
+							size="sm"
+							variant="outline"
+						>
+							Check Admin Capabilities
+						</Button>
+
+						{adminCheckResult && (
+							<div className="mt-4 p-3 rounded bg-slate-100 dark:bg-slate-900 border text-xs font-mono overflow-auto max-h-60">
+								<p
+									className={
+										adminCheckResult.status === "success"
+											? "text-green-600 font-bold"
+											: "text-red-500 font-bold"
+									}
+								>
+									Status:{" "}
+									{adminCheckResult.status.toUpperCase()}
+								</p>
+								<pre className="mt-2 text-muted-foreground">
+									{JSON.stringify(
+										adminCheckResult.data,
+										null,
+										2
+									)}
+								</pre>
+							</div>
+						)}
+					</div>
 				</CardContent>
 			</Card>
 		</div>

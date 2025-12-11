@@ -1,24 +1,46 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import prisma from "@/lib/prisma";
+import { hasPermission } from "@/lib/rbac";
 
 export async function GET(req: Request) {
 	const { searchParams } = new URL(req.url);
-	const query: Record<string, string> = {};
+	const limit = parseInt(searchParams.get("limit") || "10");
+	const offset = parseInt(searchParams.get("offset") || "0");
+	const search = searchParams.get("search") || "";
 
-	// Map query params to admin.listUsers options
-	for (const [key, value] of searchParams.entries()) {
-		query[key] = value;
+	const canReadUsers = await hasPermission("read", "users");
+	if (!canReadUsers) {
+		return new NextResponse("Forbidden", { status: 403 });
 	}
 
 	try {
-		const result = await auth.api.listUsers({
-			headers: await headers(),
-			query,
-		});
+		const where: any = {};
+		if (search) {
+			where.OR = [
+				{ name: { contains: search, mode: "insensitive" } },
+				{ email: { contains: search, mode: "insensitive" } },
+			];
+		}
 
-		return NextResponse.json(result);
+		const [users, total] = await Promise.all([
+			prisma.user.findMany({
+				where,
+				take: limit,
+				skip: offset,
+				orderBy: { createdAt: "desc" },
+				include: {
+					roles: true, // Include roles for display
+				},
+			}),
+			prisma.user.count({ where }),
+		]);
+
+		return NextResponse.json({
+			users,
+			total,
+		});
 	} catch (error) {
-		return NextResponse.json({ error }, { status: 500 });
+		console.error("List users error", error);
+		return new NextResponse("Internal Error", { status: 500 });
 	}
 }

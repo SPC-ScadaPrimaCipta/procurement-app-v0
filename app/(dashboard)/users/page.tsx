@@ -1,24 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useEffect, useState } from "react";
+import { UserRoleManager } from "@/components/admin/user-role-manager";
+import { authClient } from "@/lib/auth-client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -27,108 +13,239 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BadgeCheck, MailPlus, MoreVertical, Plus, Shield } from "lucide-react";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { PasswordInput } from "@/components/ui/password-input";
+import {
+	Ban,
+	Edit,
+	MoreHorizontal,
+	Trash2,
+	ShieldOff,
+	Search,
+	Loader2,
+	Shield,
+	Plus,
+} from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
 
-type UserStatus = "Active" | "Unverified" | "Suspended";
-type UserRole = "admin" | "user" | "manager" | "editor" | "viewer";
+// Basic types
+interface Role {
+	id: string;
+	name: string;
+	description: string | null;
+}
 
 interface User {
 	id: string;
 	name: string;
 	email: string;
-	role: string;
-	status: UserStatus;
-	team: string;
-	lastActive: string;
+	image: string | null;
 	createdAt: string;
-	emailVerified: boolean;
 	banned: boolean;
+	roles: Role[];
 }
 
-const STATUS_STYLES: Record<UserStatus, string> = {
-	Active: "text-emerald-600 bg-emerald-100/80 dark:text-emerald-300 dark:bg-emerald-500/15",
-	Unverified:
-		"text-amber-600 bg-amber-100/70 dark:text-amber-300 dark:bg-amber-500/10",
-	Suspended:
-		"text-rose-600 bg-rose-100/80 dark:text-rose-300 dark:bg-rose-500/15",
-};
-
-const ROLES: UserRole[] = ["admin", "user", "manager", "viewer"];
-
 export default function UsersPage() {
-	const [search, setSearch] = useState("");
-	const [roleFilter, setRoleFilter] = useState<string>("all");
-	const [statusFilter, setStatusFilter] = useState<string>("all");
 	const [users, setUsers] = useState<User[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [search, setSearch] = useState("");
+	const [page, setPage] = useState(0);
+	const limit = 10;
+
+	// Edit User Dialog
+	const [editingUser, setEditingUser] = useState<User | null>(null);
+	const [editName, setEditName] = useState("");
+	const [isEditOpen, setIsEditOpen] = useState(false);
+	const [saving, setSaving] = useState(false);
+
+	// Create User Dialog
+	const [isCreateOpen, setIsCreateOpen] = useState(false);
+	const [creating, setCreating] = useState(false);
+	const [createForm, setCreateForm] = useState({
+		name: "",
+		email: "",
+		password: "",
+		role: "user",
+	});
 
 	useEffect(() => {
-		const fetchUsers = async () => {
-			setLoading(true);
-			const params = new URLSearchParams();
-			if (search) params.append("searchValue", search);
-
-			// Note: better-auth listUsers primarily supports generic search or limit/offset.
-			// Complex filtering might need to be handled client-side or via specific admin query helpers if available.
-			// For now, we'll fetch and let client-side filtering refine it,
-			// but we pass standard params just in case our API wrapper passes them to a compatible backend query.
-
-			try {
-				const res = await fetch(
-					`/api/admin/list-users?${params.toString()}`
-				);
-				const json = await res.json();
-
-				if (json.users) {
-					const mappedUsers = json.users.map((u: any) => ({
-						id: u.id,
-						name: u.name,
-						email: u.email,
-						role: u.role || "user",
-						status: u.banned
-							? "Suspended"
-							: u.emailVerified
-							? "Active"
-							: "Unverified",
-						team: "Unassigned", // Placeholder as it's not in default schema
-						lastActive: new Date(u.createdAt).toLocaleDateString(), // using createdAt as proxy for now
-						createdAt: u.createdAt,
-						emailVerified: u.emailVerified,
-						banned: u.banned,
-					}));
-					setUsers(mappedUsers);
-				}
-			} catch (error) {
-				console.error("Failed to fetch users", error);
-			} finally {
-				setLoading(false);
-			}
-		};
 		fetchUsers();
-	}, [search, roleFilter, statusFilter]);
+	}, [search, page]);
 
-	const filteredUsers = useMemo(() => {
-		return users.filter((user) => {
-			const matchesSearch =
-				!search ||
-				user.name.toLowerCase().includes(search.toLowerCase()) ||
-				user.email.toLowerCase().includes(search.toLowerCase()) ||
-				user.id.toLowerCase().includes(search.toLowerCase());
+	const fetchUsers = async () => {
+		setLoading(true);
+		try {
+			const params = new URLSearchParams({
+				limit: limit.toString(),
+				offset: (page * limit).toString(),
+				search: search,
+			});
+			const res = await fetch(`/api/admin/list-users?${params}`);
+			if (res.ok) {
+				const data = await res.json();
+				setUsers(data.users);
+			} else {
+				toast.error("Failed to load users");
+			}
+		} catch (error) {
+			console.error(error);
+		} finally {
+			setLoading(false);
+		}
+	};
 
-			const matchesRole =
-				roleFilter === "all" || user.role.toLowerCase() === roleFilter;
-			const matchesStatus =
-				statusFilter === "all" ||
-				user.status.toLowerCase() === statusFilter;
+	const handleBanUser = async (userId: string, isBanned: boolean) => {
+		if (
+			!confirm(
+				`Are you sure you want to ${
+					isBanned ? "unban" : "ban"
+				} this user?`
+			)
+		)
+			return;
 
-			return matchesSearch && matchesRole && matchesStatus;
-		});
-	}, [search, roleFilter, statusFilter, users]);
+		try {
+			if (isBanned) {
+				await authClient.admin.unbanUser({ userId });
+				toast.success("User unbanned");
+			} else {
+				await authClient.admin.banUser({
+					userId,
+					banReason: "Admin action",
+				});
+				toast.success("User banned");
+			}
+			fetchUsers();
+		} catch (error: any) {
+			toast.error(error.message || "Action failed");
+		}
+	};
 
-	const activeUsers = users.filter((user) => user.status === "Active").length;
-	const pendingInvites = users.filter(
-		(user) => user.status === "Unverified"
-	).length;
+	const handleRevokeSessions = async (userId: string) => {
+		if (!confirm("Revoke all active sessions for this user?")) return;
+		try {
+			const res = await fetch(`/api/admin/users/${userId}/revoke`, {
+				method: "POST",
+			});
+			if (res.ok) toast.success("Sessions revoked");
+			else toast.error("Failed to revoke sessions");
+		} catch (e) {
+			toast.error("Error revoking sessions");
+		}
+	};
+
+	const handleDeleteUser = async (userId: string) => {
+		if (
+			!confirm(
+				"Are you sure you want to PERMANENTLY delete this user? This action cannot be undone."
+			)
+		)
+			return;
+		try {
+			const res = await fetch(`/api/admin/users/${userId}`, {
+				method: "DELETE",
+			});
+			if (res.ok) {
+				toast.success("User deleted");
+				fetchUsers();
+			} else {
+				toast.error("Failed to delete user");
+			}
+		} catch (e) {
+			toast.error("Error deleting user");
+		}
+	};
+
+	const openEdit = (user: User) => {
+		setEditingUser(user);
+		setEditName(user.name);
+		setIsEditOpen(true);
+	};
+
+	const handleSaveEdit = async () => {
+		if (!editingUser) return;
+		setSaving(true);
+		try {
+			const res = await fetch(`/api/admin/users/${editingUser.id}`, {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ name: editName }),
+			});
+
+			if (res.ok) {
+				toast.success("User updated");
+				setIsEditOpen(false);
+				fetchUsers();
+			} else {
+				toast.error("Update failed");
+			}
+		} catch (err) {
+			toast.error("Error updating user");
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const handleCreateUser = async () => {
+		if (!createForm.email || !createForm.password || !createForm.name) {
+			toast.error("Please fill in all fields");
+			return;
+		}
+
+		setCreating(true);
+		try {
+			const { data, error } = await authClient.admin.createUser({
+				email: createForm.email,
+				password: createForm.password,
+				name: createForm.name,
+				role: createForm.role,
+			});
+
+			if (error) {
+				toast.error(error.message || "Failed to create user");
+			} else {
+				toast.success("User created successfully");
+				setIsCreateOpen(false);
+				setCreateForm({
+					name: "",
+					email: "",
+					password: "",
+					role: "user",
+				});
+				fetchUsers();
+			}
+		} catch (err: any) {
+			toast.error(err.message || "Error creating user");
+		} finally {
+			setCreating(false);
+		}
+	};
 
 	return (
 		<div className="space-y-8">
@@ -145,268 +262,300 @@ export default function UsersPage() {
 						<Shield className="size-4" />
 						Access policies
 					</Button>
-					<Button className="gap-2">
+					<Button
+						className="gap-2"
+						onClick={() => setIsCreateOpen(true)}
+					>
 						<Plus className="size-4" />
-						Invite user
+						Create User
 					</Button>
 				</div>
 			</header>
 
-			<section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-				<Card>
-					<CardHeader>
-						<CardTitle className="text-sm font-medium text-muted-foreground">
-							Total members
-						</CardTitle>
-						<CardDescription className="text-3xl font-semibold text-foreground">
-							{users.length}
-						</CardDescription>
-					</CardHeader>
-				</Card>
+			{/* Search */}
+			<div className="flex w-full items-center space-x-2">
+				<Input
+					placeholder="Search users..."
+					value={search}
+					onChange={(e) => setSearch(e.target.value)}
+					className="max-w-xs"
+				/>
+				{loading && (
+					<Loader2 className="animate-spin size-4 text-muted-foreground" />
+				)}
+			</div>
 
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between">
-						<div>
-							<CardTitle className="text-sm font-medium text-muted-foreground">
-								Active users
-							</CardTitle>
-							<p className="text-3xl font-semibold">
-								{activeUsers}
-							</p>
-						</div>
-						<BadgeCheck className="text-emerald-500 size-8" />
-					</CardHeader>
-				</Card>
+			<div className="rounded-md border">
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead>User</TableHead>
+							<TableHead>Roles</TableHead>
+							<TableHead>Status</TableHead>
+							<TableHead>Created</TableHead>
+							<TableHead className="text-right">
+								Actions
+							</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{users.map((user) => (
+							<TableRow key={user.id}>
+								<TableCell className="flex items-center gap-3">
+									<Avatar className="size-8">
+										<AvatarImage src={user.image || ""} />
+										<AvatarFallback>
+											{user.name.charAt(0).toUpperCase()}
+										</AvatarFallback>
+									</Avatar>
+									<div className="flex flex-col">
+										<span className="font-medium text-sm">
+											{user.name}
+										</span>
+										<span className="text-xs text-muted-foreground">
+											{user.email}
+										</span>
+									</div>
+								</TableCell>
+								<TableCell>
+									<div className="flex flex-wrap gap-1">
+										{user.roles.length > 0 ? (
+											user.roles.map((r) => (
+												<Badge
+													key={r.id}
+													variant="secondary"
+													className="text-xs font-normal"
+												>
+													{r.name}
+												</Badge>
+											))
+										) : (
+											<span className="text-xs text-muted-foreground">
+												No roles
+											</span>
+										)}
+									</div>
+								</TableCell>
+								<TableCell>
+									{user.banned ? (
+										<Badge variant="destructive">
+											Banned
+										</Badge>
+									) : (
+										<Badge
+											variant="outline"
+											className="text-green-600 border-green-200 bg-green-50"
+										>
+											Active
+										</Badge>
+									)}
+								</TableCell>
+								<TableCell className="text-muted-foreground text-xs">
+									{format(
+										new Date(user.createdAt),
+										"MMM d, yyyy"
+									)}
+								</TableCell>
+								<TableCell className="text-right">
+									<DropdownMenu>
+										<DropdownMenuTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+											>
+												<MoreHorizontal className="size-4" />
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent align="end">
+											<DropdownMenuLabel>
+												Actions
+											</DropdownMenuLabel>
+											<DropdownMenuItem
+												onClick={() => openEdit(user)}
+											>
+												<Edit className="mr-2 size-4" />{" "}
+												Edit Details
+											</DropdownMenuItem>
+											<DropdownMenuSeparator />
+											<div className="">
+												<UserRoleManager
+													userId={user.id}
+													currentRoles={user.roles.map(
+														(r) => r.name
+													)}
+													onUpdate={fetchUsers}
+												/>
+											</div>
+											<DropdownMenuSeparator />
+											<DropdownMenuItem
+												onClick={() =>
+													handleRevokeSessions(
+														user.id
+													)
+												}
+											>
+												<ShieldOff className="mr-2 size-4 text-orange-500" />{" "}
+												Revoke Access
+											</DropdownMenuItem>
+											<DropdownMenuItem
+												onClick={() =>
+													handleBanUser(
+														user.id,
+														user.banned
+													)
+												}
+												className={
+													user.banned
+														? "text-green-600"
+														: "text-destructive"
+												}
+											>
+												<Ban className="mr-2 size-4" />{" "}
+												{user.banned
+													? "Unban User"
+													: "Ban User"}
+											</DropdownMenuItem>
+											<DropdownMenuSeparator />
+											<DropdownMenuItem
+												onClick={() =>
+													handleDeleteUser(user.id)
+												}
+												className="text-destructive focus:text-destructive"
+											>
+												<Trash2 className="mr-2 size-4" />
+												Delete User
+											</DropdownMenuItem>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								</TableCell>
+							</TableRow>
+						))}
+						{!loading && users.length === 0 && (
+							<TableRow>
+								<TableCell
+									colSpan={5}
+									className="h-24 text-center"
+								>
+									No users found.
+								</TableCell>
+							</TableRow>
+						)}
+					</TableBody>
+				</Table>
+			</div>
 
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between">
-						<div>
-							<CardTitle className="text-sm font-medium text-muted-foreground">
-								Pending invites
-							</CardTitle>
-							<p className="text-3xl font-semibold">
-								{pendingInvites}
-							</p>
-						</div>
-						<MailPlus className="text-amber-500 size-8" />
-					</CardHeader>
-				</Card>
-			</section>
+			{/* Pagination Controls could go here */}
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Filters</CardTitle>
-					<CardDescription>
-						Use quick filters to narrow down large teams.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="grid gap-4 md:grid-cols-3">
+			{/* Edit User Dialog */}
+			<Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Edit User</DialogTitle>
+						<DialogDescription>
+							Change user display name
+						</DialogDescription>
+					</DialogHeader>
+					<div className="py-2">
+						<Label>Name</Label>
+						<Input
+							value={editName}
+							onChange={(e) => setEditName(e.target.value)}
+						/>
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setIsEditOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button onClick={handleSaveEdit} disabled={saving}>
+							{saving ? "Saving..." : "Save Changes"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+			{/* Create User Dialog */}
+			<Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Create New User</DialogTitle>
+						<DialogDescription>
+							Add a new user to the system.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4 py-2">
 						<div className="space-y-2">
-							<Label htmlFor="search">Search</Label>
+							<Label>Name</Label>
 							<Input
-								id="search"
-								placeholder="Name, email, or ID"
-								value={search}
-								onChange={(event) =>
-									setSearch(event.target.value)
+								placeholder="John Doe"
+								value={createForm.name}
+								onChange={(e) =>
+									setCreateForm({
+										...createForm,
+										name: e.target.value,
+									})
 								}
 							/>
 						</div>
-
+						<div className="space-y-2">
+							<Label>Email</Label>
+							<Input
+								type="email"
+								placeholder="john@example.com"
+								value={createForm.email}
+								onChange={(e) =>
+									setCreateForm({
+										...createForm,
+										email: e.target.value,
+									})
+								}
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label>Password</Label>
+							<PasswordInput
+								placeholder="Secure password"
+								value={createForm.password}
+								onChange={(e) =>
+									setCreateForm({
+										...createForm,
+										password: e.target.value,
+									})
+								}
+							/>
+						</div>
 						<div className="space-y-2">
 							<Label>Role</Label>
 							<Select
-								value={roleFilter}
-								onValueChange={setRoleFilter}
+								value={createForm.role}
+								onValueChange={(val) =>
+									setCreateForm({ ...createForm, role: val })
+								}
 							>
 								<SelectTrigger>
-									<SelectValue placeholder="All roles" />
+									<SelectValue placeholder="Select role" />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="all">
-										All roles
-									</SelectItem>
-									{ROLES.map((role) => (
-										<SelectItem
-											key={role}
-											value={role.toLowerCase()}
-										>
-											{role}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-
-						<div className="space-y-2">
-							<Label>Status</Label>
-							<Select
-								value={statusFilter}
-								onValueChange={setStatusFilter}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder="All statuses" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="all">
-										All statuses
-									</SelectItem>
-									{(
-										Object.keys(
-											STATUS_STYLES
-										) as UserStatus[]
-									).map((status) => (
-										<SelectItem
-											key={status}
-											value={status.toLowerCase()}
-										>
-											{status}
-										</SelectItem>
-									))}
+									<SelectItem value="user">User</SelectItem>
+									<SelectItem value="admin">Admin</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
 					</div>
-				</CardContent>
-			</Card>
-
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between">
-					<div>
-						<CardTitle>Team directory</CardTitle>
-						<CardDescription>
-							{filteredUsers.length} member
-							{filteredUsers.length === 1 ? "" : "s"} match the
-							current filters.
-						</CardDescription>
-					</div>
-					<Button variant="outline" className="gap-2">
-						<Plus className="size-4" />
-						Bulk invite
-					</Button>
-				</CardHeader>
-				<CardContent className="px-0">
-					{loading ? (
-						<div className="p-8 text-center text-muted-foreground">
-							Loading users...
-						</div>
-					) : (
-						<>
-							<div className="px-6">
-								<div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 border-b pb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-									<span>User</span>
-									<span>Role &amp; team</span>
-									<span>Status</span>
-									<span className="sr-only">Row actions</span>
-								</div>
-							</div>
-
-							<ul className="divide-y">
-								{filteredUsers.map((user) => (
-									<li
-										key={user.id}
-										className="px-6 py-4 grid items-center gap-4 grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
-									>
-										<div className="flex items-center gap-3">
-											<Avatar>
-												<AvatarFallback>
-													{user.name
-														.split(" ")
-														.map((part) => part[0])
-														.join("")
-														.slice(0, 2)
-														.toUpperCase()}
-												</AvatarFallback>
-											</Avatar>
-											<div>
-												<p className="font-medium leading-tight">
-													{user.name}
-												</p>
-												<p className="text-muted-foreground text-sm">
-													{user.email}
-												</p>
-												<p className="text-muted-foreground text-xs">
-													{user.id}
-												</p>
-											</div>
-										</div>
-
-										<div>
-											<p className="text-sm font-medium capitalize">
-												{user.role}
-											</p>
-											<p className="text-muted-foreground text-xs">
-												{user.team}
-											</p>
-										</div>
-
-										<div className="flex flex-col gap-1">
-											<span
-												className={`inline-flex w-fit items-center rounded-full px-2 py-1 text-xs font-medium ${
-													STATUS_STYLES[user.status]
-												}`}
-											>
-												{user.status}
-											</span>
-											<span className="text-muted-foreground text-xs">
-												{user.lastActive}
-											</span>
-										</div>
-
-										<div className="flex justify-end">
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
-													<Button
-														variant="ghost"
-														size="icon-sm"
-													>
-														<MoreVertical className="size-4" />
-														<span className="sr-only">
-															Open menu
-														</span>
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="end">
-													<DropdownMenuLabel>
-														Manage
-													</DropdownMenuLabel>
-													<DropdownMenuItem>
-														Edit details
-													</DropdownMenuItem>
-													<DropdownMenuItem>
-														Change role
-													</DropdownMenuItem>
-													<DropdownMenuItem>
-														Resend invitation
-													</DropdownMenuItem>
-													<DropdownMenuSeparator />
-													<DropdownMenuItem variant="destructive">
-														Revoke access
-													</DropdownMenuItem>
-												</DropdownMenuContent>
-											</DropdownMenu>
-										</div>
-									</li>
-								))}
-							</ul>
-
-							{filteredUsers.length === 0 && (
-								<div className="flex flex-col items-center gap-2 px-6 py-12 text-center text-muted-foreground">
-									<p className="text-sm font-medium">
-										No users found
-									</p>
-									<p className="text-sm">
-										Adjust your filters or invite a new
-										teammate.
-									</p>
-								</div>
-							)}
-						</>
-					)}
-				</CardContent>
-			</Card>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setIsCreateOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button onClick={handleCreateUser} disabled={creating}>
+							{creating ? "Creating..." : "Create User"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
-

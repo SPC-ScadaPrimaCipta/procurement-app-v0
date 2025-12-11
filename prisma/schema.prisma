@@ -26,6 +26,7 @@ model User {
   accounts      Account[]
 
   role       String?
+  roles      Role[]
   banned     Boolean?  @default(false)
   banReason  String?
   banExpires DateTime?
@@ -82,4 +83,29 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String?
+  permissions Permission[]
+  users       User[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("role")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  action      String
+  resource    String
+  description String?
+  roles       Role[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([action, resource])
+  @@map("permission")
 }
