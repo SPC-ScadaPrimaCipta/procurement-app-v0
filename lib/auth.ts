@@ -22,6 +22,18 @@ export const auth = betterAuth({
 		enabled: true,
 	},
 
+	socialProviders: {
+		microsoft: {
+			clientId: process.env.MICROSOFT_CLIENT_ID as string,
+			clientSecret: process.env.MICROSOFT_CLIENT_SECRET as string,
+			tenantId: "866bbb0d-62fc-42ab-bbc2-51355e965c88",
+			// Optional
+			// tenantId: 'common', // use common for all tenants
+			// authority: "https://login.microsoftonline.com", // Authentication authority URL
+			// prompt: "select_account", // Forces account selection
+		},
+	},
+
 	// Use Prisma + PostgreSQL
 	database: prismaAdapter(prisma, {
 		provider: "postgresql",
