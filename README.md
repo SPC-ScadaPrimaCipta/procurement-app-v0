@@ -1,29 +1,40 @@
-# NextJS Dashboard
+# Dashboard Project (v0.1.0)
 
-A modern, high-performance dashboard application built with **Next.js**, **React**, and **TypeScript**, designed for extensible data visualization, API-driven workflows, and scalable enterprise use cases.
+A modern, high-performance dashboard application built with **Next.js 16**, **React 19**, and **TypeScript**, designed for extensible data visualization, API-driven workflows, and scalable enterprise use cases.
 
 ## 🚀 Features
 
--   **Next.js App Router (v14+)** with Server Actions
+-   **Next.js App Router (v16)** with Server Actions
 -   **TypeScript-first** development
--   **Responsive Dashboard Layout**
--   **Protected Routes & User Auth**
--   **API Handlers** for backend integration
--   **Reusable UI Components**
--   **Dark / Light Theme** toggle
--   **Optimized for Production**
--   Works with **Docker, Vercel, or custom Node server**
+-   **Advanced Workflow Engine**:
+    -   Multi-step approval flows with configurable sendback logic.
+    -   Drafting mechanism for workflow steps.
+    -   Dynamic approver selection (User/Role based).
+-   **Role-Based Access Control (RBAC)**:
+    -   Dynamic permission checks using `better-auth`.
+    -   Granular "manage" vs "read" access controls.
+-   **User Management System**:
+    -   Create and Edit User dialogs.
+    -   Role assignment and validation.
+-   **Enhanced Profile Management**:
+    -   Secure password updates.
+    -   Profile information editing with optimized loading states.
+-   **Responsive & Themed UI**:
+    -   Dark / Light Theme toggle.
+    -   Minimalist and dynamic animations.
+-   **Optimized for Production**:
+    -   Docker support.
+    -   Prisma ORM with PostgreSQL.
 
 ## 🏗️ Tech Stack
 
--   Next.js 14+
--   React 19
--   TypeScript
--   Tailwind CSS
--   Prisma (optional)
--   PostgreSQL / MySQL / MSSQL
--   Docker Ready
--   Better Auth
+-   **Framework**: Next.js 16 (App Router)
+-   **Core**: React 19
+-   **Language**: TypeScript
+-   **Styling**: Tailwind CSS 4, Radix UI, Lucide React
+-   **Database**: PostgreSQL, Prisma ORM
+-   **Authentication**: Better Auth
+-   **Utilities**: date-fns, zod, react-hook-form
 
 ## 📦 Installation
 
@@ -46,6 +57,7 @@ Create `.env` file:
 
 ```env
 DATABASE_URL="postgresql://user:pass@localhost:5432/db"
+BETTER_AUTH_SECRET="your_secret_here"
 ```
 
 ## ▶️ Running the App
@@ -75,14 +87,14 @@ docker run -p 3000:3000 nextjs-dashboard
 ```
 nextjs-dashboard/
 ├── app/
-│   ├── dashboard/
-│   ├── api/
-│   ├── auth/
-│   └── layout.tsx
-├── components/
-├── lib/
-├── prisma/
-├── public/
+│   ├── (dashboard)/    # Dashboard layout and pages
+│   ├── api/            # API Routes
+│   ├── auth/           # Authentication pages
+│   └── globals.css     # Global styles
+├── components/         # Reusable UI components
+├── lib/                # Utilities, hooks, and configurations
+├── prisma/             # Database schema
+├── public/             # Static assets
 └── README.md
 ```
 
