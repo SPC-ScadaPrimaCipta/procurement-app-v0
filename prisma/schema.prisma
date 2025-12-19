@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -17,38 +11,34 @@ datasource db {
 model User {
   id            String    @id
   name          String
-  email         String
+  email         String    @unique
   emailVerified Boolean   @default(false)
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  sessions      Session[]
+  banExpires    DateTime?
+  banReason     String?
+  banned        Boolean?  @default(false)
+  role          String?
   accounts      Account[]
+  sessions      Session[]
+  roles         Role[]    @relation("RoleToUser")
 
-  role       String?
-  roles      Role[]
-  banned     Boolean?  @default(false)
-  banReason  String?
-  banExpires DateTime?
-
-  @@unique([email])
   @@map("user")
 }
 
 model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  id             String   @id
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
   impersonatedBy String?
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
   @@index([userId])
   @@map("session")
 }
@@ -58,7 +48,6 @@ model Account {
   accountId             String
   providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -68,6 +57,7 @@ model Account {
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("account")
@@ -89,10 +79,10 @@ model Role {
   id          String       @id @default(cuid())
   name        String       @unique
   description String?
-  permissions Permission[]
-  users       User[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  permissions Permission[] @relation("PermissionToRole")
+  users       User[]       @relation("RoleToUser")
 
   @@map("role")
 }
@@ -102,10 +92,143 @@ model Permission {
   action      String
   resource    String
   description String?
-  roles       Role[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  roles       Role[]   @relation("PermissionToRole")
 
   @@unique([action, resource])
   @@map("permission")
+}
+
+model workflow {
+  id                String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  code              String              @db.VarChar(100)
+  name              String              @db.VarChar(255)
+  version           Int
+  description       String?
+  is_active         Boolean             @default(true)
+  created_at        DateTime            @default(now()) @db.Timestamptz(6)
+  created_by        String
+  updated_at        DateTime?           @db.Timestamptz(6)
+  updated_by        String?
+  workflow_step     workflow_step[]
+  workflow_instance workflow_instance[]
+
+  @@unique([code, version], map: "uq_workflow_code_version")
+}
+
+model workflow_action_log {
+  id                      String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  workflow_instance_id    String            @db.Uuid
+  action                  workflow_action
+  from_step_id            String?           @db.Uuid
+  to_step_id              String?           @db.Uuid
+  actor_id                String
+  comment                 String?
+  metadata                Json?
+  created_at              DateTime          @default(now()) @db.Timestamptz(6)
+  from_step               workflow_step?    @relation("from_step", fields: [from_step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  to_step                 workflow_step?    @relation("to_step", fields: [to_step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  workflow_instance       workflow_instance @relation(fields: [workflow_instance_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([workflow_instance_id], map: "idx_action_log_instance")
+}
+
+model workflow_instance {
+  id                     String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  workflow_id            String                   @db.Uuid
+  workflow_version       Int
+  ref_type               String                   @db.VarChar(100)
+  ref_id                 String                   @db.VarChar(255)
+  status                 workflow_status          @default(DRAFT)
+  current_step_id        String?                  @db.Uuid
+  created_by             String
+  created_at             DateTime                 @default(now()) @db.Timestamptz(6)
+  workflow_action_log    workflow_action_log[]
+  workflow_step          workflow_step?           @relation(fields: [current_step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  workflow               workflow                 @relation(fields: [workflow_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  workflow_step_instance workflow_step_instance[]
+
+  @@unique([ref_type, ref_id], map: "uq_workflow_instance_ref")
+  @@index([status], map: "idx_workflow_instance_status")
+}
+
+model workflow_step {
+  id                        String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  workflow_id               String                   @db.Uuid
+  step_key                  String                   @db.VarChar(50)
+  step_order                Int
+  name                      String                   @db.VarChar(255)
+  approver_strategy         approver_strategy
+  approver_value            String                   @db.VarChar(255)
+  approval_mode             approval_mode            @default(ANY)
+  can_send_back             Boolean                  @default(true)
+  reject_target_type        reject_target_type
+  reject_target_step_id     String?                  @db.Uuid
+  is_terminal               Boolean                  @default(false)
+  from_action_logs          workflow_action_log[]    @relation("from_step")
+  to_action_logs            workflow_action_log[]    @relation("to_step")
+  workflow_instance         workflow_instance[]
+  workflow                  workflow                 @relation(fields: [workflow_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  workflow_step_instance    workflow_step_instance[]
+
+  @@unique([workflow_id, step_key], map: "uq_workflow_step_key")
+  @@unique([workflow_id, step_order], map: "uq_workflow_step_order")
+}
+
+model workflow_step_instance {
+  id                   String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  workflow_instance_id String               @db.Uuid
+  step_id              String               @db.Uuid
+  status               workflow_step_status @default(PENDING)
+  assigned_to          Json                 @default("[]")
+  acted_by             String?
+  acted_at             DateTime?            @db.Timestamptz(6)
+  comment              String?
+  created_at           DateTime             @default(now()) @db.Timestamptz(6)
+  step                 workflow_step        @relation(fields: [step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  workflow_instance    workflow_instance    @relation(fields: [workflow_instance_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([assigned_to], map: "idx_step_instance_assigned_to", type: Gin)
+}
+
+enum approval_mode {
+  ANY
+  ALL
+}
+
+enum approver_strategy {
+  USER
+  ROLE
+  DYNAMIC
+  MULTI
+}
+
+enum reject_target_type {
+  PREVIOUS
+  SUBMITTER
+  SPECIFIC
+}
+
+enum workflow_action {
+  SUBMIT
+  APPROVE
+  REJECT
+  SEND_BACK
+  CANCEL
+}
+
+enum workflow_status {
+  DRAFT
+  IN_PROGRESS
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum workflow_step_status {
+  PENDING
+  APPROVED
+  REJECTED
+  SKIPPED
 }
