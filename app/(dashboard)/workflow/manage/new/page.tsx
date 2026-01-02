@@ -83,7 +83,7 @@ export default function NewWorkflowPage() {
 			const wf = await res.json();
 			toast.success("Workflow created successfully");
 			// Redirect to the edit/view page for the new workflow
-			router.push(`/workflow/manage/workflows/${wf.workflowId}`);
+			router.push(`/workflow/manage/${wf.workflowId}`);
 		} catch (error) {
 			console.error(error);
 			toast.error("Something went wrong. Please try again.");
@@ -100,7 +100,7 @@ export default function NewWorkflowPage() {
 					className="pl-0 hover:pl-2 transition-all"
 					asChild
 				>
-					<Link href="/workflow/manage/workflows">
+					<Link href="/workflow/manage">
 						<ArrowLeft className="mr-2 h-4 w-4" />
 						Back to Workflows
 					</Link>
