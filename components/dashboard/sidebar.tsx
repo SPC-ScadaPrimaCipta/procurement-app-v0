@@ -6,15 +6,14 @@ import {
 	Settings,
 	RocketIcon,
 	User,
-	ChevronDown,
 	ChevronRight,
 	UserCircle,
 	ShieldCheck,
-	Palette,
-	CreditCard,
 	Inbox,
-	Monitor,
-	Clipboard,
+	GitBranch,
+	UserCheck,
+	HeartPulse,
+	FileSearch,
 } from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
@@ -64,7 +63,7 @@ const rawMenu: MenuItem[] = [
 	{
 		name: "Workflow",
 		href: "/workflow",
-		icon: RocketIcon,
+		icon: GitBranch,
 		children: [
 			{
 				name: "Inbox",
@@ -75,25 +74,25 @@ const rawMenu: MenuItem[] = [
 			{
 				name: "My Requests",
 				href: "/workflow/requests",
-				icon: Inbox,
+				icon: UserCheck,
 				permissions: [{ resource: "workflows", action: "read" }],
 			},
 			{
 				name: "Manage Workflow",
 				href: "/workflow/manage",
-				icon: User,
+				icon: Settings,
 				permissions: [{ resource: "workflows", action: "read" }],
 			},
 			{
 				name: "Monitoring",
 				href: "/workflow/monitoring",
-				icon: Monitor,
+				icon: HeartPulse,
 				permissions: [{ resource: "roles", action: "read" }],
 			},
 			{
 				name: "Audit",
 				href: "/workflow/audit",
-				icon: Clipboard,
+				icon: FileSearch,
 				permissions: [{ resource: "roles", action: "read" }],
 			},
 		],
@@ -109,8 +108,8 @@ const rawMenu: MenuItem[] = [
 				href: "/settings/security",
 				icon: ShieldCheck,
 			},
-			{ name: "Appearance", href: "/settings/appearance", icon: Palette },
-			{ name: "Billing", href: "/settings/billing", icon: CreditCard },
+			// { name: "Appearance", href: "/settings/appearance", icon: Palette },
+			// { name: "Billing", href: "/settings/billing", icon: CreditCard },
 		],
 	},
 ];
