@@ -60,6 +60,33 @@ DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 BETTER_AUTH_SECRET="your_secret_here"
 ```
 
+### 4. Database Setup
+
+To get started, you need to push the schema to your database and seed it with initial data (like roles and permissions).
+
+```bash
+# Push the database schema
+npx prisma db push
+
+# Seed the database
+npx prisma db seed
+```
+
+### 5. Create a Superadmin User
+
+After setting up the database, create a Superadmin user to access all features.
+
+1.  **Register a User**: Run the app (`npm run dev`), go to the login page, and create a new account.
+2.  **Assign Superadmin Role**: Run the provided script to promote your user to superadmin. You will need your User ID (which you can find in the database, or via `npx prisma studio`).
+
+```bash
+# Syntax
+npx tsx prisma/assign-superadmin.ts <USER_ID>
+
+# Example
+npx tsx prisma/assign-superadmin.ts cm5j4920v0000abc123xyz
+```
+
 ## ▶️ Running the App
 
 ### Development

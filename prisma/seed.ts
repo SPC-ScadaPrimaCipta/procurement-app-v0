@@ -23,6 +23,16 @@ async function main() {
 		{ action: "manage", resource: "users", description: "Manage users" },
 		{ action: "read", resource: "roles", description: "View roles" },
 		{ action: "manage", resource: "roles", description: "Manage roles" },
+		{
+			action: "read",
+			resource: "workflows",
+			description: "View workflows",
+		},
+		{
+			action: "manage",
+			resource: "workflows",
+			description: "Manage workflows",
+		},
 	];
 
 	for (const perm of permissions) {
