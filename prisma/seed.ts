@@ -16,6 +16,18 @@ async function main() {
 
 	console.log("Superadmin role created:", superAdminRole.name);
 
+	// Create User Role
+	const userRole = await prisma.role.upsert({
+		where: { name: "user" },
+		update: {},
+		create: {
+			name: "user",
+			description: "Basic user with limited access",
+		},
+	});
+
+	console.log("User role created:", userRole.name);
+
 	// Create basic permissions
 	const permissions = [
 		{ action: "manage", resource: "all", description: "Manage everything" },

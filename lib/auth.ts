@@ -46,6 +46,30 @@ export const auth = betterAuth({
 		process.env.BETTER_AUTH_URL as string,
 	],
 
+	databaseHooks: {
+		user: {
+			create: {
+				after: async (user) => {
+					// Check if "user" role exists
+					const userRole = await prisma.role.findUnique({
+						where: { name: "user" },
+					});
+
+					if (userRole) {
+						await prisma.user.update({
+							where: { id: user.id },
+							data: {
+								roles: {
+									connect: { id: userRole.id },
+								},
+							},
+						});
+					}
+				},
+			},
+		},
+	},
+
 	// Required for Next.js App Router cookie handling
 	plugins: [
 		nextCookies(),
