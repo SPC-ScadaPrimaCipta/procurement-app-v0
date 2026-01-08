@@ -14,6 +14,7 @@ import {
 	UserCheck,
 	HeartPulse,
 	FileSearch,
+	HelpCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
@@ -111,6 +112,12 @@ const rawMenu: MenuItem[] = [
 			// { name: "Appearance", href: "/settings/appearance", icon: Palette },
 			// { name: "Billing", href: "/settings/billing", icon: CreditCard },
 		],
+	},
+
+	{
+		name: "Help",
+		href: "/help",
+		icon: HelpCircle,
 	},
 ];
 
