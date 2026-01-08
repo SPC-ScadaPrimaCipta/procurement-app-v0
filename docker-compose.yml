@@ -12,3 +12,4 @@ services:
             BETTER_AUTH_URL: "http://localhost:3002"
             MICROSOFT_CLIENT_ID: ""
             MICROSOFT_CLIENT_SECRET: ""
+            MICROSOFT_TENANT_ID: ""

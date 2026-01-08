@@ -26,7 +26,7 @@ export const auth = betterAuth({
 		microsoft: {
 			clientId: process.env.MICROSOFT_CLIENT_ID as string,
 			clientSecret: process.env.MICROSOFT_CLIENT_SECRET as string,
-			tenantId: "866bbb0d-62fc-42ab-bbc2-51355e965c88",
+			tenantId: process.env.MICROSOFT_TENANT_ID as string,
 			// Optional
 			// tenantId: 'common', // use common for all tenants
 			// authority: "https://login.microsoftonline.com", // Authentication authority URL
@@ -43,6 +43,7 @@ export const auth = betterAuth({
 		"http://localhost:3002",
 		"http://127.0.0.1:3002",
 		"http://0.0.0.0:3002",
+		process.env.BETTER_AUTH_URL as string,
 	],
 
 	// Required for Next.js App Router cookie handling
