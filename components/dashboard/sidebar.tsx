@@ -16,6 +16,11 @@ import {
 	FileSearch,
 	HelpCircle,
 	FileText,
+	Package,
+	FileCheck,
+	Building2,
+	Send,
+	ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
@@ -38,9 +43,46 @@ type MenuItem = {
 const rawMenu: MenuItem[] = [
 	{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
 	{
-		name: "Proposals",
-		href: "/proposals",
+		name: "Inbox",
+		href: "/inbox",
+		icon: Inbox,
+	},
+	{
+		name: "Nota Dinas",
+		href: "/nota-dinas",
 		icon: FileText,
+		children: [
+			{
+				name: "Surat Masuk",
+				href: "/nota-dinas/surat-masuk",
+				icon: Inbox,
+			},
+			{
+				name: "Surat Keluar",
+				href: "/nota-dinas/surat-keluar",
+				icon: Send,
+			},
+		],
+	},
+	{
+		name: "Pengadaan",
+		href: "/pengadaan",
+		icon: Package,
+	},
+	{
+		name: "Kontrak",
+		href: "/kontrak",
+		icon: FileCheck,
+	},
+	{
+		name: "Vendor",
+		href: "/vendor",
+		icon: Building2,
+	},
+	{
+		name: "Master Data",
+		href: "/master-data",
+		icon: Settings,
 	},
 	{
 		name: "Admin",
@@ -115,15 +157,7 @@ const rawMenu: MenuItem[] = [
 				href: "/settings/security",
 				icon: ShieldCheck,
 			},
-			// { name: "Appearance", href: "/settings/appearance", icon: Palette },
-			// { name: "Billing", href: "/settings/billing", icon: CreditCard },
 		],
-	},
-
-	{
-		name: "Help",
-		href: "/help",
-		icon: HelpCircle,
 	},
 ];
 
@@ -255,7 +289,7 @@ export function Sidebar() {
 			{/* HEADER */}
 			<nav className="px-2">
 				<div className="flex items-center min-h-16 gap-3 px-6 py-2 rounded-md text-sm">
-					<RocketIcon size={24} className="shrink-0" />
+					<ShoppingCart size={24} className="shrink-0" />
 
 					<span
 						className={`
@@ -264,7 +298,7 @@ export function Sidebar() {
               ${collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-[200px]"}
             `}
 					>
-						Dashboard
+						Procurement
 					</span>
 				</div>
 			</nav>
@@ -322,8 +356,6 @@ export function Sidebar() {
 											}
                                             ${depth > 0 ? "pl-8" : ""} 
                                         `}
-										// Indent children more? No, the parent is at depth 0, children at depth 1.
-										// Wait, the button *is* the parent.
 										style={{
 											paddingLeft:
 												depth > 0
