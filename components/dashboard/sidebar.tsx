@@ -4,7 +4,6 @@ import { useSidebar } from "./sidebar-context";
 import {
 	LayoutDashboard,
 	Settings,
-	RocketIcon,
 	User,
 	ChevronRight,
 	UserCircle,
@@ -14,13 +13,14 @@ import {
 	UserCheck,
 	HeartPulse,
 	FileSearch,
-	HelpCircle,
 	FileText,
 	Package,
 	FileCheck,
 	Building2,
 	Send,
 	ShoppingCart,
+	FileSpreadsheet,
+	FileCog,
 } from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
@@ -75,9 +75,19 @@ const rawMenu: MenuItem[] = [
 		icon: FileCheck,
 	},
 	{
+		name: "Non Kontrak",
+		href: "/non-kontrak",
+		icon: FileSpreadsheet,
+	},
+	{
 		name: "Vendor",
 		href: "/vendor",
 		icon: Building2,
+	},
+	{
+		name: "Peraturan",
+		href: "/peraturan",
+		icon: FileCog,
 	},
 	{
 		name: "Master Data",

@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { BoxIcon } from "lucide-react";
 
 export default function LoginPage() {
 	const router = useRouter();
@@ -117,7 +116,49 @@ export default function LoginPage() {
 						onClick={handleMicrosoftLogin}
 						disabled={loading}
 					>
-						<BoxIcon />
+						<svg
+							viewBox="0 0 32 32"
+							fill="none"
+							xmlns="http://www.w3.org/2000/svg"
+							className="w-5 h-5"
+						>
+							<g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+							<g
+								id="SVGRepo_tracerCarrier"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							></g>
+							<g id="SVGRepo_iconCarrier">
+								<rect
+									x="17"
+									y="17"
+									width="10"
+									height="10"
+									fill="#FEBA08"
+								></rect>
+								<rect
+									x="5"
+									y="17"
+									width="10"
+									height="10"
+									fill="#05A6F0"
+								></rect>
+								<rect
+									x="17"
+									y="5"
+									width="10"
+									height="10"
+									fill="#80BC06"
+								></rect>
+								<rect
+									x="5"
+									y="5"
+									width="10"
+									height="10"
+									fill="#F25325"
+								></rect>
+							</g>
+						</svg>
 						Continue with Microsoft
 					</Button>
 
