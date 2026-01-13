@@ -37,7 +37,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
+import { formatIDR } from "@/lib/utils";
 
 // --- Interfaces ---
 interface ContractDetail {
@@ -48,11 +49,16 @@ interface ContractDetail {
 	end_date: string;
 	contract_value: number; // Decimal in DB, number in JSON
 	work_description: string;
+	expense_type: string;
+	duration_days: number;
 	vendor: {
 		vendor_name: string;
 		address?: string;
 	} | null;
 	contract_status: {
+		name: string;
+	};
+	procurement_method: {
 		name: string;
 	};
 	procurement_case: {
@@ -172,14 +178,10 @@ export default function ContractDetailPage() {
 		contract_payment_plan,
 		bast,
 		created_by_name,
+		expense_type,
+		duration_days,
+		procurement_method,
 	} = data;
-
-	const formatCurrency = (val: number) => {
-		return new Intl.NumberFormat("id-ID", {
-			style: "currency",
-			currency: "IDR",
-		}).format(val);
-	};
 
 	const formatDate = (dateString: string | null) => {
 		if (!dateString) return "-";
@@ -210,7 +212,7 @@ export default function ContractDetailPage() {
 							Detail Kontrak
 						</h1>
 						<div className="flex items-center gap-2 text-sm text-muted-foreground">
-							<Hash className="w-3 h-3" />
+							{/* <Hash className="w-3 h-3" /> */}
 							<span className="font-mono">
 								{contract_number || "No Contract Number"}
 							</span>
@@ -236,11 +238,11 @@ export default function ContractDetailPage() {
 								<div className="flex items-start justify-between gap-4 mb-2">
 									<div className="space-y-1">
 										<p className="text-sm font-medium text-muted-foreground">
-											Nama Vendor / Penyedia
+											Judul Pengadaan
 										</p>
 										<h2 className="text-2xl font-bold leading-tight flex items-center gap-2">
-											<Building2 className="w-6 h-6 text-primary" />
-											{vendor?.vendor_name || "-"}
+											{/* <Briefcase className="w-6 h-6 text-primary" /> */}
+											{procurement_case.title}
 										</h2>
 									</div>
 									<Badge
@@ -251,22 +253,34 @@ export default function ContractDetailPage() {
 									</Badge>
 								</div>
 								<Separator className="my-4" />
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 									<div>
 										<p className="text-sm text-muted-foreground">
-											Judul Pengadaan
+											Vendor / Penyedia
+										</p>
+										<p className="font-medium flex items-center gap-2">
+											<Building2 className="w-4 h-4 text-muted-foreground" />
+											{vendor?.vendor_name || "-"}
+										</p>
+									</div>
+									<div>
+										<p className="text-sm text-muted-foreground">
+											Jenis Belanja
 										</p>
 										<p className="font-medium">
-											{procurement_case.title}
+											{expense_type.replace(/_/g, " ")}
 										</p>
 									</div>
 									<div>
 										<p className="text-sm text-muted-foreground">
 											Nilai Kontrak
 										</p>
-										<p className="font-bold text-lg text-primary">
-											{formatCurrency(contract_value)}
-										</p>
+										<div className="flex items-center gap-2">
+											<CreditCard className="w-4 h-4 text-muted-foreground" />
+											<p className="font-bold text-lg text-primary">
+												{formatIDR(contract_value)}
+											</p>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -317,11 +331,31 @@ export default function ContractDetailPage() {
 											</div>
 											<div className="space-y-1">
 												<p className="text-sm text-muted-foreground">
-													Tanggal Tanda Tangan
+													Tanggal Kontrak
 												</p>
 												<p className="font-medium">
 													{formatDate(contract_date)}
 												</p>
+											</div>
+											<div className="space-y-1">
+												<p className="text-sm text-muted-foreground">
+													Metode Pemilihan
+												</p>
+												<p className="font-medium">
+													{procurement_method?.name ||
+														"-"}
+												</p>
+											</div>
+											<div className="space-y-1">
+												<p className="text-sm text-muted-foreground">
+													Status
+												</p>
+												<Badge
+													variant={statusVariant}
+													className="font-normal"
+												>
+													{contract_status.name}
+												</Badge>
 											</div>
 											<div className="space-y-1">
 												<p className="text-sm text-muted-foreground">
@@ -352,6 +386,10 @@ export default function ContractDetailPage() {
 									</CardContent>
 								</Card>
 							</TabsContent>
+							{/* ... (Other Tabs Content unchanged for this tool call, but I will include them to match EndLine correctly if possible, or just break here. Breaking here leaves the rest unchanged which is fine, I just need to return the FULL replacement if I span the interface and all logic.
+                            actually I will replace just the interface through the detail tab, but the sidebar is near the end.
+                            Given the logic, I should replace everything from interface start to sidebar end to be safe and clean.)
+                            */}
 
 							<TabsContent
 								value="payment"
@@ -403,7 +441,7 @@ export default function ContractDetailPage() {
 																)}
 															</TableCell>
 															<TableCell className="text-right font-medium">
-																{formatCurrency(
+																{formatIDR(
 																	Number(
 																		item.line_amount
 																	)
@@ -622,18 +660,14 @@ export default function ContractDetailPage() {
 								</span>
 							</div>
 							<div className="flex justify-between items-center text-sm pt-4 border-t">
-								<span className="font-medium">Sisa Waktu</span>
-								<Badge variant="secondary">
-									{Math.max(
-										0,
-										Math.ceil(
-											(new Date(end_date).getTime() -
-												new Date().getTime()) /
-												(1000 * 60 * 60 * 24)
-										)
-									)}{" "}
-									Hari
-								</Badge>
+								<span className="font-medium">
+									Jangka Waktu
+								</span>
+								<div className="flex items-center gap-2">
+									<Badge variant="outline">
+										{duration_days} Hari
+									</Badge>
+								</div>
 							</div>
 						</CardContent>
 					</Card>
