@@ -111,25 +111,25 @@ model workflow {
   created_by        String
   updated_at        DateTime?           @db.Timestamptz(6)
   updated_by        String?
-  workflow_step     workflow_step[]
   workflow_instance workflow_instance[]
+  workflow_step     workflow_step[]
 
   @@unique([code, version], map: "uq_workflow_code_version")
 }
 
 model workflow_action_log {
-  id                      String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  workflow_instance_id    String            @db.Uuid
-  action                  workflow_action
-  from_step_id            String?           @db.Uuid
-  to_step_id              String?           @db.Uuid
-  actor_id                String
-  comment                 String?
-  metadata                Json?
-  created_at              DateTime          @default(now()) @db.Timestamptz(6)
-  from_step               workflow_step?    @relation("from_step", fields: [from_step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  to_step                 workflow_step?    @relation("to_step", fields: [to_step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  workflow_instance       workflow_instance @relation(fields: [workflow_instance_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                   String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  workflow_instance_id String            @db.Uuid
+  action               workflow_action
+  from_step_id         String?           @db.Uuid
+  to_step_id           String?           @db.Uuid
+  actor_id             String
+  comment              String?
+  metadata             Json?
+  created_at           DateTime          @default(now()) @db.Timestamptz(6)
+  from_step            workflow_step?    @relation("from_step", fields: [from_step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  to_step              workflow_step?    @relation("to_step", fields: [to_step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  workflow_instance    workflow_instance @relation(fields: [workflow_instance_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([workflow_instance_id], map: "idx_action_log_instance")
 }
@@ -154,23 +154,23 @@ model workflow_instance {
 }
 
 model workflow_step {
-  id                        String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  workflow_id               String                   @db.Uuid
-  step_key                  String                   @db.VarChar(50)
-  step_order                Int
-  name                      String                   @db.VarChar(255)
-  approver_strategy         approver_strategy
-  approver_value            String                   @db.VarChar(255)
-  approval_mode             approval_mode            @default(ANY)
-  can_send_back             Boolean                  @default(true)
-  reject_target_type        reject_target_type
-  reject_target_step_id     String?                  @db.Uuid
-  is_terminal               Boolean                  @default(false)
-  from_action_logs          workflow_action_log[]    @relation("from_step")
-  to_action_logs            workflow_action_log[]    @relation("to_step")
-  workflow_instance         workflow_instance[]
-  workflow                  workflow                 @relation(fields: [workflow_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  workflow_step_instance    workflow_step_instance[]
+  id                     String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  workflow_id            String                   @db.Uuid
+  step_key               String                   @db.VarChar(50)
+  step_order             Int
+  name                   String                   @db.VarChar(255)
+  approver_strategy      approver_strategy
+  approver_value         String                   @db.VarChar(255)
+  approval_mode          approval_mode            @default(ANY)
+  can_send_back          Boolean                  @default(true)
+  reject_target_type     reject_target_type
+  reject_target_step_id  String?                  @db.Uuid
+  is_terminal            Boolean                  @default(false)
+  from_action_logs       workflow_action_log[]    @relation("from_step")
+  to_action_logs         workflow_action_log[]    @relation("to_step")
+  workflow_instance      workflow_instance[]
+  workflow               workflow                 @relation(fields: [workflow_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  workflow_step_instance workflow_step_instance[]
 
   @@unique([workflow_id, step_key], map: "uq_workflow_step_key")
   @@unique([workflow_id, step_order], map: "uq_workflow_step_order")
@@ -190,6 +190,510 @@ model workflow_step_instance {
   workflow_instance    workflow_instance    @relation(fields: [workflow_instance_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([assigned_to], map: "idx_step_instance_assigned_to", type: Gin)
+}
+
+model ProjectProposal {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  budget      Decimal? @db.Decimal(10, 2)
+  status      String   @default("DRAFT")
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("project_proposal")
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  name       String
+  url        String
+  type       String
+  size       Int
+  refType    String
+  refId      String
+  uploadedBy String
+  createdAt  DateTime @default(now())
+
+  @@index([refType, refId])
+  @@map("attachment")
+}
+
+model procurement_case {
+  id                       String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  case_code                String?                   @unique @db.VarChar(100)
+  title                    String                    @db.VarChar(255)
+  unit_id                  String?                   @db.Uuid
+  agenda_scope             String?
+  status_id                String                    @db.Uuid
+  created_by               String
+  created_at               DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime?                 @db.Timestamptz(6)
+  case_disposition_summary case_disposition_summary?
+  contract                 contract?
+  correspondence_in        correspondence_in?
+  correspondence_out       correspondence_out[]
+  document                 document[]
+  status                   case_status               @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  unit                     org_unit?                 @relation(fields: [unit_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("procurement_case")
+}
+
+model correspondence_in {
+  id               String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  case_id          String           @unique @db.Uuid
+  agenda_number    String?          @db.VarChar(100)
+  received_date    DateTime         @db.Date
+  disposition_date DateTime?        @db.Date
+  from_name        String           @db.VarChar(255)
+  letter_date      DateTime         @db.Date
+  letter_number    String           @db.VarChar(150)
+  subject          String           @db.VarChar(500)
+  cc               String?
+  created_by       String
+  created_at       DateTime         @default(now()) @db.Timestamptz(6)
+  procurement_case procurement_case @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("correspondence_in")
+}
+
+model correspondence_out {
+  id               String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  case_id          String           @db.Uuid
+  letter_number    String           @db.VarChar(150)
+  letter_date      DateTime         @db.Date
+  from_name        String           @db.VarChar(255)
+  to_name          String           @db.VarChar(255)
+  subject          String           @db.VarChar(500)
+  created_by       String
+  created_at       DateTime         @default(now()) @db.Timestamptz(6)
+  procurement_case procurement_case @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([case_id])
+  @@map("correspondence_out")
+}
+
+model case_disposition_summary {
+  id                  String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  case_id             String           @unique @db.Uuid
+  agenda_scope        String?
+  agenda_number       String?          @db.VarChar(100)
+  disposition_date    DateTime?        @db.Date
+  disposition_actions String?
+  disposition_note    String?
+  forward_kabag       String?          @db.VarChar(255)
+  forward_to_user_id  String?
+  updated_by          String
+  updated_at          DateTime         @db.Timestamptz(6)
+  procurement_case    procurement_case @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  forward_to          case_disposition_forward_to[]
+
+  @@map("case_disposition_summary")
+}
+
+model contract {
+  id                    String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  case_id               String                    @unique @db.Uuid
+  contract_number       String                    @db.VarChar(150)
+  contract_date         DateTime                  @db.Date
+  vendor_id             String?                   @db.Uuid
+  work_description      String
+  contract_value        Decimal                   @db.Decimal(20, 2)
+  start_date            DateTime                  @db.Date
+  end_date              DateTime                  @db.Date
+  duration_days         Int?
+  procurement_method_id String                    @db.Uuid
+  contract_status_id    String                    @db.Uuid
+  expense_type          ExpenseType
+  created_by            String
+  created_at            DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?                 @db.Timestamptz(6)
+  bast                  bast[]
+  procurement_case      procurement_case          @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  contract_status       master_contract_status    @relation(fields: [contract_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  procurement_method    master_procurement_method @relation(fields: [procurement_method_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vendor                vendor?                   @relation(fields: [vendor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  contract_payment_plan contract_payment_plan[]
+  payment_schedule      payment_schedule[]
+
+  @@map("contract")
+}
+
+model contract_payment_plan {
+  id               String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  contract_id      String             @db.Uuid
+  payment_method   String             @db.VarChar(50)
+  line_no          Int
+  line_amount      Decimal            @db.Decimal(20, 2)
+  planned_date     DateTime?          @db.Date
+  notes            String?
+  bast             bast[]
+  contract         contract           @relation(fields: [contract_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  payment_schedule payment_schedule[]
+
+  @@unique([contract_id, line_no], map: "uq_contract_payment_plan_contract_line")
+  @@index([contract_id])
+  @@map("contract_payment_plan")
+}
+
+model payment_schedule {
+  id                   String                 @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  contract_id          String                 @db.Uuid
+  payment_plan_id      String?                @db.Uuid
+  payment_no           Int
+  description          String?
+  planned_payment_date DateTime?              @db.Date
+  actual_payment_date  DateTime?              @db.Date
+  planned_amount       Decimal?               @db.Decimal(20, 2)
+  actual_amount        Decimal?               @db.Decimal(20, 2)
+  payment_status       String                 @db.VarChar(20)
+  updated_by           String
+  updated_at           DateTime               @db.Timestamptz(6)
+  contract             contract               @relation(fields: [contract_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  payment_plan         contract_payment_plan? @relation(fields: [payment_plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([contract_id])
+  @@index([payment_plan_id])
+  @@map("payment_schedule")
+}
+
+model bast {
+  id               String                 @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  contract_id      String                 @db.Uuid
+  payment_plan_id  String?                @db.Uuid
+  bast_type        BastType
+  bast_number      String?                @db.VarChar(150)
+  bast_date        DateTime               @db.Date
+  progress_percent Decimal?               @db.Decimal(5, 2)
+  notes            String?
+  created_by       String
+  created_at       DateTime               @default(now()) @db.Timestamptz(6)
+  contract         contract               @relation(fields: [contract_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  payment_plan     contract_payment_plan? @relation(fields: [payment_plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([contract_id])
+  @@index([payment_plan_id])
+  @@map("bast")
+}
+
+model master_doc_type {
+  id         String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name       String     @unique @db.VarChar(200)
+  is_active  Boolean
+  created_by String
+  created_at DateTime   @default(now()) @db.Timestamptz(6)
+  document   document[]
+
+  @@map("master_doc_type")
+}
+
+model case_step {
+  id         String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name       String     @unique @db.VarChar(200)
+  sort_order Int
+  created_by String
+  created_at DateTime   @default(now()) @db.Timestamptz(6)
+  document   document[]
+
+  @@map("case_step")
+}
+
+model document {
+  id               String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  case_id          String           @db.Uuid
+  doc_type_id      String           @db.Uuid
+  title            String?          @db.VarChar(255)
+  doc_number       String?          @db.VarChar(150)
+  doc_date         DateTime?        @db.Date
+  step_id          String?          @db.Uuid
+  version_no       Int
+  is_latest        Boolean
+  created_by       String
+  created_at       DateTime         @default(now()) @db.Timestamptz(6)
+  procurement_case procurement_case @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  master_doc_type  master_doc_type  @relation(fields: [doc_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  case_step        case_step?       @relation(fields: [step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  document_file    document_file[]
+
+  @@index([case_id])
+  @@index([doc_type_id])
+  @@index([step_id])
+  @@map("document")
+}
+
+model document_file {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  document_id String   @db.Uuid
+  sp_site_id  String?  @db.VarChar(255)
+  sp_drive_id String?  @db.VarChar(255)
+  sp_item_id  String?  @db.VarChar(255)
+  sp_web_url  String?
+  folder_path String?
+  file_name   String   @db.VarChar(255)
+  mime_type   String?  @db.VarChar(150)
+  file_size   BigInt?
+  file_url    String?
+  uploaded_by String
+  uploaded_at DateTime @db.Timestamptz(6)
+  document    document @relation(fields: [document_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([document_id])
+  @@map("document_file")
+}
+
+model org_unit {
+  id                  String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  unit_type           String                @db.VarChar(50)
+  unit_code           String?               @db.VarChar(50)
+  unit_name           String                @db.VarChar(255)
+  parent_unit_id      String?               @db.Uuid
+  is_active           Boolean
+  parent              org_unit?             @relation("org_unit_parent", fields: [parent_unit_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children            org_unit[]            @relation("org_unit_parent")
+  procurement_case    procurement_case[]
+  regulation_document regulation_document[]
+
+  @@index([parent_unit_id])
+  @@map("org_unit")
+}
+
+model case_status {
+  id               String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name             String             @unique @db.VarChar(100)
+  is_active        Boolean
+  sort_order       Int
+  created_by       String
+  created_at       DateTime           @default(now()) @db.Timestamptz(6)
+  procurement_case procurement_case[]
+
+  @@map("case_status")
+}
+
+model master_disposition_action {
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name       String   @unique @db.VarChar(100)
+  is_active  Boolean
+  sort_order Int
+  created_by String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("master_disposition_action")
+}
+
+model master_procurement_method {
+  id         String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name       String     @unique @db.VarChar(150)
+  is_active  Boolean
+  sort_order Int
+  created_by String
+  created_at DateTime   @default(now()) @db.Timestamptz(6)
+  contract   contract[]
+
+  @@map("master_procurement_method")
+}
+
+model master_contract_status {
+  id         String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name       String     @unique @db.VarChar(150)
+  is_active  Boolean
+  sort_order Int
+  created_by String
+  created_at DateTime   @default(now()) @db.Timestamptz(6)
+  contract   contract[]
+
+  @@map("master_contract_status")
+}
+
+model master_supplier_type {
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name       String   @unique @db.VarChar(100)
+  is_active  Boolean
+  created_by String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  vendor     vendor[]
+
+  @@map("master_supplier_type")
+}
+
+model vendor {
+  id                      String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  vendor_name             String                    @db.VarChar(255)
+  supplier_type_id        String                    @db.Uuid
+  npwp                    String?                   @db.VarChar(50)
+  address                 String?
+  is_active               Boolean
+  created_by              String
+  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                 @db.Timestamptz(6)
+  contract                contract[]
+  reimbursement           reimbursement[]
+  supplier_type           master_supplier_type      @relation(fields: [supplier_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vendor_bank_account     vendor_bank_account[]
+  vendor_business_license vendor_business_license[]
+  vendor_management       vendor_management[]
+
+  @@index([supplier_type_id])
+  @@map("vendor")
+}
+
+model vendor_bank_account {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  vendor_id      String   @db.Uuid
+  account_number String   @db.VarChar(100)
+  account_name   String?  @db.VarChar(255)
+  bank_name      String?  @db.VarChar(255)
+  branch_name    String?  @db.VarChar(255)
+  currency_code  String?  @db.VarChar(10)
+  is_primary     Boolean
+  is_active      Boolean
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  created_by     String
+  vendor         vendor   @relation(fields: [vendor_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([vendor_id, account_number], map: "uq_vendor_bank_account_vendor_accno")
+  @@index([vendor_id])
+  @@map("vendor_bank_account")
+}
+
+model vendor_business_license {
+  id             String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  vendor_id      String    @db.Uuid
+  license_type   String    @db.VarChar(100)
+  license_number String    @db.VarChar(150)
+  qualification  String    @db.VarChar(50)
+  issued_date    DateTime? @db.Date
+  expiry_date    DateTime? @db.Date
+  issuer         String?   @db.VarChar(255)
+  notes          String?
+  status         String?   @db.VarChar(50)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  created_by     String
+  vendor         vendor    @relation(fields: [vendor_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([vendor_id])
+  @@map("vendor_business_license")
+}
+
+model vendor_management {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  vendor_id      String   @db.Uuid
+  full_name      String   @db.VarChar(255)
+  position_title String?  @db.VarChar(255)
+  phone          String?  @db.VarChar(50)
+  email          String?  @db.VarChar(255)
+  is_active      Boolean
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  created_by     String
+  vendor         vendor   @relation(fields: [vendor_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([vendor_id])
+  @@map("vendor_management")
+}
+
+model reimbursement {
+  id                 String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  reimbursement_no   String?              @db.VarChar(100)
+  no_validasi_ppk    String               @db.VarChar(150)
+  tgl_validasi_ppk   DateTime             @db.Date
+  vendor_id          String?              @db.Uuid
+  nomor_kwitansi     String               @db.VarChar(150)
+  tanggal_kwitansi   DateTime             @db.Date
+  uraian_pekerjaan   String
+  nilai_kwitansi     Decimal              @db.Decimal(20, 2)
+  status_id          String               @db.Uuid
+  keterangan         String?
+  created_by         String
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?            @db.Timestamptz(6)
+  status             reimbursement_status @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vendor             vendor?              @relation(fields: [vendor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reimbursement_file reimbursement_file[]
+
+  @@index([status_id])
+  @@index([vendor_id])
+  @@map("reimbursement")
+}
+
+model reimbursement_status {
+  id            String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name          String          @unique @db.VarChar(100)
+  sort_order    Int
+  is_active     Boolean
+  created_by    String
+  created_at    DateTime        @default(now()) @db.Timestamptz(6)
+  reimbursement reimbursement[]
+
+  @@map("reimbursement_status")
+}
+
+model regulation_document {
+  id          String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  type_id     String            @db.Uuid
+  doc_number  String            @db.VarChar(150)
+  title       String            @db.VarChar(500)
+  org_unit_id String?           @db.Uuid
+  year        Int?
+  created_by  String
+  created_at  DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?         @db.Timestamptz(6)
+  org_unit    org_unit?         @relation(fields: [org_unit_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  type        regulation_type   @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  files       regulation_file[]
+
+  @@index([type_id])
+  @@index([org_unit_id])
+  @@index([doc_number])
+  @@index([title])
+  @@map("regulation_document")
+}
+
+model regulation_file {
+  id                     String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  regulation_document_id String              @db.Uuid
+  file_name              String              @db.VarChar(255)
+  mime_type              String?             @db.VarChar(150)
+  file_size              BigInt?
+  sp_site_id             String?             @db.VarChar(255)
+  sp_drive_id            String?             @db.VarChar(255)
+  sp_item_id             String?             @db.VarChar(255)
+  sp_web_url             String?
+  folder_path            String?
+  file_url               String?
+  uploaded_by            String
+  uploaded_at            DateTime            @default(now()) @db.Timestamptz(6)
+  regulation_document    regulation_document @relation(fields: [regulation_document_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([regulation_document_id])
+  @@map("regulation_file")
+}
+
+model regulation_type {
+  id                  String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name                String                @unique @db.VarChar(200)
+  sort_order          Int
+  is_active           Boolean
+  created_by          String
+  created_at          DateTime              @default(now()) @db.Timestamptz(6)
+  regulation_document regulation_document[]
+
+  @@map("regulation_type")
+}
+
+model reimbursement_file {
+  id               String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  reimbursement_id String        @db.Uuid
+  file_name        String        @db.VarChar(255)
+  mime_type        String?       @db.VarChar(150)
+  file_size        BigInt?
+  file_url         String?
+  uploaded_by      String
+  uploaded_at      DateTime      @default(now()) @db.Timestamptz(6)
+  reimbursement    reimbursement @relation(fields: [reimbursement_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([reimbursement_id])
 }
 
 enum approval_mode {
@@ -233,34 +737,6 @@ enum workflow_step_status {
   SKIPPED
 }
 
-model ProjectProposal {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  budget      Decimal? @db.Decimal(10, 2)
-  status      String   @default("DRAFT")
-  userId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("project_proposal")
-}
-
-model Attachment {
-  id          String   @id @default(cuid())
-  name        String
-  url         String
-  type        String
-  size        Int
-  refType     String
-  refId       String
-  uploadedBy  String
-  createdAt   DateTime @default(now())
-
-  @@index([refType, refId])
-  @@map("attachment")
-}
-
 enum ExpenseType {
   BELANJA_BARANG
   BELANJA_JASA
@@ -272,535 +748,36 @@ enum BastType {
   BAST
 }
 
-model procurement_case {
-  id           String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  case_code    String?     @unique @db.VarChar(100)
-  title        String      @db.VarChar(255)
-  unit_id      String?     @db.Uuid
-  agenda_scope String?
-  status_id    String      @db.Uuid
-  created_by   String
-  created_at   DateTime    @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime?   @db.Timestamptz(6)
-
-  unit         org_unit?   @relation(fields: [unit_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  status       case_status @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  correspondence_in        correspondence_in?
-  correspondence_out       correspondence_out[]
-  case_disposition_summary case_disposition_summary?
-  contract                contract?
-  document                document[]
-
-  @@map("procurement_case")
-}
-
-model correspondence_in {
-  id               String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  case_id          String           @unique @db.Uuid
-  agenda_number    String?          @db.VarChar(100)
-  received_date    DateTime         @db.Date
-  disposition_date DateTime?        @db.Date
-  from_name        String           @db.VarChar(255)
-  letter_date      DateTime         @db.Date
-  letter_number    String           @db.VarChar(150)
-  subject          String           @db.VarChar(500)
-  cc               String?
-  created_by       String
-  created_at       DateTime         @default(now()) @db.Timestamptz(6)
-
-  procurement_case procurement_case @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@map("correspondence_in")
-}
-
-model correspondence_out {
-  id            String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  case_id       String           @db.Uuid
-  letter_number String           @db.VarChar(150)
-  letter_date   DateTime         @db.Date
-  from_name     String           @db.VarChar(255)
-  to_name       String           @db.VarChar(255)
-  subject       String           @db.VarChar(500)
-  created_by    String
-  created_at    DateTime         @default(now()) @db.Timestamptz(6)
-
-  procurement_case procurement_case @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([case_id])
-  @@map("correspondence_out")
-}
-
-model case_disposition_summary {
-  id                 String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  case_id            String           @unique @db.Uuid
-  agenda_scope       String?
-  agenda_number      String?          @db.VarChar(100)
-  disposition_date   DateTime?        @db.Date
-  disposition_actions String?
-  disposition_note   String?
-  forward_kabag      String?          @db.VarChar(255)
-  forward_to_user_id String?
-  updated_by         String
-  updated_at         DateTime         @db.Timestamptz(6)
-
-  procurement_case procurement_case @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@map("case_disposition_summary")
-}
-
-model contract {
-  id                    String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  case_id               String                  @unique @db.Uuid
-  contract_number       String                  @db.VarChar(150)
-  contract_date         DateTime                @db.Date
-  vendor_id             String?                 @db.Uuid
-  work_description      String
-  contract_value        Decimal                 @db.Decimal(20, 2)
-  start_date            DateTime                @db.Date
-  end_date              DateTime                @db.Date
-  duration_days         Int?
-  procurement_method_id String                  @db.Uuid
-  contract_status_id    String                  @db.Uuid
-  expense_type          ExpenseType
-  created_by            String
-  created_at            DateTime                @default(now()) @db.Timestamptz(6)
-  updated_at            DateTime?               @db.Timestamptz(6)
-
-  procurement_case      procurement_case        @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  vendor               vendor?                  @relation(fields: [vendor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  procurement_method   master_procurement_method @relation(fields: [procurement_method_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  contract_status      master_contract_status   @relation(fields: [contract_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  contract_payment_plan contract_payment_plan[]
-  payment_schedule      payment_schedule[]
-  bast                  bast[]
-
-  @@map("contract")
-}
-
-model contract_payment_plan {
-  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  contract_id   String   @db.Uuid
-  payment_method String  @db.VarChar(50)
-  line_no       Int
-  line_amount   Decimal  @db.Decimal(20, 2)
-  planned_date  DateTime? @db.Date
-  notes         String?
-
-  contract contract @relation(fields: [contract_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  payment_schedule payment_schedule[]
-  bast bast[]
-
-  @@unique([contract_id, line_no], map: "uq_contract_payment_plan_contract_line")
-  @@index([contract_id])
-  @@map("contract_payment_plan")
-}
-
-model payment_schedule {
-  id                  String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  contract_id          String   @db.Uuid
-  payment_plan_id      String?  @db.Uuid
-  payment_no           Int
-  description          String?
-  planned_payment_date DateTime? @db.Date
-  actual_payment_date  DateTime? @db.Date
-  planned_amount       Decimal? @db.Decimal(20, 2)
-  actual_amount        Decimal? @db.Decimal(20, 2)
-  payment_status       String   @db.VarChar(20)
-  updated_by           String
-  updated_at           DateTime @db.Timestamptz(6)
-
-  contract contract @relation(fields: [contract_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  payment_plan contract_payment_plan? @relation(fields: [payment_plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([contract_id])
-  @@index([payment_plan_id])
-  @@map("payment_schedule")
-}
-
-model bast {
-  id               String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  contract_id       String   @db.Uuid
-  payment_plan_id   String?  @db.Uuid
-  bast_type         BastType
-  bast_number       String?  @db.VarChar(150)
-  bast_date         DateTime @db.Date
-  progress_percent  Decimal? @db.Decimal(5, 2)
-  notes             String?
-  created_by        String
-  created_at        DateTime @default(now()) @db.Timestamptz(6)
-
-  contract contract @relation(fields: [contract_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  payment_plan contract_payment_plan? @relation(fields: [payment_plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([contract_id])
-  @@index([payment_plan_id])
-  @@map("bast")
-}
-
-// =========================
-// DOCUMENT (SharePoint/URL)
-// =========================
-
-model master_doc_type {
-  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name       String   @unique @db.VarChar(200)
-  is_active  Boolean
-  created_by String
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-
-  document document[]
-
-  @@map("master_doc_type")
-}
-
-model case_step {
-  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name       String   @unique @db.VarChar(200)
-  sort_order Int
-  created_by String
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-
-  document document[]
-
-  @@map("case_step")
-}
-
-model document {
-  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  case_id     String   @db.Uuid
-  doc_type_id String   @db.Uuid
-  title       String?  @db.VarChar(255)
-  doc_number  String?  @db.VarChar(150)
-  doc_date    DateTime? @db.Date
-  step_id     String?  @db.Uuid
-  version_no  Int
-  is_latest   Boolean
-  created_by  String
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-
-  procurement_case procurement_case @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  master_doc_type  master_doc_type  @relation(fields: [doc_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  case_step        case_step?       @relation(fields: [step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  document_file document_file[]
-
-  @@index([case_id])
-  @@index([doc_type_id])
-  @@index([step_id])
-  @@map("document")
-}
-
-model document_file {
-  id          String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  document_id String  @db.Uuid
-
-  sp_site_id  String? @db.VarChar(255)
-  sp_drive_id String? @db.VarChar(255)
-  sp_item_id  String? @db.VarChar(255)
-  sp_web_url  String?
-  folder_path String?
-
-  file_name   String  @db.VarChar(255)
-  mime_type   String? @db.VarChar(150)
-  file_size   BigInt?
-  file_url    String?
-
-  uploaded_by String
-  uploaded_at DateTime @db.Timestamptz(6)
-
-  document document @relation(fields: [document_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([document_id])
-  @@map("document_file")
-}
-
-// =========================
-// MASTER DATA
-// =========================
-
-model org_unit {
-  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  unit_type      String    @db.VarChar(50)
-  unit_code      String?   @db.VarChar(50)
-  unit_name      String    @db.VarChar(255)
-  parent_unit_id String?   @db.Uuid
-  is_active      Boolean
-
-  parent org_unit?  @relation("org_unit_parent", fields: [parent_unit_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  children org_unit[] @relation("org_unit_parent")
-
-  procurement_case procurement_case[]
-  regulation_document regulation_document[]
-
-  @@index([parent_unit_id])
-  @@map("org_unit")
-}
-
-model case_status {
-  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name       String   @unique @db.VarChar(100)
-  is_active  Boolean
-  sort_order Int
-  created_by String
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-
-  procurement_case procurement_case[]
-
-  @@map("case_status")
-}
-
-model master_disposition_action {
-  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name       String   @unique @db.VarChar(100)
-  is_active  Boolean
-  sort_order Int
-  created_by String
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-
-  @@map("master_disposition_action")
-}
-
-model master_procurement_method {
-  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name       String   @unique @db.VarChar(150)
-  is_active  Boolean
-  sort_order Int
-  created_by String
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-
-  contract contract[]
-
-  @@map("master_procurement_method")
-}
-
-model master_contract_status {
-  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name       String   @unique @db.VarChar(150)
-  is_active  Boolean
-  sort_order Int
-  created_by String
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-
-  contract contract[]
-
-  @@map("master_contract_status")
-}
-
-// =========================
-// VENDOR (with child tables)
-// =========================
-
-model master_supplier_type {
-  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name       String   @unique @db.VarChar(100)
-  is_active  Boolean
-  created_by String
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-
-  vendor vendor[]
-
-  @@map("master_supplier_type")
-}
-
-model vendor {
-  id               String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  vendor_name      String   @db.VarChar(255)
-  supplier_type_id String   @db.Uuid
-  npwp             String?  @db.VarChar(50)
-  address          String?
-  is_active        Boolean
-  created_by       String
-  created_at       DateTime @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime? @db.Timestamptz(6)
-
-  supplier_type master_supplier_type @relation(fields: [supplier_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  contract contract[]
-  vendor_bank_account vendor_bank_account[]
-  vendor_business_license vendor_business_license[]
-  vendor_management vendor_management[]
-  reimbursement reimbursement[]
-
-  @@index([supplier_type_id])
-  @@map("vendor")
-}
-
-model vendor_bank_account {
-  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  vendor_id       String   @db.Uuid
-  account_number  String   @db.VarChar(100)
-  account_name    String?  @db.VarChar(255)
-  bank_name       String?  @db.VarChar(255)
-  branch_name     String?  @db.VarChar(255)
-  currency_code   String?  @db.VarChar(10)
-  is_primary      Boolean
-  is_active       Boolean
-  created_at      DateTime @default(now()) @db.Timestamptz(6)
-  created_by      String
-
-  vendor vendor @relation(fields: [vendor_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@unique([vendor_id, account_number], map: "uq_vendor_bank_account_vendor_accno")
-  @@index([vendor_id])
-  @@map("vendor_bank_account")
-}
-
-model vendor_business_license {
-  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  vendor_id       String   @db.Uuid
-  license_type    String   @db.VarChar(100)
-  license_number  String   @db.VarChar(150)
-  qualification   String   @db.VarChar(50)
-  issued_date     DateTime? @db.Date
-  expiry_date     DateTime? @db.Date
-  issuer          String?  @db.VarChar(255)
-  notes           String?
-  status          String?  @db.VarChar(50)
-  created_at      DateTime @default(now()) @db.Timestamptz(6)
-  created_by      String
-
-  vendor vendor @relation(fields: [vendor_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([vendor_id])
-  @@map("vendor_business_license")
-}
-
-model vendor_management {
-  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  vendor_id       String   @db.Uuid
-  full_name       String   @db.VarChar(255)
-  position_title  String?  @db.VarChar(255)
-  phone           String?  @db.VarChar(50)
-  email           String?  @db.VarChar(255)
-  is_active       Boolean
-  created_at      DateTime @default(now()) @db.Timestamptz(6)
-  created_by      String
-
-  vendor vendor @relation(fields: [vendor_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([vendor_id])
-  @@map("vendor_management")
-}
-
 enum RegulationStatus {
   ACTIVE
   INACTIVE
 }
 
-// -------------------------------
-// Reimbursement (Non Kontrak)
-// -------------------------------
-
-model reimbursement {
-  id               String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  reimbursement_no String?              @db.VarChar(100) // optional, can be generated later
-
-  no_validasi_ppk  String               @db.VarChar(150)
-  tgl_validasi_ppk DateTime             @db.Date
-
-  vendor_id        String?              @db.Uuid
-
-  nomor_kwitansi   String               @db.VarChar(150)
-  tanggal_kwitansi DateTime             @db.Date
-  uraian_pekerjaan String
-  nilai_kwitansi   Decimal              @db.Decimal(20, 2)
-
-  status_id        String               @db.Uuid
-  keterangan       String?
-
-  created_by       String
-  created_at       DateTime             @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime?            @db.Timestamptz(6)
-
-  // relations
-  status           reimbursement_status @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  vendor           vendor?              @relation(fields: [vendor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([status_id])
-  @@index([vendor_id])
-  @@map("reimbursement")
-}
-
-model reimbursement_status {
+model master_disposition_recipient {
   id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name       String   @unique @db.VarChar(100) // Draft, Diajukan, Diverifikasi PPK, Ditolak, Dibayar, Selesai
+  name       String   @unique @db.VarChar(200)
   sort_order Int
   is_active  Boolean
   created_by String
   created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @db.Timestamptz(6)
 
-  reimbursement reimbursement[]
+  forwarded_to case_disposition_forward_to[]  // ✅ opposite relation
 
-  @@map("reimbursement_status")
+  @@index([is_active, sort_order])
+  @@map("master_disposition_recipient")
 }
 
-// -------------------------------
-// Regulation (Peraturan) - Document Library
-// -------------------------------
+model case_disposition_forward_to {
+  id                         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  case_disposition_summary_id String   @db.Uuid
+  recipient_id               String   @db.Uuid
+  sort_order                 Int?
 
-model regulation_document {
-  id          String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  type_id     String          @db.Uuid
+  summary   case_disposition_summary      @relation(fields: [case_disposition_summary_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  recipient master_disposition_recipient  @relation(fields: [recipient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  doc_number  String          @db.VarChar(150)
-  title       String          @db.VarChar(500)
-
-  org_unit_id String?         @db.Uuid
-  year        Int?
-
-  created_by  String
-  created_at  DateTime        @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime?       @db.Timestamptz(6)
-
-  // relations
-  type        regulation_type @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  org_unit    org_unit?       @relation(fields: [org_unit_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  files       regulation_file[]
-
-  @@index([type_id])
-  @@index([org_unit_id])
-  @@index([doc_number])
-  @@index([title])
-  @@map("regulation_document")
-}
-
-model regulation_file {
-  id                     String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  regulation_document_id  String              @db.Uuid
-
-  file_name              String              @db.VarChar(255)
-  mime_type              String?             @db.VarChar(150)
-  file_size              BigInt?
-
-  // SharePoint / URL (nullable for MVP)
-  sp_site_id             String?             @db.VarChar(255)
-  sp_drive_id            String?             @db.VarChar(255)
-  sp_item_id             String?             @db.VarChar(255)
-  sp_web_url             String?
-  folder_path            String?
-  file_url               String?
-
-  uploaded_by            String
-  uploaded_at            DateTime            @default(now()) @db.Timestamptz(6)
-
-  // relations
-  regulation_document    regulation_document @relation(fields: [regulation_document_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([regulation_document_id])
-  @@map("regulation_file")
-}
-
-model regulation_type {
-  id         String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name       String               @unique @db.VarChar(200) // Keputusan Bersama, Kepmen, PP, Perpres, etc.
-  sort_order Int
-  is_active  Boolean
-  created_by String
-  created_at DateTime             @default(now()) @db.Timestamptz(6)
-
-  regulation_document regulation_document[]
-
-  @@map("regulation_type")
+  @@unique([case_disposition_summary_id, recipient_id], map: "uq_dispo_forward_unique")
+  @@index([recipient_id], map: "idx_dispo_forward_recipient")
+  @@map("case_disposition_forward_to")
 }

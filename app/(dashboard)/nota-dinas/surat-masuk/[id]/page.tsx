@@ -408,7 +408,7 @@ export default function NotaDinasDetailPage() {
 					</Card>
 
 					{/* Actions Card */}
-					{data.currentStepInstanceId && (
+					{/* {data.currentStepInstanceId && (
 						<Card className="bg-primary/5 border-primary/20">
 							<CardHeader>
 								<CardTitle className="text-base text-primary">
@@ -450,7 +450,7 @@ export default function NotaDinasDetailPage() {
 								</div>
 							</CardContent>
 						</Card>
-					)}
+					)} */}
 				</div>
 			</div>
 		</div>
