@@ -5,11 +5,9 @@ import prisma from "@/lib/prisma";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
-// ... imports logic removed
-
 export async function POST(
 	req: Request,
-	{ params }: { params: Promise<{ caseId: string }> }
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
 		const session = await auth.api.getSession({
@@ -21,7 +19,7 @@ export async function POST(
 		}
 
 		// Await params
-		const { caseId } = await params;
+		const { id: caseId } = await params;
 
 		const formData = await req.formData();
 		const file = formData.get("file") as File;
