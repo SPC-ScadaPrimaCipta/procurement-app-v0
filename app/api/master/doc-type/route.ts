@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { hasPermission } from "@/lib/rbac";
 
 export async function GET() {
     try {
@@ -38,6 +39,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
+        const canManage = await hasPermission("manage", "masterData");
+        if (!canManage) {
+            return new NextResponse("Forbidden", { status: 403 });
+        }
+
         const session = await auth.api.getSession({
             headers: await headers(),
         });
@@ -55,6 +61,17 @@ export async function POST(request: Request) {
 
         if (data.is_active === undefined) data.is_active = true;
 
+        const existing = await prisma.master_doc_type.findUnique({
+            where: { name: data.name },
+        });
+
+        if (existing) {
+            return NextResponse.json(
+                { error: `Document type '${data.name}' already exists.` },
+                { status: 409 }, // Conflict
+            );
+        }
+
         const newValue = await prisma.master_doc_type.create({
             data,
             select: {
@@ -66,8 +83,16 @@ export async function POST(request: Request) {
 
         return NextResponse.json(newValue, { status: 201 });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating document type:", error);
+
+        if (error.code === "P2002") {
+            return NextResponse.json(
+                { error: `Document type already exists (duplicate '${error.meta?.target}')` },
+                { status: 409 },
+            );
+        }
+
         return NextResponse.json(
             { error: "Failed to create document type" },
             { status: 500 },
