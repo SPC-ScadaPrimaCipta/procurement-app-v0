@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "NextJS Dashboard Template",
+	title: "Procurement App",
 	description:
-		"A modern dashboard template built with Next.js and Tailwind CSS.",
+		"Aplikasi Pengadaan Barang dan Jasa Satuan Kerja Kementerian Perhubungan Republik Indonesia",
 };
 
 export default function RootLayout({

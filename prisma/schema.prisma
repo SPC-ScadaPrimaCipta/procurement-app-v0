@@ -532,6 +532,7 @@ model org_unit {
   children org_unit[] @relation("org_unit_parent")
 
   procurement_case procurement_case[]
+  regulation_document regulation_document[]
 
   @@index([parent_unit_id])
   @@map("org_unit")
@@ -620,6 +621,7 @@ model vendor {
   vendor_bank_account vendor_bank_account[]
   vendor_business_license vendor_business_license[]
   vendor_management vendor_management[]
+  reimbursement reimbursement[]
 
   @@index([supplier_type_id])
   @@map("vendor")
@@ -680,4 +682,125 @@ model vendor_management {
 
   @@index([vendor_id])
   @@map("vendor_management")
+}
+
+enum RegulationStatus {
+  ACTIVE
+  INACTIVE
+}
+
+// -------------------------------
+// Reimbursement (Non Kontrak)
+// -------------------------------
+
+model reimbursement {
+  id               String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  reimbursement_no String?              @db.VarChar(100) // optional, can be generated later
+
+  no_validasi_ppk  String               @db.VarChar(150)
+  tgl_validasi_ppk DateTime             @db.Date
+
+  vendor_id        String?              @db.Uuid
+
+  nomor_kwitansi   String               @db.VarChar(150)
+  tanggal_kwitansi DateTime             @db.Date
+  uraian_pekerjaan String
+  nilai_kwitansi   Decimal              @db.Decimal(20, 2)
+
+  status_id        String               @db.Uuid
+  keterangan       String?
+
+  created_by       String
+  created_at       DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?            @db.Timestamptz(6)
+
+  // relations
+  status           reimbursement_status @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vendor           vendor?              @relation(fields: [vendor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([status_id])
+  @@index([vendor_id])
+  @@map("reimbursement")
+}
+
+model reimbursement_status {
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name       String   @unique @db.VarChar(100) // Draft, Diajukan, Diverifikasi PPK, Ditolak, Dibayar, Selesai
+  sort_order Int
+  is_active  Boolean
+  created_by String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  reimbursement reimbursement[]
+
+  @@map("reimbursement_status")
+}
+
+// -------------------------------
+// Regulation (Peraturan) - Document Library
+// -------------------------------
+
+model regulation_document {
+  id          String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  type_id     String          @db.Uuid
+
+  doc_number  String          @db.VarChar(150)
+  title       String          @db.VarChar(500)
+
+  org_unit_id String?         @db.Uuid
+  year        Int?
+
+  created_by  String
+  created_at  DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?       @db.Timestamptz(6)
+
+  // relations
+  type        regulation_type @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  org_unit    org_unit?       @relation(fields: [org_unit_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  files       regulation_file[]
+
+  @@index([type_id])
+  @@index([org_unit_id])
+  @@index([doc_number])
+  @@index([title])
+  @@map("regulation_document")
+}
+
+model regulation_file {
+  id                     String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  regulation_document_id  String              @db.Uuid
+
+  file_name              String              @db.VarChar(255)
+  mime_type              String?             @db.VarChar(150)
+  file_size              BigInt?
+
+  // SharePoint / URL (nullable for MVP)
+  sp_site_id             String?             @db.VarChar(255)
+  sp_drive_id            String?             @db.VarChar(255)
+  sp_item_id             String?             @db.VarChar(255)
+  sp_web_url             String?
+  folder_path            String?
+  file_url               String?
+
+  uploaded_by            String
+  uploaded_at            DateTime            @default(now()) @db.Timestamptz(6)
+
+  // relations
+  regulation_document    regulation_document @relation(fields: [regulation_document_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([regulation_document_id])
+  @@map("regulation_file")
+}
+
+model regulation_type {
+  id         String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name       String               @unique @db.VarChar(200) // Keputusan Bersama, Kepmen, PP, Perpres, etc.
+  sort_order Int
+  is_active  Boolean
+  created_by String
+  created_at DateTime             @default(now()) @db.Timestamptz(6)
+
+  regulation_document regulation_document[]
+
+  @@map("regulation_type")
 }
