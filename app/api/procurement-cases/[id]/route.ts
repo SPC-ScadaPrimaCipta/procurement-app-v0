@@ -35,7 +35,15 @@ export async function GET(
 						procurement_method: true,
 					},
 				},
-				case_disposition_summary: true,
+				case_disposition_summary: {
+					include: {
+						forward_to: {
+							include: {
+								recipient: true,
+							},
+						},
+					},
+				},
 				document: {
 					include: {
 						master_doc_type: true,
@@ -101,6 +109,23 @@ export async function GET(
 			}
 		}
 
+		// Parse disposition actions to ensure array
+		let parsedDispositionActions: string[] = [];
+		if (data.case_disposition_summary?.disposition_actions) {
+			try {
+				const raw = data.case_disposition_summary.disposition_actions;
+				if (raw.trim().startsWith("[")) {
+					parsedDispositionActions = JSON.parse(raw);
+				} else {
+					parsedDispositionActions = [raw];
+				}
+			} catch (e) {
+				parsedDispositionActions = [
+					data.case_disposition_summary.disposition_actions,
+				];
+			}
+		}
+
 		return NextResponse.json({
 			...data,
 			created_by_name: createdByName,
@@ -112,6 +137,12 @@ export async function GET(
 				: null,
 			correspondence_out: correspondenceOutWithNames,
 			currentStepInstanceId,
+			case_disposition_summary: data.case_disposition_summary
+				? {
+						...data.case_disposition_summary,
+						disposition_actions: parsedDispositionActions, // Override with parsed array
+				  }
+				: null,
 		});
 	} catch (error) {
 		console.error("Error fetching procurement case details:", error);
