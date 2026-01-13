@@ -4,7 +4,7 @@ import { hasPermission } from "@/lib/rbac";
 import { resolveUserName } from "@/lib/user-utils";
 
 export async function GET(req: Request) {
-	const canRead = await hasPermission("read", "Procurement");
+	const canRead = await hasPermission("read", "pengadaan");
 	if (!canRead) {
 		return new NextResponse("Forbidden", { status: 403 });
 	}

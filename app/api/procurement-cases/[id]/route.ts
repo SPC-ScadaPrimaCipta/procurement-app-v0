@@ -3,17 +3,24 @@ import { NextResponse } from "next/server";
 import { hasPermission } from "@/lib/rbac";
 import { resolveUserName } from "@/lib/user-utils";
 
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+
 export async function GET(
 	request: Request,
 	{ params }: { params: Promise<{ id: string }> }
 ) {
 	const { id } = await params;
-	const canRead = await hasPermission("read", "Procurement");
+	const canRead = await hasPermission("read", "pengadaan");
 	if (!canRead) {
 		return new NextResponse("Forbidden", { status: 403 });
 	}
 
 	try {
+		const session = await auth.api.getSession({
+			headers: await headers(),
+		});
+
 		const data = await prisma.procurement_case.findUnique({
 			where: { id },
 			include: {
@@ -59,6 +66,41 @@ export async function GET(
 			}))
 		);
 
+		let currentStepInstanceId = null;
+
+		if (session?.user?.id) {
+			const workflowInstance = await prisma.workflow_instance.findUnique({
+				where: {
+					ref_type_ref_id: {
+						ref_type: "PROCUREMENT_CASE",
+						ref_id: id,
+					},
+				},
+			});
+
+			if (workflowInstance) {
+				const stepInstances =
+					await prisma.workflow_step_instance.findMany({
+						where: {
+							workflow_instance_id: workflowInstance.id,
+							status: "PENDING",
+						},
+					});
+
+				const assignment = stepInstances.find((step) => {
+					const assigned = step.assigned_to as string[];
+					return (
+						Array.isArray(assigned) &&
+						assigned.includes(session.user.id)
+					);
+				});
+
+				if (assignment) {
+					currentStepInstanceId = assignment.id;
+				}
+			}
+		}
+
 		return NextResponse.json({
 			...data,
 			created_by_name: createdByName,
@@ -69,6 +111,7 @@ export async function GET(
 				  }
 				: null,
 			correspondence_out: correspondenceOutWithNames,
+			currentStepInstanceId,
 		});
 	} catch (error) {
 		console.error("Error fetching procurement case details:", error);

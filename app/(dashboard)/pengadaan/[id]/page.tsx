@@ -41,6 +41,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { WorkflowStep } from "@/components/workflow/step-indicator";
+import { WorkflowActions } from "@/components/workflow/workflow-actions";
 
 interface DocumentFile {
 	id: string;
@@ -114,6 +115,7 @@ interface ProcurementCaseDetail {
 		disposition_note: string | null;
 		disposition_date: string | null;
 	} | null;
+	currentStepInstanceId?: string | null;
 }
 
 export default function PengadaanDetailPage() {
@@ -648,6 +650,29 @@ export default function PengadaanDetailPage() {
 
 				{/* RIGHT COLUMN: Sidebar (4 cols) */}
 				<div className="xl:col-span-4 space-y-6">
+					{/* Workflow Actions Card */}
+					{data?.currentStepInstanceId && (
+						<Card className="border-l-4 border-l-blue-500 shadow-md bg-blue-50/50 dark:bg-blue-950/20">
+							<CardHeader className="pb-3">
+								<CardTitle className="text-base flex items-center gap-2">
+									<CheckCircle2 className="w-5 h-5 text-blue-600" />
+									Tindakan Diperlukan
+								</CardTitle>
+								<CardDescription>
+									Anda memiliki tugas pending.
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<WorkflowActions
+									stepInstanceId={data.currentStepInstanceId}
+									onSuccess={() => {
+										window.location.reload();
+									}}
+								/>
+							</CardContent>
+						</Card>
+					)}
+
 					{/* Workflow Progress */}
 					<Card>
 						<CardHeader>

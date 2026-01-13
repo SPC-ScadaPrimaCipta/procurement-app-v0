@@ -8,10 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/datatable/data-table";
 import { columns, NotaDinas } from "./columns";
+import { useRequirePermission } from "@/hooks/use-require-permission";
 
 export default function NotaDinasPage() {
 	const [data, setData] = useState<NotaDinas[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+
+	// Authorization - manage:users (for actions)
+	const { isAuthorized: canManage } = useRequirePermission(
+		"manage",
+		"notadinas",
+		{ redirect: false }
+	);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -60,12 +68,14 @@ export default function NotaDinasPage() {
 						Daftar Nota Dinas dan Surat Masuk yang perlu diproses.
 					</p>
 				</div>
-				<Button asChild>
-					<Link href="/nota-dinas/surat-masuk/new">
-						<Plus className="mr-2 h-4 w-4" />
-						Tambah Surat Masuk
-					</Link>
-				</Button>
+				{canManage && (
+					<Button asChild>
+						<Link href="/nota-dinas/surat-masuk/new">
+							<Plus className="mr-2 h-4 w-4" />
+							Tambah Surat Masuk
+						</Link>
+					</Button>
+				)}
 			</div>
 
 			{/* DataTable wrapped in Card */}

@@ -18,11 +18,15 @@ import { toast } from "sonner";
 interface WorkflowActionsProps {
 	stepInstanceId: string;
 	onSuccess?: (data?: any) => void;
+	approveLabel?: string;
+	sendBackLabel?: string;
 }
 
 export function WorkflowActions({
 	stepInstanceId,
 	onSuccess,
+	approveLabel = "Approve",
+	sendBackLabel = "Send Back",
 }: WorkflowActionsProps) {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
@@ -55,7 +59,7 @@ export function WorkflowActions({
 
 			toast.success(
 				`Successfully ${
-					action === "approve" ? "approved" : "sendback"
+					action === "approve" ? "approved" : "sent back"
 				} the request`
 			);
 			setRejectOpen(false);
@@ -84,7 +88,7 @@ export function WorkflowActions({
 				disabled={loading}
 			>
 				<CheckCircle2 className="mr-2 h-4 w-4" />
-				Approve
+				{approveLabel}
 			</Button>
 
 			<Button
@@ -94,17 +98,18 @@ export function WorkflowActions({
 				disabled={loading}
 			>
 				<XCircle className="mr-2 h-4 w-4" />
-				Send Back
+				{sendBackLabel}
 			</Button>
 
 			{/* Approve Dialog */}
 			<Dialog open={approveOpen} onOpenChange={setApproveOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Approve Request</DialogTitle>
+						<DialogTitle>{approveLabel} Request</DialogTitle>
 						<DialogDescription>
-							Are you sure you want to approve this request? You
-							can optionally add a comment.
+							Are you sure you want to{" "}
+							{approveLabel.toLowerCase()} this request? You can
+							optionally add a comment.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="py-4">
@@ -129,7 +134,7 @@ export function WorkflowActions({
 							{loading && (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 							)}
-							Approve
+							{approveLabel}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -139,15 +144,15 @@ export function WorkflowActions({
 			<Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Send Back Request</DialogTitle>
+						<DialogTitle>{sendBackLabel} Request</DialogTitle>
 						<DialogDescription>
-							Please provide a reason for sending back this
-							request.
+							Please provide a reason for{" "}
+							{sendBackLabel.toLowerCase()} this request.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="py-4">
 						<Textarea
-							placeholder="Reason for send back..."
+							placeholder={`Reason for ${sendBackLabel.toLowerCase()}...`}
 							value={rejectComment}
 							onChange={(e) => setRejectComment(e.target.value)}
 							className="min-h-[100px]"
@@ -168,7 +173,7 @@ export function WorkflowActions({
 							{loading && (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 							)}
-							Send Back
+							{sendBackLabel}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

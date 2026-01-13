@@ -26,6 +26,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WorkflowActions } from "@/components/workflow/workflow-actions";
 
 interface DocumentFile {
 	id: string;
@@ -58,6 +59,7 @@ interface NotaDinasDetail {
 	cc: string | null;
 	created_by: string;
 	created_at: string;
+	currentStepInstanceId?: string | null;
 	procurement_case: {
 		case_code: string | null;
 		status: {
@@ -159,13 +161,13 @@ export default function NotaDinasDetailPage() {
 						<h1 className="text-2xl font-bold tracking-tight text-foreground">
 							Detail Surat Masuk
 						</h1>
-						<p className="text-sm text-muted-foreground flex items-center gap-2">
+						{/* <p className="text-sm text-muted-foreground flex items-center gap-2">
 							<Hash className="w-3 h-3" />
 							Case Code:{" "}
 							<span className="font-mono text-foreground">
 								{data.procurement_case.case_code || "-"}
 							</span>
-						</p>
+						</p> */}
 					</div>
 				</div>
 				<div className="flex items-center space-x-2">
@@ -405,26 +407,50 @@ export default function NotaDinasDetailPage() {
 						</CardContent>
 					</Card>
 
-					{/* Actions Card (Placeholder for future actions like Disposition) */}
-					<Card className="bg-primary/5 border-primary/20">
-						<CardHeader>
-							<CardTitle className="text-base text-primary">
-								Tindakan
-							</CardTitle>
-						</CardHeader>
-						<CardContent className="space-y-2">
-							<Button className="w-full" disabled>
-								Disposisi Surat (Segera)
-							</Button>
-							<Button
-								variant="outline"
-								className="w-full bg-background"
-								disabled
-							>
-								Edit Detail
-							</Button>
-						</CardContent>
-					</Card>
+					{/* Actions Card */}
+					{data.currentStepInstanceId && (
+						<Card className="bg-primary/5 border-primary/20">
+							<CardHeader>
+								<CardTitle className="text-base text-primary">
+									Tindakan Perlu Diselesaikan
+								</CardTitle>
+								<CardDescription>
+									Anda memiliki tugas pending untuk dokumen
+									ini.
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<div className="flex flex-col gap-2">
+									<WorkflowActions
+										stepInstanceId={
+											data.currentStepInstanceId
+										}
+										approveLabel="Disposisi / Teruskan"
+										sendBackLabel="Kembalikan"
+										onSuccess={() => {
+											// Refresh data
+											const fetchData = async () => {
+												if (!id) return;
+												try {
+													const response =
+														await fetch(
+															`/api/nota-dinas/in/${id}`
+														);
+													if (response.ok) {
+														const result =
+															await response.json();
+														setData(result);
+													}
+												} catch (err) {}
+											};
+											fetchData();
+											router.refresh();
+										}}
+									/>
+								</div>
+							</CardContent>
+						</Card>
+					)}
 				</div>
 			</div>
 		</div>

@@ -46,15 +46,15 @@ const getStatusColor = (status: string) => {
 };
 
 export const columns: ColumnDef<ProcurementCase>[] = [
-	{
-		accessorKey: "case_code",
-		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title="Kode Pengadaan" />
-		),
-		cell: ({ row }) => (
-			<div className="font-mono">{row.getValue("case_code") || "-"}</div>
-		),
-	},
+	// {
+	// 	accessorKey: "case_code",
+	// 	header: ({ column }) => (
+	// 		<DataTableColumnHeader column={column} title="Kode Pengadaan" />
+	// 	),
+	// 	cell: ({ row }) => (
+	// 		<div className="font-mono">{row.getValue("case_code") || "-"}</div>
+	// 	),
+	// },
 	{
 		accessorKey: "title",
 		header: ({ column }) => (

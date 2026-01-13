@@ -69,6 +69,10 @@ export async function startWorkflow({
 			},
 		});
 
+		if (!instance) {
+			throw new Error("Failed to create workflow instance");
+		}
+
 		// 5. Log submit action
 		await tx.workflow_action_log.create({
 			data: {
