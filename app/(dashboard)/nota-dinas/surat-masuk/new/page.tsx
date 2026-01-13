@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, FileText, Send, Save } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Send, Save, Cross } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,7 +82,7 @@ export default function NewSuratMasukPage() {
 		}
 	};
 
-	const handleCreateDraft = async () => {
+	const handleSubmit = async (isDraft: boolean) => {
 		setIsLoading(true);
 
 		// Validation (Basic)
@@ -98,8 +98,12 @@ export default function NewSuratMasukPage() {
 		}
 
 		try {
+			const endpoint = isDraft
+				? "/api/nota-dinas/in"
+				: "/api/nota-dinas/in/submit";
+
 			// 1. Create Case & Correspondence
-			const createRes = await fetch("/api/nota-dinas/in", {
+			const createRes = await fetch(endpoint, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(formData),
@@ -107,7 +111,7 @@ export default function NewSuratMasukPage() {
 
 			if (!createRes.ok) {
 				const err = await createRes.text();
-				throw new Error(err || "Failed to create case");
+				throw new Error(err || "Failed to process request");
 			}
 
 			const { case_id, case_code } = await createRes.json();
@@ -123,8 +127,11 @@ export default function NewSuratMasukPage() {
 
 			await Promise.all(uploads);
 
-			console.log("Draft Created:", case_code);
-			toast.success(`Draft berhasil dibuat: ${case_code}`);
+			const actionText = isDraft
+				? "Draft berhasil dibuat"
+				: "Berhasil disubmit ke KPA";
+			console.log(`${actionText}:`, case_code);
+			toast.success(`${actionText}: ${case_code}`);
 			router.push("/nota-dinas/surat-masuk");
 		} catch (error) {
 			console.error("Error submitting:", error);
@@ -263,9 +270,6 @@ export default function NewSuratMasukPage() {
 						<div className="space-y-2">
 							<Label htmlFor="file_notadinas">
 								Scan Nota Dinas / Surat Masuk{" "}
-								<span className="text-muted-foreground">
-									(Optional)
-								</span>
 							</Label>
 							<div className="flex items-center gap-4">
 								<Input
@@ -287,9 +291,6 @@ export default function NewSuratMasukPage() {
 						<div className="space-y-2">
 							<Label htmlFor="file_tor">
 								TOR (Terms of Reference){" "}
-								<span className="text-muted-foreground">
-									(Optional)
-								</span>
 							</Label>
 							<div className="flex items-center gap-4">
 								<Input
@@ -311,9 +312,6 @@ export default function NewSuratMasukPage() {
 						<div className="space-y-2">
 							<Label htmlFor="file_rab">
 								RAB (Rencana Anggaran Biaya){" "}
-								<span className="text-muted-foreground">
-									(Optional)
-								</span>
 							</Label>
 							<div className="flex items-center gap-4">
 								<Input
@@ -334,15 +332,15 @@ export default function NewSuratMasukPage() {
 				{/* Footer Actions */}
 				<div className="flex justify-end gap-4">
 					<Button
-						variant="outline"
 						type="button"
+						variant="outline"
 						onClick={() => router.back()}
 					>
 						Batal
 					</Button>
 					<Button
 						type="button"
-						onClick={handleCreateDraft}
+						onClick={() => handleSubmit(true)}
 						disabled={isLoading}
 					>
 						<Save className="mr-2 h-4 w-4" />
@@ -350,8 +348,9 @@ export default function NewSuratMasukPage() {
 					</Button>
 					<Button
 						type="button"
-						disabled={true}
-						className="min-w-[150px] opacity-50 cursor-not-allowed"
+						onClick={() => handleSubmit(false)}
+						disabled={isLoading}
+						className="min-w-[150px]"
 					>
 						<Send className="mr-2 h-4 w-4" />
 						Submit ke KPA

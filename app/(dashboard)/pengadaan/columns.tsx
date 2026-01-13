@@ -3,8 +3,8 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { MoreHorizontal, Eye, Copy } from "lucide-react";
+import Link from "next/link";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -15,72 +15,77 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeader } from "@/components/datatable/data-table-column-header";
 
-// Type Definition
-export type NotaDinas = {
+export type ProcurementCase = {
 	id: string;
-	case_code: string;
-	letter_number: string;
-	letter_date: string;
-	from: string;
-	subject: string;
-	status: string;
+	case_code: string | null;
+	title: string;
+	unit: {
+		unit_name: string;
+	} | null;
+	status: {
+		name: string;
+	};
+	created_by_name: string;
 	created_at: string;
 };
 
-// Helper for Status Color
 const getStatusColor = (status: string) => {
 	switch (status) {
 		case "DRAFT":
 			return "secondary";
 		case "SUBMITTED":
-			return "default"; // or blue
+		case "IN_PROGRESS":
+			return "default";
 		case "APPROVED":
-			return "default"; // green usually but using default for now
+			return "outline"; // or success color if available
+		case "REJECTED":
+			return "destructive";
 		default:
 			return "outline";
 	}
 };
 
-export const columns: ColumnDef<NotaDinas>[] = [
+export const columns: ColumnDef<ProcurementCase>[] = [
+	// {
+	// 	accessorKey: "case_code",
+	// 	header: ({ column }) => (
+	// 		<DataTableColumnHeader column={column} title="Kode Pengadaan" />
+	// 	),
+	// 	cell: ({ row }) => (
+	// 		<div className="font-mono">{row.getValue("case_code") || "-"}</div>
+	// 	),
+	// },
 	{
-		accessorKey: "letter_number",
+		accessorKey: "title",
 		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title="Nomor Surat" />
-		),
-	},
-	{
-		accessorKey: "letter_date",
-		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title="Tanggal Surat" />
-		),
-	},
-	{
-		accessorKey: "from",
-		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title="Dari" />
-		),
-	},
-	{
-		accessorKey: "subject",
-		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title="Perihal" />
+			<DataTableColumnHeader column={column} title="Judul Pengadaan" />
 		),
 		cell: ({ row }) => (
 			<div
-				className="max-w-[300px] truncate"
-				title={row.getValue("subject")}
+				className="max-w-[400px] truncate font-medium"
+				title={row.getValue("title")}
 			>
-				{row.getValue("subject")}
+				{row.getValue("title")}
 			</div>
 		),
 	},
 	{
-		accessorKey: "status",
+		accessorKey: "unit.unit_name",
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title="Unit" />
+		),
+		cell: ({ row }) => {
+			const unit = row.original.unit?.unit_name;
+			return <div>{unit || "-"}</div>;
+		},
+	},
+	{
+		accessorKey: "status.name",
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Status" />
 		),
 		cell: ({ row }) => {
-			const status = row.getValue("status") as string;
+			const status = row.original.status.name;
 			return (
 				<Badge variant={getStatusColor(status) as any}>{status}</Badge>
 			);
@@ -89,11 +94,18 @@ export const columns: ColumnDef<NotaDinas>[] = [
 	{
 		accessorKey: "created_at",
 		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title="Created At" />
+			<DataTableColumnHeader column={column} title="Dibuat Pada" />
 		),
 		cell: ({ row }) => (
 			<div className="text-xs text-muted-foreground">
-				{new Date(row.getValue("created_at")).toLocaleDateString()}
+				{new Date(row.getValue("created_at")).toLocaleDateString(
+					"id-ID",
+					{
+						day: "numeric",
+						month: "short",
+						year: "numeric",
+					}
+				)}
 			</div>
 		),
 	},
@@ -114,15 +126,17 @@ export const columns: ColumnDef<NotaDinas>[] = [
 						<DropdownMenuLabel>Aksi</DropdownMenuLabel>
 						<DropdownMenuItem
 							onClick={() =>
-								navigator.clipboard.writeText(item.case_code)
+								navigator.clipboard.writeText(
+									item.case_code || ""
+								)
 							}
 						>
 							<Copy className="mr-2 h-4 w-4" />
-							Copy Case Code
+							Salin Kode
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem asChild>
-							<Link href={`/nota-dinas/surat-masuk/${item.id}`}>
+							<Link href={`/pengadaan/${item.id}`}>
 								<Eye className="mr-2 h-4 w-4" />
 								Detail
 							</Link>

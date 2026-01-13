@@ -16,12 +16,12 @@ import {
 import { DataTableColumnHeader } from "@/components/datatable/data-table-column-header";
 
 // Type Definition
-export type NotaDinas = {
+export type SuratKeluar = {
 	id: string;
 	case_code: string;
 	letter_number: string;
 	letter_date: string;
-	from: string;
+	to: string;
 	subject: string;
 	status: string;
 	created_at: string;
@@ -41,7 +41,7 @@ const getStatusColor = (status: string) => {
 	}
 };
 
-export const columns: ColumnDef<NotaDinas>[] = [
+export const columns: ColumnDef<SuratKeluar>[] = [
 	{
 		accessorKey: "letter_number",
 		header: ({ column }) => (
@@ -55,9 +55,9 @@ export const columns: ColumnDef<NotaDinas>[] = [
 		),
 	},
 	{
-		accessorKey: "from",
+		accessorKey: "to",
 		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title="Dari" />
+			<DataTableColumnHeader column={column} title="Kepada" />
 		),
 	},
 	{
@@ -118,11 +118,11 @@ export const columns: ColumnDef<NotaDinas>[] = [
 							}
 						>
 							<Copy className="mr-2 h-4 w-4" />
-							Copy Case Code
+							Salin Kode Kasus
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem asChild>
-							<Link href={`/nota-dinas/surat-masuk/${item.id}`}>
+							<Link href={`/nota-dinas/surat-keluar/${item.id}`}>
 								<Eye className="mr-2 h-4 w-4" />
 								Detail
 							</Link>
