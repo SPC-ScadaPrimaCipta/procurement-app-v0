@@ -11,6 +11,7 @@ import { columns, Contract } from "./columns";
 export default function KontrakPage() {
 	const [data, setData] = useState<Contract[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [totalContracts, setTotalContracts] = useState<number>(0);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -29,6 +30,24 @@ export default function KontrakPage() {
 
 		fetchData();
 	}, []);
+
+	useEffect(() => {
+			const fetchTotalContracts = async () => {
+				try {
+					const res = await fetch("/api/contracts");
+					if (!res.ok) throw new Error("Failed to fetch");
+					const result = await res.json();
+	
+					setTotalContracts(result.data?.length ?? 0);
+				} catch (e) {
+					console.error(e);
+				} finally {
+					setIsLoading(false);
+				}
+			};
+	
+			fetchTotalContracts();
+		}, []);
 
 	return (
 		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
@@ -61,7 +80,7 @@ export default function KontrakPage() {
 						<CheckSquare className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">12</div>
+						<div className="text-2xl font-bold">{totalContracts}</div>
 					</CardContent>
 				</Card>
 			</div>
