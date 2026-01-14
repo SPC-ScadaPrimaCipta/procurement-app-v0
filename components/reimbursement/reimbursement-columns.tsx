@@ -17,7 +17,7 @@ export type Reimbursement = {
 	vendor: {
 		id: string;
 		vendor_name: string;
-	};
+	} | null;
 	status: {
 		id: string;
 		name: string;

@@ -74,7 +74,7 @@ export function ReimbursementDeleteDialog({
 						<div>
 							<span className="text-sm font-medium">Nama Penyedia:</span>
 							<p className="text-sm text-muted-foreground">
-								{reimbursement.vendor.vendor_name}
+								{reimbursement.vendor?.vendor_name || "-"}
 							</p>
 						</div>
 						<div>

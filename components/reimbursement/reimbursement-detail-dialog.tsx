@@ -46,13 +46,18 @@ export function ReimbursementDetailDialog({
 
 	useEffect(() => {
 		if (open && reimbursement) {
-			fetchFiles();
+			// fetchFiles(); // TEMPORARY DISABLED - API not ready
 		}
 	}, [open, reimbursement]);
 
 	const fetchFiles = async () => {
 		if (!reimbursement) return;
 
+		// TEMPORARY DISABLED - API not ready
+		console.log("File fetching disabled - API not ready");
+		return;
+
+		/* 
 		try {
 			const response = await fetch(
 				`/api/reimbursement/${reimbursement.id}/files`
@@ -64,6 +69,7 @@ export function ReimbursementDetailDialog({
 		} catch (error) {
 			console.error("Error fetching files:", error);
 		}
+		*/
 	};
 
 	const handleFileUpload = async (
@@ -72,6 +78,12 @@ export function ReimbursementDetailDialog({
 		const file = event.target.files?.[0];
 		if (!file || !reimbursement) return;
 
+		// TEMPORARY DISABLED - API not ready
+		toast.info("Fitur upload file sedang dalam pengembangan");
+		event.target.value = "";
+		return;
+
+		/* 
 		setUploading(true);
 		try {
 			const formData = new FormData();
@@ -97,12 +109,18 @@ export function ReimbursementDetailDialog({
 			setUploading(false);
 			event.target.value = "";
 		}
+		*/
 	};
 
 	const handleFileDelete = async (fileId: string) => {
 		if (!reimbursement) return;
 		if (!confirm("Hapus file ini?")) return;
 
+		// TEMPORARY DISABLED - API not ready
+		toast.info("Fitur hapus file sedang dalam pengembangan");
+		return;
+
+		/* 
 		try {
 			const response = await fetch(
 				`/api/reimbursement/${reimbursement.id}/files/${fileId}`,
@@ -120,6 +138,7 @@ export function ReimbursementDetailDialog({
 			toast.error("Gagal menghapus file");
 			console.error(error);
 		}
+		*/
 	};
 
 	const formatFileSize = (bytes: string) => {
@@ -143,7 +162,7 @@ export function ReimbursementDetailDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
 				<DialogHeader>
-					<div className="flex items-start justify-between">
+					<div className="flex items-start justify-between pr-8">
 						<div>
 							<DialogTitle className="text-xl">
 								Detail Reimbursement
@@ -207,18 +226,20 @@ export function ReimbursementDetailDialog({
 								Nama Penyedia
 							</label>
 							<div className="flex items-center gap-2 mt-1">
-								<p>{reimbursement.vendor.vendor_name}</p>
-								<Button
-									variant="ghost"
-									size="sm"
-									className="h-6 px-2"
-									onClick={() => {
-										// TODO: Open vendor detail dialog
-										toast.info("Vendor detail akan dibuka");
-									}}
-								>
-									<ExternalLink className="h-3 w-3" />
-								</Button>
+								<p>{reimbursement.vendor?.vendor_name || "-"}</p>
+								{reimbursement.vendor && (
+									<Button
+										variant="ghost"
+										size="sm"
+										className="h-6 px-2"
+										onClick={() => {
+											// TODO: Open vendor detail dialog
+											toast.info("Vendor detail akan dibuka");
+										}}
+									>
+										<ExternalLink className="h-3 w-3" />
+									</Button>
+								)}
 							</div>
 						</div>
 					</div>
@@ -302,6 +323,7 @@ export function ReimbursementDetailDialog({
 									size="sm"
 									disabled={uploading}
 									onClick={() => document.getElementById("file-upload")?.click()}
+									title="Fitur sedang dalam pengembangan"
 								>
 									<Upload className="h-4 w-4 mr-2" />
 									{uploading ? "Uploading..." : "Upload File"}
@@ -354,9 +376,14 @@ export function ReimbursementDetailDialog({
 								))}
 							</div>
 						) : (
-							<p className="text-sm text-muted-foreground text-center py-4">
-								Belum ada file yang diupload
-							</p>
+							<div className="text-center py-8">
+								<p className="text-sm text-muted-foreground mb-2">
+									Belum ada file yang diupload
+								</p>
+								<p className="text-xs text-amber-600">
+									⚠️ Fitur upload file sedang dalam pengembangan
+								</p>
+							</div>
 						)}
 					</div>
 				</div>

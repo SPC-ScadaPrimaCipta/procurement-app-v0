@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DataTable } from "@/components/datatable/data-table";
 import {
 	createReimbursementColumns,
@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, PanelLeftClose, PanelLeft } from "lucide-react";
 import { ReimbursementFormDialog } from "@/components/reimbursement/reimbursement-form-dialog";
 import { ReimbursementDetailDialog } from "@/components/reimbursement/reimbursement-detail-dialog";
 import { ReimbursementDeleteDialog } from "@/components/reimbursement/reimbursement-delete-dialog";
@@ -19,6 +19,7 @@ export default function NonKontrakPage() {
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState("");
+	const [showSidebar, setShowSidebar] = useState(true);
 
 	// Dialog states
 	const [showFormDialog, setShowFormDialog] = useState(false);
@@ -50,9 +51,9 @@ export default function NonKontrakPage() {
 	};
 
 	// Load data on mount and when filters change
-	useState(() => {
+	useEffect(() => {
 		fetchReimbursements();
-	});
+	}, []);
 
 	// Handle row click
 	const handleRowClick = (reimbursement: Reimbursement) => {
@@ -102,50 +103,66 @@ export default function NonKontrakPage() {
 	return (
 		<div className="flex h-screen overflow-hidden">
 			{/* Sidebar Filter */}
-			<aside className="w-64 border-r bg-background p-4 overflow-y-auto">
-				<h2 className="font-semibold mb-4">Data Non Kontrak</h2>
+			{showSidebar && (
+				<aside className="w-64 border-r bg-background p-4 overflow-y-auto transition-all duration-300">
+					<h2 className="font-semibold mb-4">Data Non Kontrak</h2>
 
-				<div className="space-y-4">
-					<div>
-						<label className="text-sm font-medium mb-2 block">
-							Filter Status
-						</label>
-						<select
-							className="w-full border rounded-md p-2 text-sm"
-							value={statusFilter}
-							onChange={(e) => {
-								setStatusFilter(e.target.value);
+					<div className="space-y-4">
+						<div>
+							<label className="text-sm font-medium mb-2 block">
+								Filter Status
+							</label>
+							<select
+								className="w-full border rounded-md p-2 text-sm"
+								value={statusFilter}
+								onChange={(e) => {
+									setStatusFilter(e.target.value);
+									fetchReimbursements();
+								}}
+							>
+								<option value="">Semua Status</option>
+								{/* Status options will be populated dynamically */}
+							</select>
+						</div>
+
+						<Button
+							variant="outline"
+							className="w-full"
+							onClick={() => {
+								setSearch("");
+								setStatusFilter("");
 								fetchReimbursements();
 							}}
 						>
-							<option value="">Semua Status</option>
-							{/* Status options will be populated dynamically */}
-						</select>
+							Reset Filter
+						</Button>
 					</div>
-
-					<Button
-						variant="outline"
-						className="w-full"
-						onClick={() => {
-							setSearch("");
-							setStatusFilter("");
-							fetchReimbursements();
-						}}
-					>
-						Reset Filter
-					</Button>
-				</div>
-			</aside>
+				</aside>
+			)}
 
 			{/* Main Content */}
 			<main className="flex-1 overflow-hidden flex flex-col">
 				<div className="p-6 border-b">
 					<div className="flex items-center justify-between mb-4">
-						<div>
-							<h1 className="text-2xl font-bold">Non Kontrak</h1>
-							<p className="text-sm text-muted-foreground">
-								Kelola data reimbursement non kontrak
-							</p>
+						<div className="flex items-center gap-3">
+							<Button
+								variant="outline"
+								size="icon"
+								onClick={() => setShowSidebar(!showSidebar)}
+								title={showSidebar ? "Sembunyikan Filter" : "Tampilkan Filter"}
+							>
+								{showSidebar ? (
+									<PanelLeftClose className="h-4 w-4" />
+								) : (
+									<PanelLeft className="h-4 w-4" />
+								)}
+							</Button>
+							<div>
+								<h1 className="text-2xl font-bold">Non Kontrak</h1>
+								<p className="text-sm text-muted-foreground">
+									Kelola data reimbursement non kontrak
+								</p>
+							</div>
 						</div>
 						<Button onClick={handleAdd}>
 							<Plus className="mr-2 h-4 w-4" />

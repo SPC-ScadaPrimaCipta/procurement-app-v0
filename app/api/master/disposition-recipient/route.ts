@@ -4,7 +4,6 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { hasPermission } from "@/lib/rbac";
 
-// GET all supplier types
 export async function GET() {
 	try {
 		const session = await auth.api.getSession({
@@ -12,15 +11,18 @@ export async function GET() {
 		});
 
 		if (!session) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 }
+			);
 		}
 
-		const supplierTypes = await prisma.master_supplier_type.findMany({
+		const recipients = await prisma.master_disposition_recipient.findMany({
 			where: {
 				is_active: true,
 			},
 			orderBy: {
-				name: "asc",
+				sort_order: "asc",
 			},
 			select: {
 				id: true,
@@ -28,11 +30,11 @@ export async function GET() {
 			},
 		});
 
-		return NextResponse.json(supplierTypes);
+		return NextResponse.json(recipients);
 	} catch (error) {
-		console.error("Error fetching supplier types:", error);
+		console.error("Error fetching disposition recipients:", error);
 		return NextResponse.json(
-			{ error: "Failed to fetch supplier types" },
+			{ error: "Failed to fetch disposition recipients" },
 			{ status: 500 }
 		);
 	}
@@ -44,13 +46,15 @@ export async function POST(request: Request) {
 		if (!canManage) {
 			return new NextResponse("Forbidden", { status: 403 });
 		}
-
 		const session = await auth.api.getSession({
 			headers: await headers(),
 		});
 
 		if (!session) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 }
+			);
 		}
 
 		const body = await request.json();
@@ -63,42 +67,41 @@ export async function POST(request: Request) {
 		if (data.is_active === undefined) data.is_active = true;
 		if (data.sort_order === undefined) data.sort_order = 0;
 
-		const existing = await prisma.master_supplier_type.findUnique({
+		const existing = await prisma.master_disposition_recipient.findUnique({
 			where: { name: data.name },
 		});
 
 		if (existing) {
 			return NextResponse.json(
-				{ error: `Supplier type '${data.name}' already exists.` },
-				{ status: 409 }, // Conflict
+				{ error: `Recipient '${data.name}' already exists.` },
+				{ status: 409 }
 			);
 		}
 
-		const newValue = await prisma.master_supplier_type.create({
+		const newValue = await prisma.master_disposition_recipient.create({
 			data,
 			select: {
 				id: true,
 				name: true,
-				is_active: true
+				is_active: true,
+				sort_order: true,
 			},
 		});
 
 		return NextResponse.json(newValue, { status: 201 });
-
 	} catch (error: any) {
-		console.error("Error creating supplier type:", error);
+		console.error("Error creating disposition recipient:", error);
 
 		if (error.code === "P2002") {
 			return NextResponse.json(
-				{ error: `Supplier type already exists (duplicate '${error.meta?.target}')` },
-				{ status: 409 },
+				{ error: `Recipient '${error.meta?.target}' already exists.` },
+				{ status: 409 }
 			);
 		}
 
 		return NextResponse.json(
-			{ error: "Failed to create supplier type" },
-			{ status: 500 },
+			{ error: "Failed to create disposition recipient" },
+			{ status: 500 }
 		);
 	}
 }
-

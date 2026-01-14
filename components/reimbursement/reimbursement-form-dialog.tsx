@@ -76,7 +76,7 @@ export function ReimbursementFormDialog({
 					tgl_validasi_ppk: new Date(reimbursement.tgl_validasi_ppk)
 						.toISOString()
 						.split("T")[0],
-					vendor_id: reimbursement.vendor.id,
+					vendor_id: reimbursement.vendor?.id || "",
 					nomor_kwitansi: reimbursement.nomor_kwitansi,
 					tanggal_kwitansi: new Date(reimbursement.tanggal_kwitansi)
 						.toISOString()
