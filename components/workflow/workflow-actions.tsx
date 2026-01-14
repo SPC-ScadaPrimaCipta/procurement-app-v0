@@ -11,6 +11,12 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -105,17 +111,42 @@ export function WorkflowActions({
 		}
 	};
 
+	const getDisplayLabel = (label: string) => {
+		if (label.length > 20) {
+			return label.substring(0, 20) + "...";
+		}
+		return label;
+	};
+
+	const displayApproveLabel = getDisplayLabel(approveLabel);
+	const isTruncated = displayApproveLabel !== approveLabel;
+
+	const ApproveButton = (
+		<Button
+			variant="outline"
+			className="flex-1 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-950/30 whitespace-nowrap"
+			onClick={() => setApproveOpen(true)}
+			disabled={loading || disabled}
+		>
+			<CheckCircle2 className="mr-2 h-4 w-4" />
+			{displayApproveLabel}
+		</Button>
+	);
+
 	return (
 		<div className="flex flex-wrap gap-2 w-full">
-			<Button
-				variant="outline"
-				className="flex-1 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-950/30 whitespace-nowrap"
-				onClick={() => setApproveOpen(true)}
-				disabled={loading || disabled}
-			>
-				<CheckCircle2 className="mr-2 h-4 w-4" />
-				{approveLabel}
-			</Button>
+			{isTruncated ? (
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger asChild>{ApproveButton}</TooltipTrigger>
+						<TooltipContent>
+							<p>{approveLabel}</p>
+						</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
+			) : (
+				ApproveButton
+			)}
 
 			<Button
 				variant="outline"
@@ -165,7 +196,7 @@ export function WorkflowActions({
 							{loading && (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 							)}
-							{approveLabel}
+							{displayApproveLabel}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

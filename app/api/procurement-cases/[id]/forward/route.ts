@@ -17,26 +17,39 @@ export async function POST(
 			return new NextResponse("Unauthorized", { status: 401 });
 		}
 
-		// Find the "WAITING PPK" status
-		const status = await prisma.case_status.findFirst({
-			where: {
-				name: "WAITING PPK",
-			},
+		// 1. Get current case and its status
+		const currentCase = await prisma.procurement_case.findUnique({
+			where: { id },
+			include: { status: true },
 		});
 
-		if (!status) {
-			return new NextResponse("Status 'WAITING PPK' not found", {
+		if (!currentCase || !currentCase.status) {
+			return new NextResponse("Case or case status not found", {
 				status: 404,
 			});
 		}
 
-		// Update the procurement case status
+		// 2. Find next status (sort_order + 1)
+		const nextStatus = await prisma.case_status.findFirst({
+			where: {
+				sort_order: currentCase.status.sort_order + 1,
+				is_active: true,
+			},
+		});
+
+		if (!nextStatus) {
+			return new NextResponse("Next status not found", {
+				status: 400, // Or 404, or 422. 400 implies invalid state transition request.
+			});
+		}
+
+		// 3. Update the procurement case status
 		const updatedCase = await prisma.procurement_case.update({
 			where: {
 				id: id,
 			},
 			data: {
-				status_id: status.id,
+				status_id: nextStatus.id,
 				updated_at: new Date(),
 			},
 		});

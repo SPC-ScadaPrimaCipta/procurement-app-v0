@@ -106,14 +106,19 @@ export function TabSuratMasuk({ data, onDataChange }: TabSuratMasukProps) {
 									Disposisi telah dibuat.
 								</CardDescription>
 							</div>
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => setIsDispositionModalOpen(true)}
-							>
-								<Edit className="w-4 h-4 mr-2" />
-								Edit
-							</Button>
+
+							{data?.currentStepInstanceId && (
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() =>
+										setIsDispositionModalOpen(true)
+									}
+								>
+									<Edit className="w-4 h-4 mr-2" />
+									Edit
+								</Button>
+							)}
 						</CardHeader>
 						<CardContent className="p-4 space-y-4">
 							<div className="grid grid-cols-2 gap-4 text-sm">

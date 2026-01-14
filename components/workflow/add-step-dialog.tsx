@@ -235,7 +235,7 @@ export function AddStepDialog({
 									</SelectContent>
 								</Select>
 								{rejectTargetType && (
-									<p className="text-[0.8rem] text-muted-foreground break-words">
+									<p className="text-[0.8rem] text-muted-foreground wrap-break-word">
 										{
 											REJECT_TARGET_TYPES.find(
 												(t) =>

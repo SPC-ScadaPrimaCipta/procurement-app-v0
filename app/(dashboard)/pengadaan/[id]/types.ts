@@ -80,4 +80,14 @@ export interface ProcurementCaseDetail {
 		}[];
 	} | null;
 	currentStepInstanceId?: string | null;
+	workflow_track?: WorkflowTrackItem[];
+}
+
+export interface WorkflowTrackItem {
+	stepNumber: number;
+	title: string;
+	approverName: string;
+	status: "PENDING" | "APPROVED" | "REJECTED" | "SKIPPED";
+	approvedAt?: string | null;
+	isLast: boolean;
 }

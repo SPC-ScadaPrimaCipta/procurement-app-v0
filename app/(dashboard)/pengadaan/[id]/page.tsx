@@ -27,8 +27,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WorkflowStep } from "@/components/workflow/step-indicator";
 import { WorkflowActions } from "@/components/workflow/workflow-actions";
+import { WorkflowProgress } from "@/components/workflow/workflow-progress";
 
 import { ProcurementCaseDetail } from "./types";
 import { TabSuratMasuk } from "./tab-surat-masuk";
@@ -44,6 +44,7 @@ export default function PengadaanDetailPage() {
 	const [data, setData] = useState<ProcurementCaseDetail | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [nextStepTitle, setNextStepTitle] = useState<string | null>(null);
 
 	const fetchData = async () => {
 		try {
@@ -55,6 +56,23 @@ export default function PengadaanDetailPage() {
 			}
 			const result = await response.json();
 			setData(result);
+
+			// Determine next step title for forward label
+			if (result.workflow_track) {
+				const pendingIndex = result.workflow_track.findIndex(
+					(step: any) => step.status === "PENDING"
+				);
+				if (
+					pendingIndex !== -1 &&
+					result.workflow_track[pendingIndex + 1]
+				) {
+					setNextStepTitle(
+						result.workflow_track[pendingIndex + 1].title
+					);
+				} else {
+					setNextStepTitle(null);
+				}
+			}
 		} catch (err: any) {
 			setError(err.message);
 		} finally {
@@ -280,17 +298,21 @@ export default function PengadaanDetailPage() {
 							<CardContent>
 								<WorkflowActions
 									stepInstanceId={data.currentStepInstanceId}
-									externalComment={
-										data.case_disposition_summary
-											?.disposition_note || ""
-									}
-									useExternalComment={true}
+									// externalComment={
+									// 	data.case_disposition_summary
+									// 		?.disposition_note || ""
+									// }
+									// useExternalComment={true}
 									disabled={!data.case_disposition_summary}
 									onSuccess={() => {
 										window.location.reload();
 									}}
 									onBeforeAction={handleForward}
-									approveLabel="Forward ke PPK"
+									approveLabel={
+										nextStepTitle
+											? `Forward ke ${nextStepTitle}`
+											: "Forward"
+									}
 									sendBackLabel="Kembali ke Satker"
 								/>
 							</CardContent>
@@ -305,37 +327,9 @@ export default function PengadaanDetailPage() {
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<div className="pl-2">
-								<WorkflowStep
-									stepNumber={1}
-									title="Pengajuan Pengadaan"
-									approverName="Staff Pengadaan"
-									status="APPROVED"
-									approvedAt={
-										new Date(
-											Date.now() - 1000 * 60 * 60 * 24 * 2
-										)
-									}
-								/>
-								<WorkflowStep
-									stepNumber={2}
-									title="Verifikasi Dokumen"
-									approverName="Kasubag Umum"
-									status="APPROVED"
-									approvedAt={
-										new Date(
-											Date.now() - 1000 * 60 * 60 * 5
-										)
-									}
-								/>
-								<WorkflowStep
-									stepNumber={3}
-									title="Persetujuan KPA"
-									approverName="Kepala Dinas"
-									status="PENDING"
-									isLast={true}
-								/>
-							</div>
+							<WorkflowProgress
+								steps={data?.workflow_track || []}
+							/>
 						</CardContent>
 					</Card>
 
