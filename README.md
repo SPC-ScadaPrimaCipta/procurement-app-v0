@@ -1,30 +1,29 @@
-# Dashboard Project (v0.1.0)
+# Procurement App (v0.1.0)
 
-A modern, high-performance dashboard application built with **Next.js 16**, **React 19**, and **TypeScript**, designed for extensible data visualization, API-driven workflows, and scalable enterprise use cases.
+A comprehensive Procurement and Contract Management application built with **Next.js 16**, **React 19**, and **TypeScript**. Designed to streamline procurement cases, manage complex workflows, and handle contract lifecycles with RBAC security.
 
 ## 🚀 Features
 
 -   **Next.js App Router (v16)** with Server Actions
 -   **TypeScript-first** development
+-   **Procurement Management**:
+    -   End-to-end Procurement Case tracking.
+    -   Integrated Workflow Engine for approvals.
+    -   Dynamic forwarding and status updates.
+-   **Contract Management**:
+    -   Contract Creation and Lifecycle management.
+    -   Payment Plan scheduling (Termin/Bulanan).
+    -   Vendor Management.
 -   **Advanced Workflow Engine**:
     -   Multi-step approval flows with configurable sendback logic.
-    -   Drafting mechanism for workflow steps.
     -   Dynamic approver selection (User/Role based).
+    -   Visual progress tracking.
 -   **Role-Based Access Control (RBAC)**:
     -   Dynamic permission checks using `better-auth`.
-    -   Granular "manage" vs "read" access controls.
--   **User Management System**:
-    -   Create and Edit User dialogs.
-    -   Role assignment and validation.
--   **Enhanced Profile Management**:
-    -   Secure password updates.
-    -   Profile information editing with optimized loading states.
+    -   Granular access based on Roles (e.g., PPK, Staff).
 -   **Responsive & Themed UI**:
     -   Dark / Light Theme toggle.
-    -   Minimalist and dynamic animations.
--   **Optimized for Production**:
-    -   Docker support.
-    -   Prisma ORM with PostgreSQL.
+    -   Rich interactive components.
 
 ## 🏗️ Tech Stack
 
@@ -34,6 +33,7 @@ A modern, high-performance dashboard application built with **Next.js 16**, **Re
 -   **Styling**: Tailwind CSS 4, Radix UI, Lucide React
 -   **Database**: PostgreSQL, Prisma ORM
 -   **Authentication**: Better Auth
+-   **Visualization**: Recharts
 -   **Utilities**: date-fns, zod, react-hook-form
 
 ## 📦 Installation
