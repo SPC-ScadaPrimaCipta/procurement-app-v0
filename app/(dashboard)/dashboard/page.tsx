@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -13,6 +15,19 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Tooltip } from "@/components/ui/tooltip";
+import {
+	BarChart,
+	CartesianGrid,
+	XAxis,
+	YAxis,
+	Tooltip as RechartsTooltip,
+	Bar,
+} from "recharts";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { DataTable } from "@/components/datatable/data-table";
+import { columns } from "../pengadaan/columns";
 
 const KPI = [
 	{ label: "Monthly Recurring Revenue", value: "$82.4K", delta: "+12.4%" },
@@ -80,6 +95,150 @@ const ACTIVITY = [
 ];
 
 export default function DashboardPage() {
+	const [isLoading, setIsLoading] = useState(true);
+	const [totalContracts, setTotalContracts] = useState<number>(0);
+	const [totalReimbursement, setTotalReimbursement] = useState<number>(0);
+	const [totalCorrespondenceIn, setTotalCorrespondenceIn] = useState<number>(0);
+	const [totalCorrespondenceOut, setTotalCorrespondenceOut] = useState<number>(0);
+	const [vendors, setVendors] = useState<{ supplier_type?: { name?: string } }[]>([]);
+	const [vendorGroup, setVendorGroup] = useState<number>(0);
+	const [vendorTrend, setVendorTrend] = useState<{ label: string; value: number }[]>([]);
+	const [procurementCases, setProcurementCases] = useState<any[]>([]);
+	const router = useRouter();
+
+	useEffect(() => {
+		const fetchContracts = async () => {
+			try {
+				const res = await fetch("/api/contracts");
+				if (!res.ok) throw new Error("Failed to fetch");
+				const result = await res.json();
+
+				setTotalContracts(result.data?.length ?? 0);
+			} catch (e) {
+				console.error(e);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchContracts();
+	}, []);
+
+	useEffect(() => {
+		const fetchReimbursement = async () => {
+			try {
+				const res = await fetch("/api/reimbursement");
+				if (!res.ok) throw new Error("Failed to fetch");
+				const result = await res.json();
+
+				setTotalReimbursement(result.data?.length ?? 0);
+			} catch (e) {
+				console.error(e);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchReimbursement();
+	}, []);
+
+	useEffect(() => {
+		const fetchCorrespondenceIn = async () => {
+			try {
+				const res = await fetch("/api/nota-dinas/in");
+				if (!res.ok) throw new Error("Failed to fetch");
+				const result = await res.json();
+
+				setTotalCorrespondenceIn(result.data?.length ?? 0);
+			} catch (e) {
+				console.error(e);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchCorrespondenceIn();
+	}, []);
+
+	useEffect(() => {
+		const fetchCorrespondenceOut = async () => {
+			try {
+				const res = await fetch("/api/nota-dinas/out");
+				if (!res.ok) throw new Error("Failed to fetch");
+				const result = await res.json();
+
+				setTotalCorrespondenceOut(result.data?.length ?? 0);
+			} catch (e) {
+				console.error(e);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchCorrespondenceOut();
+	}, []);
+
+	useEffect(() => {
+		const fetchVendorGroup = async () => {
+			try {
+				const res = await fetch("/api/vendors");
+				if (!res.ok) throw new Error("Failed to fetch");
+
+				const result = await res.json();
+				const data = result.data ?? [];
+
+				setVendors(data);
+
+				// --- changed grouping logic here ---
+				const uniqueTypes = new Set(
+					data.map((v: any) => v.supplier_type?.name?.trim())
+				);
+
+				setVendorGroup(uniqueTypes.size);
+			} catch (e) {
+				console.error("Error fetching vendor group:", e);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchVendorGroup();
+	}, []);
+
+	useEffect(() => {
+		if (!vendors.length) return;
+
+		const map = new Map();
+
+		for (const v of vendors) {
+			const typeName = v.supplier_type?.name?.trim() || "Unknown";
+
+			map.set(typeName, (map.get(typeName) || 0) + 1);
+		}
+
+		setVendorTrend(
+			[...map.entries()].map(([label, value]) => ({ label, value }))
+		);
+	}, [vendors]);
+
+	useEffect(() => {
+		const fetchProcurementCases = async () => {
+			try {
+				const response = await fetch("/api/procurement-cases");
+				if (!response.ok) throw new Error("Failed to fetch data");
+
+				const result = await response.json();
+				setProcurementCases(result.data.slice(0, 4));
+			} catch (error) {
+				console.error("Error fetching procurement cases:", error);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchProcurementCases();
+	}, []);
+
 	return (
 		<div className="space-y-8">
 			<header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -91,7 +250,7 @@ export default function DashboardPage() {
 					</p>
 				</div>
 				<div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row">
-					<Select defaultValue="7d">
+					{/* <Select defaultValue="7d">
 						<SelectTrigger className="w-full sm:w-32">
 							<SelectValue placeholder="Range" />
 						</SelectTrigger>
@@ -100,7 +259,7 @@ export default function DashboardPage() {
 							<SelectItem value="30d">Last 30 days</SelectItem>
 							<SelectItem value="90d">Last 90 days</SelectItem>
 						</SelectContent>
-					</Select>
+					</Select> */}
 					<Button variant="outline" className="w-full sm:w-auto">
 						Download report
 					</Button>
@@ -109,92 +268,82 @@ export default function DashboardPage() {
 			</header>
 
 			<section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-				{KPI.map((item) => (
-					<Card key={item.label}>
-						<CardHeader>
-							<CardDescription>{item.label}</CardDescription>
-							<CardTitle className="text-3xl">
-								{item.value}
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<p
-								className={`text-sm font-medium ${
-									item.delta.startsWith("-")
-										? "text-red-500"
-										: "text-emerald-500"
-								}`}
-							>
-								{item.delta} vs last period
-							</p>
-						</CardContent>
-					</Card>
-				))}
-			</section>
-
-			<div className="grid gap-6 lg:grid-cols-3">
-				<Card className="lg:col-span-2">
-					<CardHeader className="flex flex-row items-center justify-between">
-						<div>
-							<CardTitle>Revenue trend</CardTitle>
-							<CardDescription>
-								Weekly recurring revenue by day.
-							</CardDescription>
-						</div>
-						<Select defaultValue="recurring">
-							<SelectTrigger className="w-40">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="recurring">
-									Recurring
-								</SelectItem>
-								<SelectItem value="expansion">
-									Expansion
-								</SelectItem>
-								<SelectItem value="churn">Churn</SelectItem>
-							</SelectContent>
-						</Select>
+				<Card>
+					<CardHeader>
+						<CardDescription>Semua Kontrak</CardDescription>
+						<CardTitle className="text-3xl">
+							{isLoading ? "Loading..." : totalContracts}
+						</CardTitle>
 					</CardHeader>
-					<CardContent>
-						<div className="h-56 flex items-end gap-3">
-							{REVENUE_TREND.map((point) => (
-								<div
-									key={point.label}
-									className="flex flex-1 flex-col items-center gap-2"
-								>
-									<div
-										className="w-full rounded-md bg-gradient-to-t from-primary/40 via-primary/60 to-primary"
-										style={{ height: `${point.value}%` }}
-									/>
-									<span className="text-xs text-muted-foreground">
-										{point.label}
-									</span>
-								</div>
-							))}
-						</div>
-						<div className="mt-4 grid gap-4 sm:grid-cols-2">
-							<div className="rounded-lg border px-4 py-3">
-								<p className="text-sm text-muted-foreground">
-									Expansion MRR
-								</p>
-								<p className="text-xl font-semibold">$12.6K</p>
-							</div>
-							<div className="rounded-lg border px-4 py-3">
-								<p className="text-sm text-muted-foreground">
-									Net revenue retention
-								</p>
-								<p className="text-xl font-semibold">118%</p>
-							</div>
-						</div>
-					</CardContent>
 				</Card>
 
 				<Card>
 					<CardHeader>
-						<CardTitle>Team activity</CardTitle>
+						<CardDescription>Semua Non Kontrak</CardDescription>
+						<CardTitle className="text-3xl">
+							{isLoading ? "Loading..." : totalReimbursement}
+						</CardTitle>
+					</CardHeader>
+				</Card>
+
+				<Card>
+					<CardHeader>
+						<CardDescription>Semua Nota Dinas Masuk</CardDescription>
+						<CardTitle className="text-3xl">
+							{isLoading ? "Loading..." : totalCorrespondenceIn}
+						</CardTitle>
+					</CardHeader>
+				</Card>
+
+				<Card>
+					<CardHeader>
+						<CardDescription>Semua Nota Dinas Keluar</CardDescription>
+						<CardTitle className="text-3xl">
+							{isLoading ? "Loading..." : totalCorrespondenceOut}
+						</CardTitle>
+					</CardHeader>
+				</Card>
+
+			</section>
+
+			<div className="grid gap-6 lg:grid-cols-3">
+				<Card className="lg:col-span-2">
+					<CardHeader>
+						<CardTitle>Pengelompokan Penyedia</CardTitle>
+						<CardDescription>Dikelompokan berdasarkan jenis penyedia</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{isLoading ? (
+							<p className="text-sm text-muted-foreground">Loading...</p>
+						) : (
+							<BarChart width={1000} height={400} data={[...vendorTrend].sort((a, b) => a.value - b.value)} responsive margin={{top: 5, bottom: 5, left: 0, right: 0}}>
+								<CartesianGrid stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
+								<XAxis
+									dataKey="label"
+									stroke="rgba(255,255,255,0.6)"
+									tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 12 }}
+								/>
+								<YAxis
+									stroke="rgba(255,255,255,0.6)"
+									tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 12 }}
+								/>
+								<RechartsTooltip
+									contentStyle={{
+										background: "#1e1e1e",
+										border: "1px solid rgba(255,255,255,0.2)",
+										color: "white",
+									}}
+								/>
+								<Bar dataKey="value" fill="#4F46E5" radius={[10, 10, 0, 0]} /> {/* indigo/primary */}
+							</BarChart>
+						)}
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader>
+						<CardTitle>Kotak Masuk</CardTitle>
 						<CardDescription>
-							Highlights from product + revenue teams.
+							Sekilas kotak masuk.
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4">
@@ -231,81 +380,64 @@ export default function DashboardPage() {
 				<Card className="lg:col-span-2">
 					<CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 						<div>
-							<CardTitle>Open deals</CardTitle>
+							<CardTitle>Pengadaan</CardTitle>
 							<CardDescription>
-								Deals in commit for the next 30 days.
+								Pengadaan terkini
 							</CardDescription>
 						</div>
-						<Button variant="outline" className="w-full sm:w-auto">
-							View pipeline
-						</Button>
 					</CardHeader>
-
-					<CardContent className="px-0">
-						<div className="px-6">
-							<div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-4 border-b pb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-								<span>Company</span>
-								<span>Owner</span>
-								<span>Value</span>
-								<span>Stage</span>
-							</div>
+					<CardContent className="p-0">
+						<div className="px-4">
+							<DataTable
+								columns={columns}
+								data={procurementCases}
+								filterKey="title"
+							/>
+							<Button
+								variant="outline"
+								className="rounded-md text-sm"
+								onClick={() => router.push("/pengadaan")}
+							>
+								Lihat semua pengadaan
+							</Button>
 						</div>
-
-						<ul className="divide-y">
-							{PIPELINE.map((deal) => (
-								<li
-									key={deal.company}
-									className="px-6 py-4 grid items-center gap-4 grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]"
-								>
-									<span className="font-medium">
-										{deal.company}
-									</span>
-									<span className="text-muted-foreground">
-										{deal.owner}
-									</span>
-									<span className="font-semibold">
-										{deal.value}
-									</span>
-									<span className="text-sm text-muted-foreground">
-										{deal.stage}
-									</span>
-								</li>
-							))}
-						</ul>
 					</CardContent>
 				</Card>
-
 				<Card>
 					<CardHeader>
-						<CardTitle>Quick actions</CardTitle>
+						<CardTitle>Pintasan</CardTitle>
 						<CardDescription>
-							Shortcuts for your most frequent workflows.
+							Akses cepat ke tindakan umum
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-3">
 						<Button
 							className="w-full justify-start"
 							variant="outline"
+							onClick={() => router.push("/admin/users")}
 						>
-							Create customer brief
+							Daftarkan Pengguna Baru
 						</Button>
 						<Button
 							className="w-full justify-start"
 							variant="outline"
+							onClick={() => router.push("/admin/roles")}
 						>
-							Log executive update
+							Tetapkan Peran Pada Pengguna 
 						</Button>
 						<Button
 							className="w-full justify-start"
 							variant="outline"
+							onClick={() => router.push("/admin/permissions")}
 						>
-							Schedule incident review
+							Buat Perizinan Baru
 						</Button>
 						<Button
 							className="w-full justify-start"
 							variant="outline"
+							onClick={() => router.push("/workflow/manage")}
 						>
-							Export finance pack
+							Membuat Alur Kerja Baru
 						</Button>
 					</CardContent>
 				</Card>
