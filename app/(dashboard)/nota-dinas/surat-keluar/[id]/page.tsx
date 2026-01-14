@@ -232,7 +232,7 @@ export default function NotaDinasDetailPage() {
                                         <Calendar className="w-4 h-4 text-muted-foreground" />
                                         <span>
                                             {format(
-                                                new Date(data.letter_date),s
+                                                new Date(data.letter_date),
                                                 "dd MMMM yyyy"
                                             )}
                                         </span>
