@@ -5,6 +5,7 @@ import { resolveUserName } from "@/lib/user-utils";
 
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { getWorkflowData } from "@/lib/workflow/get-workflow-data";
 
 export async function GET(
 	request: Request,
@@ -74,40 +75,11 @@ export async function GET(
 			}))
 		);
 
-		let currentStepInstanceId = null;
-
-		if (session?.user?.id) {
-			const workflowInstance = await prisma.workflow_instance.findUnique({
-				where: {
-					ref_type_ref_id: {
-						ref_type: "PROCUREMENT_CASE",
-						ref_id: id,
-					},
-				},
-			});
-
-			if (workflowInstance) {
-				const stepInstances =
-					await prisma.workflow_step_instance.findMany({
-						where: {
-							workflow_instance_id: workflowInstance.id,
-							status: "PENDING",
-						},
-					});
-
-				const assignment = stepInstances.find((step) => {
-					const assigned = step.assigned_to as string[];
-					return (
-						Array.isArray(assigned) &&
-						assigned.includes(session.user.id)
-					);
-				});
-
-				if (assignment) {
-					currentStepInstanceId = assignment.id;
-				}
-			}
-		}
+		const { currentStepInstanceId, workflowTrack } = await getWorkflowData(
+			"PROCUREMENT_CASE",
+			id,
+			session?.user?.id
+		);
 
 		// Parse disposition actions to ensure array
 		let parsedDispositionActions: string[] = [];
@@ -137,6 +109,7 @@ export async function GET(
 				: null,
 			correspondence_out: correspondenceOutWithNames,
 			currentStepInstanceId,
+			workflow_track: workflowTrack,
 			case_disposition_summary: data.case_disposition_summary
 				? {
 						...data.case_disposition_summary,

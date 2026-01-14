@@ -1,9 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/datatable/data-table";
 import { columns, ProcurementCase } from "./columns";
@@ -15,7 +12,7 @@ export default function PengadaanPage() {
 	useEffect(() => {
 		const fetchData = async () => {
 			try {
-				const response = await fetch("/api/procurement-cases");
+				const response = await fetch("/api/procurement-cases?all=true");
 				if (!response.ok) throw new Error("Failed to fetch data");
 
 				const result = await response.json();

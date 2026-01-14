@@ -2,9 +2,11 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { hasPermission } from "@/lib/rbac";
 import { resolveUserName } from "@/lib/user-utils";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export async function GET(req: Request) {
-	const canRead = await hasPermission("read", "Contract");
+	const canRead = await hasPermission("read", "kontrak");
 	if (!canRead) {
 		return new NextResponse("Forbidden", { status: 403 });
 	}
@@ -78,6 +80,61 @@ export async function GET(req: Request) {
 		});
 	} catch (error) {
 		console.error("Error fetching contracts:", error);
+		return new NextResponse("Internal Server Error", { status: 500 });
+	}
+}
+
+export async function POST(req: Request) {
+	const session = await auth.api.getSession({
+		headers: await headers(),
+	});
+
+	if (!session) {
+		return new NextResponse("Unauthorized", { status: 401 });
+	}
+
+	const canCreate = await hasPermission("manage", "kontrak");
+	if (!canCreate) {
+		return new NextResponse("Forbidden", { status: 403 });
+	}
+
+	try {
+		const body = await req.json();
+
+		const {
+			contract_number,
+			contract_date,
+			vendor_id,
+			work_description,
+			contract_value,
+			start_date,
+			end_date,
+			procurement_method_id,
+			contract_status_id,
+			expense_type,
+			procurement_case_id,
+		} = body;
+
+		const contract = await prisma.contract.create({
+			data: {
+				contract_number,
+				contract_date: new Date(contract_date),
+				vendor_id,
+				work_description,
+				contract_value,
+				start_date: new Date(start_date),
+				end_date: new Date(end_date),
+				procurement_method_id,
+				contract_status_id,
+				expense_type,
+				case_id: procurement_case_id,
+				created_by: session.user.id,
+			},
+		});
+
+		return NextResponse.json(contract);
+	} catch (error) {
+		console.error("Error creating contract:", error);
 		return new NextResponse("Internal Server Error", { status: 500 });
 	}
 }

@@ -8,7 +8,7 @@ export async function GET(
 	{ params }: { params: Promise<{ id: string }> }
 ) {
 	const { id } = await params;
-	const canRead = await hasPermission("read", "Contract");
+	const canRead = await hasPermission("read", "kontrak");
 	if (!canRead) {
 		return new NextResponse("Forbidden", { status: 403 });
 	}
