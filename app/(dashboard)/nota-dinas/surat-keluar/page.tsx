@@ -19,7 +19,6 @@ export default function SuratKeluarPage() {
 				if (!response.ok) throw new Error("Failed to fetch data");
 
 				const result = await response.json();
-				// Map API response to SuratKeluar type
 				const mappedData: SuratKeluar[] = result.data.map(
 					(item: any) => ({
 						id: item.id,
