@@ -15,15 +15,14 @@ export async function GET() {
         }
 
         const docType = await prisma.master_doc_type.findMany({
-            where: {
-                is_active: true,
-            },
             orderBy: {
                 name: "asc",
             },
             select: {
                 id: true,
                 name: true,
+                is_active: true,
+                created_at: true,
             },
         });
 

@@ -15,15 +15,15 @@ export async function GET() {
         }
 
         const procurementMethod = await prisma.master_procurement_method.findMany({
-            where: {
-                is_active: true,
-            },
             orderBy: {
-                name: "asc",
+                sort_order: "asc",
             },
             select: {
                 id: true,
                 name: true,
+                is_active: true,
+                sort_order: true,
+                created_at: true,
             },
         });
 
