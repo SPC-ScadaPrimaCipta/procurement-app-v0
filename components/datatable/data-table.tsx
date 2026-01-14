@@ -70,7 +70,7 @@ export function DataTable<TData, TValue>({
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
 				{filterKey && (
-					<div className="flex items-center py-4">
+					<div className="flex items-center">
 						<Input
 							placeholder={`Filter by ${filterKey}...`}
 							value={

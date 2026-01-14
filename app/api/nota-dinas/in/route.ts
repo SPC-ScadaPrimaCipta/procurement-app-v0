@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { generateCaseCode } from "@/lib/procurement";
 
 export async function GET(req: Request) {
-	const canRead = await hasPermission("read", "NotaDinas");
+	const canRead = await hasPermission("read", "notadinas");
 	if (!canRead) {
 		return new NextResponse("Forbidden", { status: 403 });
 	}

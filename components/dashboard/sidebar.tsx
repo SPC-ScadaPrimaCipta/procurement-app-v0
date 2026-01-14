@@ -21,6 +21,15 @@ import {
 	ShoppingCart,
 	FileSpreadsheet,
 	FileCog,
+	Database,
+	Route,
+	BarChart3,
+	FileBadge,
+	Banknote,
+	FileType,
+	ShoppingBasket,
+	Store,
+	Scale,
 } from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
@@ -92,7 +101,65 @@ const rawMenu: MenuItem[] = [
 	{
 		name: "Master Data",
 		href: "/master-data",
-		icon: Settings,
+		icon: Database,
+		children: [
+			{
+				name: "Disposisi",
+				href: "/master-data/disposisi",
+				icon: Route,
+				permissions: [{ resource: "disposisi", action: "read" }],
+			},
+			{
+				name: "Status Pengadaan",
+				href: "/master-data/status-pengadaan",
+				icon: BarChart3,
+				permissions: [{ resource: "status-pengadaan", action: "read" }],
+			},
+			{
+				name: "Status Kontrak",
+				href: "/master-data/status-kontrak",
+				icon: FileBadge,
+				permissions: [{ resource: "status-kontrak", action: "read" }],
+			},
+			{
+				name: "Status Reimbursement",
+				href: "/master-data/status-reimbursement",
+				icon: Banknote,
+				permissions: [
+					{ resource: "status-reimbursement", action: "read" },
+				],
+			},
+			{
+				name: "Jenis Dokumen",
+				href: "/master-data/jenis-dokumen",
+				icon: FileType,
+				permissions: [{ resource: "jenis-dokumen", action: "read" }],
+			},
+			{
+				name: "Jenis Pengadaan",
+				href: "/master-data/jenis-pengadaan",
+				icon: ShoppingBasket,
+				permissions: [{ resource: "jenis-pengadaan", action: "read" }],
+			},
+			{
+				name: "Jenis Vendor",
+				href: "/master-data/jenis-vendor",
+				icon: Store,
+				permissions: [{ resource: "jenis-vendor", action: "read" }],
+			},
+			{
+				name: "Jenis Regulasi",
+				href: "/master-data/jenis-regulasi",
+				icon: Scale,
+				permissions: [{ resource: "jenis-regulasi", action: "read" }],
+			},
+			{
+				name: "Unit Organisasi",
+				href: "/master-data/unit-organisasi",
+				icon: Building2,
+				permissions: [{ resource: "unit-organisasi", action: "read" }],
+			},
+		],
 	},
 	{
 		name: "Admin",

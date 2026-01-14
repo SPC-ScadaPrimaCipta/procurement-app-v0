@@ -18,12 +18,25 @@ import { toast } from "sonner";
 interface WorkflowActionsProps {
 	stepInstanceId: string;
 	onSuccess?: (data?: any) => void;
+	approveLabel?: string;
+	sendBackLabel?: string;
+	onBeforeAction?: (action: "approve" | "sendback") => Promise<boolean>;
 }
 
 export function WorkflowActions({
 	stepInstanceId,
 	onSuccess,
-}: WorkflowActionsProps) {
+	approveLabel = "Approve",
+	sendBackLabel = "Send Back",
+	externalComment,
+	useExternalComment = false,
+	disabled = false,
+	onBeforeAction,
+}: WorkflowActionsProps & {
+	externalComment?: string;
+	useExternalComment?: boolean;
+	disabled?: boolean;
+}) {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [rejectOpen, setRejectOpen] = useState(false);
@@ -34,8 +47,22 @@ export function WorkflowActions({
 	const handleAction = async (action: "approve" | "sendback") => {
 		try {
 			setLoading(true);
-			const comment =
-				action === "approve" ? approveComment : rejectComment;
+
+			if (onBeforeAction) {
+				const shouldProceed = await onBeforeAction(action);
+				if (!shouldProceed) {
+					setLoading(false);
+					return;
+				}
+			}
+
+			let comment = "";
+			if (useExternalComment) {
+				comment = externalComment || "";
+			} else {
+				comment = action === "approve" ? approveComment : rejectComment;
+			}
+
 			const endpoint = action === "sendback" ? "send-back" : action;
 			const res = await fetch(`/api/workflow-actions/${endpoint}`, {
 				method: "POST",
@@ -55,13 +82,16 @@ export function WorkflowActions({
 
 			toast.success(
 				`Successfully ${
-					action === "approve" ? "approved" : "sendback"
+					action === "approve" ? "approved" : "sent back"
 				} the request`
 			);
 			setRejectOpen(false);
 			setApproveOpen(false);
-			setApproveComment("");
-			setRejectComment("");
+
+			if (!useExternalComment) {
+				setApproveComment("");
+				setRejectComment("");
+			}
 
 			if (onSuccess) {
 				onSuccess(data);
@@ -76,45 +106,51 @@ export function WorkflowActions({
 	};
 
 	return (
-		<div className="flex items-center gap-2">
+		<div className="flex flex-wrap gap-2 w-full">
 			<Button
 				variant="outline"
-				className="text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-950/30"
+				className="flex-1 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-950/30 whitespace-nowrap"
 				onClick={() => setApproveOpen(true)}
-				disabled={loading}
+				disabled={loading || disabled}
 			>
 				<CheckCircle2 className="mr-2 h-4 w-4" />
-				Approve
+				{approveLabel}
 			</Button>
 
 			<Button
 				variant="outline"
-				className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-950/30"
+				className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-950/30 whitespace-nowrap"
 				onClick={() => setRejectOpen(true)}
-				disabled={loading}
+				disabled={loading || disabled}
 			>
 				<XCircle className="mr-2 h-4 w-4" />
-				Send Back
+				{sendBackLabel}
 			</Button>
 
 			{/* Approve Dialog */}
 			<Dialog open={approveOpen} onOpenChange={setApproveOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Approve Request</DialogTitle>
+						<DialogTitle>{approveLabel} Request</DialogTitle>
 						<DialogDescription>
-							Are you sure you want to approve this request? You
-							can optionally add a comment.
+							Are you sure you want to{" "}
+							{approveLabel.toLowerCase()} this request?
+							{!useExternalComment &&
+								" You can optionally add a comment."}
 						</DialogDescription>
 					</DialogHeader>
-					<div className="py-4">
-						<Textarea
-							placeholder="Optional comment..."
-							value={approveComment}
-							onChange={(e) => setApproveComment(e.target.value)}
-							className="min-h-[100px]"
-						/>
-					</div>
+					{!useExternalComment && (
+						<div className="py-4">
+							<Textarea
+								placeholder="Optional comment..."
+								value={approveComment}
+								onChange={(e) =>
+									setApproveComment(e.target.value)
+								}
+								className="min-h-[100px]"
+							/>
+						</div>
+					)}
 					<DialogFooter>
 						<Button
 							variant="ghost"
@@ -129,7 +165,7 @@ export function WorkflowActions({
 							{loading && (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 							)}
-							Approve
+							{approveLabel}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -139,20 +175,24 @@ export function WorkflowActions({
 			<Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Send Back Request</DialogTitle>
+						<DialogTitle>{sendBackLabel} Request</DialogTitle>
 						<DialogDescription>
-							Please provide a reason for sending back this
-							request.
+							Please provide a reason for{" "}
+							{sendBackLabel.toLowerCase()} this request.
 						</DialogDescription>
 					</DialogHeader>
-					<div className="py-4">
-						<Textarea
-							placeholder="Reason for send back..."
-							value={rejectComment}
-							onChange={(e) => setRejectComment(e.target.value)}
-							className="min-h-[100px]"
-						/>
-					</div>
+					{!useExternalComment && (
+						<div className="py-4">
+							<Textarea
+								placeholder={`Reason for ${sendBackLabel.toLowerCase()}...`}
+								value={rejectComment}
+								onChange={(e) =>
+									setRejectComment(e.target.value)
+								}
+								className="min-h-[100px]"
+							/>
+						</div>
+					)}
 					<DialogFooter>
 						<Button
 							variant="ghost"
@@ -163,12 +203,15 @@ export function WorkflowActions({
 						<Button
 							variant="destructive"
 							onClick={() => handleAction("sendback")}
-							disabled={loading || !rejectComment.trim()}
+							disabled={
+								loading ||
+								(!useExternalComment && !rejectComment.trim())
+							}
 						>
 							{loading && (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 							)}
-							Send Back
+							{sendBackLabel}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
