@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { hasPermission } from "@/lib/rbac";
 
 export async function GET() {
     try {
@@ -38,6 +39,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
+        const canManage = await hasPermission("manage", "masterData");
+        if (!canManage) {
+            return new NextResponse("Forbidden", { status: 403 });
+        }
+
         const session = await auth.api.getSession({
             headers: await headers(),
         });
