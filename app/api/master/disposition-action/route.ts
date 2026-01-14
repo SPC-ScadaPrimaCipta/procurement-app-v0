@@ -15,15 +15,15 @@ export async function GET() {
         }
 
         const dispositionAction = await prisma.master_disposition_action.findMany({
-            where: {
-                is_active: true,
-            },
             orderBy: {
                 name: "asc",
             },
             select: {
                 id: true,
                 name: true,
+                is_active: true,
+                sort_order: true,
+                created_at: true,
             },
         });
 

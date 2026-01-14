@@ -18,15 +18,15 @@ export async function GET() {
 		}
 
 		const recipients = await prisma.master_disposition_recipient.findMany({
-			where: {
-				is_active: true,
-			},
 			orderBy: {
-				sort_order: "asc",
+				name: "asc",
 			},
 			select: {
 				id: true,
 				name: true,
+				is_active: true,
+				sort_order: true,
+				created_at: true,
 			},
 		});
 

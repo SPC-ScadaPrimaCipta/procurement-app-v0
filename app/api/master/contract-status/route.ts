@@ -15,15 +15,15 @@ export async function GET() {
         }
 
         const contractStatus = await prisma.master_contract_status.findMany({
-            where: {
-                is_active: true,
-            },
             orderBy: {
                 name: "asc",
             },
             select: {
                 id: true,
                 name: true,
+                is_active: true,
+                sort_order: true,
+                created_at: true,
             },
         });
 

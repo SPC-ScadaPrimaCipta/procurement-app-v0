@@ -6,7 +6,7 @@ import { hasPermission } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
-// GET: Fetch all active regulation types
+// GET: Fetch all org units
 export async function GET() {
 	try {
 		const session = await auth.api.getSession({
@@ -17,24 +17,31 @@ export async function GET() {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		const regulationTypes = await prisma.regulation_type.findMany({
+		const orgUnits = await prisma.org_unit.findMany({
 			orderBy: {
-				sort_order: "asc",
+				unit_name: "asc",
 			},
 			select: {
 				id: true,
-				name: true,
+				unit_type: true,
+				unit_code: true,
+				unit_name: true,
+				parent_unit_id: true,
 				is_active: true,
-				sort_order: true,
-				created_at: true,
+				parent: {
+					select: {
+						id: true,
+						unit_name: true,
+					},
+				},
 			},
 		});
 
-		return NextResponse.json(regulationTypes);
+		return NextResponse.json(orgUnits);
 	} catch (error) {
-		console.error("Error fetching regulation types:", error);
+		console.error("Error fetching org units:", error);
 		return NextResponse.json(
-			{ error: "Failed to fetch regulation types" },
+			{ error: "Failed to fetch org units" },
 			{ status: 500 }
 		);
 	}
@@ -58,48 +65,46 @@ export async function POST(request: Request) {
 		const body = await request.json();
 
 		const data: any = {
-			...body,
-			created_by: session.user.id,
+			unit_type: body.unit_type,
+			unit_code: body.unit_code || null,
+			unit_name: body.unit_name,
+			parent_unit_id: body.parent_unit_id || null,
+			is_active: body.is_active !== undefined ? body.is_active : true,
 		};
 
-		if (data.is_active === undefined) data.is_active = true;
-		if (data.sort_order === undefined) data.sort_order = 0;
+		// Check if parent_unit_id exists if provided
+		if (data.parent_unit_id) {
+			const parentExists = await prisma.org_unit.findUnique({
+				where: { id: data.parent_unit_id },
+			});
 
-		const existing = await prisma.regulation_type.findUnique({
-			where: { name: data.name },
-		});
-
-		if (existing) {
-			return NextResponse.json(
-				{ error: `Regulation type '${data.name}' already exists.` },
-				{ status: 409 },
-			);
+			if (!parentExists) {
+				return NextResponse.json(
+					{ error: "Parent unit not found" },
+					{ status: 404 }
+				);
+			}
 		}
 
-		const newValue = await prisma.regulation_type.create({
+		const newValue = await prisma.org_unit.create({
 			data,
 			select: {
 				id: true,
-				name: true,
+				unit_type: true,
+				unit_code: true,
+				unit_name: true,
+				parent_unit_id: true,
 				is_active: true,
-				sort_order: true,
 			},
 		});
 
 		return NextResponse.json(newValue, { status: 201 });
 
 	} catch (error: any) {
-		console.error("Error creating regulation type:", error);
-
-		if (error.code === "P2002") {
-			return NextResponse.json(
-				{ error: `Regulation type already exists (duplicate '${error.meta?.target}')` },
-				{ status: 409 },
-			);
-		}
+		console.error("Error creating org unit:", error);
 
 		return NextResponse.json(
-			{ error: "Failed to create regulation type" },
+			{ error: "Failed to create org unit" },
 			{ status: 500 },
 		);
 	}
