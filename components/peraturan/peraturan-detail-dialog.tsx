@@ -83,7 +83,7 @@ export function PeraturanDetailDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-w-2xl">
 				<DialogHeader>
-					<div className="flex items-center justify-between">
+					<div className="flex items-center justify-between pr-8">
 						<DialogTitle className="text-xl">
 							{peraturan?.doc_number}
 						</DialogTitle>
