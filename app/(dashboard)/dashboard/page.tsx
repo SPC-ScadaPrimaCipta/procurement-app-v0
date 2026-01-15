@@ -173,7 +173,13 @@ export default function DashboardPage() {
 				const res = await fetch("/api/workflow-inbox");
 				if (!res.ok) throw new Error("Failed to fetch inbox");
 				const result = await res.json();
-				setInboxItems(result.items ?? []);
+					const items = result.items ?? [];
+					items.sort((a: any, b: any) => {
+						const ta = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+						const tb = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+						return tb - ta;
+					});
+					setInboxItems(items.slice(0, 3));
 			} catch (e) {
 				console.error("Error fetching inbox:", e);
 			} finally {
