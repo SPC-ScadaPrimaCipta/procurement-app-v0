@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,14 @@ export default function LoginPage() {
 			setLoading(false);
 			return;
 		}
+
+		// Warning about file upload access
+		toast("Access Limited", {
+			description:
+				"Please login with Microsoft to enable file uploading features.",
+			duration: Infinity,
+			closeButton: true,
+		});
 
 		// Success → redirect to dashboard
 		router.push("/dashboard");

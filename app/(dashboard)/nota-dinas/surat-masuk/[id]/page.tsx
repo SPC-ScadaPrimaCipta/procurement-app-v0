@@ -166,6 +166,17 @@ export default function NotaDinasDetailPage() {
 					</div>
 				</div>
 				<div className="flex items-center space-x-2">
+					<Button
+						variant="outline"
+						size="sm"
+						className="hidden md:flex"
+						onClick={() =>
+							router.push(`/pengadaan/${data.case_id}`)
+						}
+					>
+						<Building2 className="mr-2 h-4 w-4" />
+						Lihat Pengadaan
+					</Button>
 					<Badge variant={statusColor} className="text-sm px-3 py-1">
 						{data.procurement_case.status.name}
 					</Badge>

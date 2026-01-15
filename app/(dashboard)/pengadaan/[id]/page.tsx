@@ -142,7 +142,7 @@ export default function PengadaanDetailPage() {
 		created_at,
 		correspondence_in,
 		contract,
-		document: documents,
+		documents,
 	} = data;
 
 	const statusVariant =

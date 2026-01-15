@@ -554,7 +554,7 @@ export default function ContractDetailPage() {
 									</CardHeader>
 									<CardContent>
 										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-											{procurement_case.document.map(
+											{procurement_case?.document?.map(
 												(doc) => (
 													<div
 														key={doc.id}
@@ -615,8 +615,8 @@ export default function ContractDetailPage() {
 													</div>
 												)
 											)}
-											{procurement_case.document
-												.length === 0 && (
+											{procurement_case?.document
+												?.length === 0 && (
 												<div className="col-span-full flex flex-col items-center justify-center py-8 text-muted-foreground">
 													<FileText className="h-8 w-8 mb-2 opacity-50" />
 													<p>

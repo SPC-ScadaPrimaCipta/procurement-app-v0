@@ -80,6 +80,75 @@ export function TabSuratMasuk({ data, onDataChange }: TabSuratMasukProps) {
 								</a>
 							</Button>
 						</div>
+
+						{/* Documents Section */}
+						<div className="md:col-span-2 space-y-3 pt-4 border-t">
+							<h3 className="text-sm font-medium text-muted-foreground mb-2">
+								Lampiran Dokumen
+							</h3>
+							{data.documents && data.documents.length > 0 ? (
+								<div className="grid gap-3">
+									{data.documents.map((doc) => (
+										<div
+											key={doc.id}
+											className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border hover:border-primary/50 transition-colors"
+										>
+											<div className="flex items-center gap-3 overflow-hidden">
+												<div className="h-9 w-9 rounded bg-background border flex items-center justify-center shrink-0">
+													<FileText className="h-4 w-4 text-primary" />
+												</div>
+												<div className="min-w-0">
+													<p className="text-sm font-medium truncate">
+														{doc.file_name ||
+															doc.title ||
+															"Dokumen"}
+													</p>
+													<div className="flex items-center gap-2 text-xs text-muted-foreground">
+														<span className="bg-background px-1.5 py-0.5 rounded border">
+															{
+																doc
+																	.master_doc_type
+																	?.name
+															}
+														</span>
+														<span>•</span>
+														<span>
+															{doc.created_at
+																? format(
+																		new Date(
+																			doc.created_at
+																		),
+																		"dd MMM yyyy"
+																  )
+																: "-"}
+														</span>
+													</div>
+												</div>
+											</div>
+											{doc.file_url && (
+												<Button
+													variant="ghost"
+													size="sm"
+													asChild
+												>
+													<a
+														href={doc.file_url}
+														target="_blank"
+														rel="noopener noreferrer"
+													>
+														Download
+													</a>
+												</Button>
+											)}
+										</div>
+									))}
+								</div>
+							) : (
+								<p className="text-sm text-muted-foreground italic">
+									Tidak ada dokumen lampiran.
+								</p>
+							)}
+						</div>
 					</CardContent>
 				</Card>
 			) : (
