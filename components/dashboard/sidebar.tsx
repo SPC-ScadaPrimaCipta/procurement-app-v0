@@ -74,6 +74,11 @@ const rawMenu: MenuItem[] = [
 		],
 	},
 	{
+		name: "Dokumen",
+		href: "/documents",
+		icon: FileText,
+	},
+	{
 		name: "Pengadaan",
 		href: "/pengadaan",
 		icon: Package,
