@@ -23,11 +23,13 @@ import {
 	YAxis,
 	Tooltip as RechartsTooltip,
 	Bar,
+	ResponsiveContainer,
 } from "recharts";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/datatable/data-table";
 import { columns } from "../pengadaan/columns";
+import { Container } from "lucide-react";
 
 const KPI = [
 	{ label: "Monthly Recurring Revenue", value: "$82.4K", delta: "+12.4%" },
@@ -316,26 +318,30 @@ export default function DashboardPage() {
 						{isLoading ? (
 							<p className="text-sm text-muted-foreground">Loading...</p>
 						) : (
-							<BarChart width={1000} height={400} data={[...vendorTrend].sort((a, b) => a.value - b.value)} responsive margin={{top: 5, bottom: 5, left: 0, right: 0}}>
-								<CartesianGrid stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
-								<XAxis
-									dataKey="label"
-									stroke="rgba(255,255,255,0.6)"
-									tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 12 }}
-								/>
-								<YAxis
-									stroke="rgba(255,255,255,0.6)"
-									tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 12 }}
-								/>
-								<RechartsTooltip
-									contentStyle={{
-										background: "#1e1e1e",
-										border: "1px solid rgba(255,255,255,0.2)",
-										color: "white",
-									}}
-								/>
-								<Bar dataKey="value" fill="#4F46E5" radius={[10, 10, 0, 0]} /> {/* indigo/primary */}
-							</BarChart>
+							<div className="w-full h-96">
+								<ResponsiveContainer width="100%" height="100%">
+									<BarChart data={[...vendorTrend].sort((a, b) => a.value - b.value)} responsive margin={{top: 5, bottom: 5, left: 0, right: 0}}>
+										<CartesianGrid stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
+										<XAxis
+											dataKey="label"
+											stroke="rgba(255,255,255,0.6)"
+											tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 12 }}
+										/>
+										<YAxis
+											stroke="rgba(255,255,255,0.6)"
+											tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 12 }}
+										/>
+										<RechartsTooltip
+											contentStyle={{
+												background: "#1e1e1e",
+												border: "1px solid rgba(255,255,255,0.2)",
+												color: "white",
+											}}
+										/>
+										<Bar dataKey="value" fill="#4F46E5" radius={[10, 10, 0, 0]} /> {/* indigo/primary */}
+									</BarChart>
+								</ResponsiveContainer >
+							</div>
 						)}
 					</CardContent>
 				</Card>
