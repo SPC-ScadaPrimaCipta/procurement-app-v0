@@ -13,19 +13,28 @@ export async function generateCaseCode(
 ): Promise<string> {
 	const now = new Date();
 	const year = now.getFullYear();
-	const startOfYear = new Date(year, 0, 1);
-	const nextYear = new Date(year + 1, 0, 1);
+	const prefix = `PROC-${year}-`;
 
-	const count = await tx.procurement_case.count({
+	const lastCase = await tx.procurement_case.findFirst({
 		where: {
-			created_at: {
-				gte: startOfYear,
-				lt: nextYear,
+			case_code: {
+				startsWith: prefix,
 			},
+		},
+		orderBy: {
+			case_code: "desc",
 		},
 	});
 
-	const seq = count + 1;
+	let seq = 1;
+	if (lastCase?.case_code) {
+		const parts = lastCase.case_code.split("-");
+		const lastSeq = parseInt(parts[parts.length - 1]);
+		if (!isNaN(lastSeq)) {
+			seq = lastSeq + 1;
+		}
+	}
+
 	const seqPadded = seq.toString().padStart(6, "0");
-	return `PROC-${year}-${seqPadded}`;
+	return `${prefix}${seqPadded}`;
 }
