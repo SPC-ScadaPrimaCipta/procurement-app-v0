@@ -45,15 +45,6 @@ export async function GET(
 						},
 					},
 				},
-				document: {
-					include: {
-						master_doc_type: true,
-						document_file: true,
-					},
-					orderBy: {
-						created_at: "desc",
-					},
-				},
 			},
 		});
 

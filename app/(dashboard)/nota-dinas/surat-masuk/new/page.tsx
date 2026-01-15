@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -43,6 +43,25 @@ export default function NewSuratMasukPage() {
 		rab: null,
 	});
 
+	const [docTypes, setDocTypes] = useState<{ id: string; name: string }[]>(
+		[]
+	);
+
+	useEffect(() => {
+		const fetchDocTypes = async () => {
+			try {
+				const res = await fetch("/api/master/doc-type");
+				if (res.ok) {
+					const data = await res.json();
+					setDocTypes(data);
+				}
+			} catch (error) {
+				console.error("Failed to fetch doc types", error);
+			}
+		};
+		fetchDocTypes();
+	}, []);
+
 	const handleInputChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
 	) => {
@@ -61,24 +80,45 @@ export default function NewSuratMasukPage() {
 	const uploadFile = async (
 		caseId: string,
 		file: File,
-		docTypeName: string
+		docTypeName: string,
+		caseCode: string
 	) => {
-		const data = new FormData();
-		data.append("file", file);
-		data.append("doc_type_name", docTypeName);
-		data.append("title", file.name);
-
-		const response = await fetch(
-			`/api/procurement-cases/${caseId}/documents`,
-			{
-				method: "POST",
-				body: data,
-			}
+		// Find doc_type_id
+		const docType = docTypes.find(
+			(dt) => dt.name.toLowerCase() === docTypeName.toLowerCase()
 		);
+		const docTypeId = docType?.id || "";
+
+		const data = new FormData();
+		data.append("files", file); // api/uploads expects 'files' or 'file'
+		data.append("ref_type", "PROCUREMENT_CASE");
+		data.append("ref_id", caseId);
+		if (docTypeId) {
+			data.append("doc_type_id", docTypeId);
+		}
+
+		// Folder path: Procurement/<case_code>/Surat Masuk
+		// Using caseCode from response
+		const folderPath = `Procurement/${caseCode}/Surat Masuk`;
+		data.append("folder_path", folderPath);
+
+		console.log(
+			`Uploading ${docTypeName} to ${folderPath} with docType ${docTypeId}`
+		);
+
+		const response = await fetch("/api/uploads", {
+			method: "POST",
+			body: data,
+		});
 
 		if (!response.ok) {
 			console.error(`Failed to upload ${docTypeName}`);
+			const errText = await response.text();
+			console.error(errText);
 			// Non-blocking error for now
+			toast.error(`Gagal upload ${docTypeName}: ${errText}`);
+		} else {
+			console.log(`Uploaded ${docTypeName} successfully`);
 		}
 	};
 
@@ -118,12 +158,20 @@ export default function NewSuratMasukPage() {
 
 			// 2. Upload Files if present
 			const uploads = [];
+			// Note: User requested "SCAN SURAT MASUK" for doc type mapping
 			if (files.notaDinas)
 				uploads.push(
-					uploadFile(case_id, files.notaDinas, "SCAN NOTA DINAS")
+					uploadFile(
+						case_id,
+						files.notaDinas,
+						"SCAN SURAT MASUK",
+						case_code
+					)
 				);
-			if (files.tor) uploads.push(uploadFile(case_id, files.tor, "TOR"));
-			if (files.rab) uploads.push(uploadFile(case_id, files.rab, "RAB"));
+			if (files.tor)
+				uploads.push(uploadFile(case_id, files.tor, "TOR", case_code));
+			if (files.rab)
+				uploads.push(uploadFile(case_id, files.rab, "RAB", case_code));
 
 			await Promise.all(uploads);
 
@@ -338,14 +386,14 @@ export default function NewSuratMasukPage() {
 					>
 						Batal
 					</Button>
-					<Button
+					{/* <Button
 						type="button"
 						onClick={() => handleSubmit(true)}
 						disabled={isLoading}
 					>
 						<Save className="mr-2 h-4 w-4" />
 						Simpan Draft
-					</Button>
+					</Button> */}
 					<Button
 						type="button"
 						onClick={() => handleSubmit(false)}

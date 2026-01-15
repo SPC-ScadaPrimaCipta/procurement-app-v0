@@ -28,13 +28,6 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkflowActions } from "@/components/workflow/workflow-actions";
 
-interface DocumentFile {
-	id: string;
-	file_name: string;
-	file_url: string | null;
-	file_size: number | null;
-}
-
 interface Document {
 	id: string;
 	title: string | null;
@@ -43,7 +36,9 @@ interface Document {
 	master_doc_type: {
 		name: string;
 	};
-	document_file: DocumentFile[];
+	file_name: string | null;
+	file_url: string | null;
+	file_size: string | number | null;
 }
 
 interface NotaDinasDetail {
@@ -68,8 +63,8 @@ interface NotaDinasDetail {
 		unit: {
 			unit_name: string;
 		} | null;
-		document: Document[];
 	};
+	documents: Document[];
 }
 
 export default function NotaDinasDetailPage() {
@@ -271,7 +266,7 @@ export default function NotaDinasDetailPage() {
 							<FileIcon className="w-5 h-5" />
 							Lampiran Dokumen
 						</h2>
-						{data.procurement_case.document.length === 0 ? (
+						{data.documents.length === 0 ? (
 							<Card className="bg-muted/10 border-dashed">
 								<CardContent className="flex flex-col items-center justify-center py-8 text-center">
 									<FileText className="h-10 w-10 text-muted-foreground/50 mb-2" />
@@ -282,67 +277,57 @@ export default function NotaDinasDetailPage() {
 							</Card>
 						) : (
 							<div className="grid gap-3">
-								{data.procurement_case.document.map(
-									(doc, idx) => (
-										<Card
-											key={doc.id}
-											className="hover:shadow-sm transition-shadow"
-										>
-											<CardContent className="p-4 flex items-center justify-between">
-												<div className="flex items-center gap-3 overflow-hidden">
-													<div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-														<FileText className="h-5 w-5" />
-													</div>
-													<div className="min-w-0">
-														<p className="font-medium truncate">
-															{doc
-																.document_file[0]
-																?.file_name ||
-																doc.title ||
-																"Dokumen"}
-														</p>
-														<p className="text-xs text-muted-foreground">
-															{
-																doc
-																	.master_doc_type
-																	?.name
-															}{" "}
-															•{" "}
-															{format(
-																new Date(
-																	doc.created_at
-																),
-																"dd MMM yyyy HH:mm"
-															)}
-														</p>
-													</div>
+								{data.documents.map((doc, idx) => (
+									<Card
+										key={doc.id}
+										className="hover:shadow-sm transition-shadow"
+									>
+										<CardContent className="p-4 flex items-center justify-between">
+											<div className="flex items-center gap-3 overflow-hidden">
+												<div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+													<FileText className="h-5 w-5" />
 												</div>
-												{doc.document_file[0]
-													?.file_url && (
-													<Button
-														variant="outline"
-														size="sm"
-														className="shrink-0 ml-2"
-														asChild
+												<div className="min-w-0">
+													<p className="font-medium truncate">
+														{doc.file_name ||
+															doc.title ||
+															"Dokumen"}
+													</p>
+													<p className="text-xs text-muted-foreground">
+														{
+															doc.master_doc_type
+																?.name
+														}{" "}
+														•{" "}
+														{format(
+															new Date(
+																doc.created_at
+															),
+															"dd MMM yyyy HH:mm"
+														)}
+													</p>
+												</div>
+											</div>
+											{doc.file_url && (
+												<Button
+													variant="outline"
+													size="sm"
+													className="shrink-0 ml-2"
+													asChild
+												>
+													<a
+														href={doc.file_url}
+														target="_blank"
+														rel="noopener noreferrer"
 													>
-														<a
-															href={
-																doc
-																	.document_file[0]
-																	.file_url
-															}
-															target="_blank"
-															rel="noopener noreferrer"
-														>
-															<Download className="mr-2 h-4 w-4" />
-															Download
-														</a>
-													</Button>
-												)}
-											</CardContent>
-										</Card>
-									)
-								)}
+														<Download className="mr-2 h-4 w-4" />
+														Download
+													</a>
+												</Button>
+											)}
+										</CardContent>
+									</Card>
+								))}
 							</div>
 						)}
 					</div>

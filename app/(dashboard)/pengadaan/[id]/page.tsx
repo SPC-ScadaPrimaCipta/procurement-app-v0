@@ -242,7 +242,7 @@ export default function PengadaanDetailPage() {
 								className="gap-2 py-2"
 							>
 								<Paperclip className="w-4 h-4" /> Lampiran (
-								{documents.length})
+								{documents?.length || 0})
 							</TabsTrigger>
 						</TabsList>
 
@@ -383,7 +383,7 @@ export default function PengadaanDetailPage() {
 										variant="secondary"
 										className="rounded-full px-2"
 									>
-										{documents.length}
+										{documents?.length || 0}
 									</Badge>
 								</div>
 							</div>

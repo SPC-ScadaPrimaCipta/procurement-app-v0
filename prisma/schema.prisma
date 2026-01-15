@@ -234,7 +234,6 @@ model procurement_case {
   contract                 contract?
   correspondence_in        correspondence_in?
   correspondence_out       correspondence_out[]
-  document                 document[]
   status                   case_status               @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   unit                     org_unit?                 @relation(fields: [unit_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -403,7 +402,8 @@ model case_step {
 
 model document {
   id               String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  case_id          String           @db.Uuid
+  ref_type         String           @db.VarChar(100)
+  ref_id           String           @db.Uuid
   doc_type_id      String           @db.Uuid
   title            String?          @db.VarChar(255)
   doc_number       String?          @db.VarChar(150)
@@ -411,38 +411,31 @@ model document {
   step_id          String?          @db.Uuid
   version_no       Int
   is_latest        Boolean
-  created_by       String
+
+  file_url         String?
+  file_name        String?          @db.VarChar(255)
+  mime_type        String?          @db.VarChar(150)
+  file_size        BigInt?
+
+  sp_site_id       String?          @db.VarChar(255)
+  sp_drive_id      String?          @db.VarChar(255)
+  sp_item_id       String?          @db.VarChar(255)
+  sp_web_url       String?
+  folder_path      String?
+
+  uploaded_by      String
+  uploaded_at      DateTime         @default(now()) @db.Timestamptz(6)
   created_at       DateTime         @default(now()) @db.Timestamptz(6)
-  procurement_case procurement_case @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  updated_at       DateTime?        @db.Timestamptz(6)
+
   master_doc_type  master_doc_type  @relation(fields: [doc_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   case_step        case_step?       @relation(fields: [step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  document_file    document_file[]
 
-  @@index([case_id])
   @@index([doc_type_id])
   @@index([step_id])
   @@map("document")
 }
 
-model document_file {
-  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  document_id String   @db.Uuid
-  sp_site_id  String?  @db.VarChar(255)
-  sp_drive_id String?  @db.VarChar(255)
-  sp_item_id  String?  @db.VarChar(255)
-  sp_web_url  String?
-  folder_path String?
-  file_name   String   @db.VarChar(255)
-  mime_type   String?  @db.VarChar(150)
-  file_size   BigInt?
-  file_url    String?
-  uploaded_by String
-  uploaded_at DateTime @db.Timestamptz(6)
-  document    document @relation(fields: [document_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([document_id])
-  @@map("document_file")
-}
 
 model org_unit {
   id                  String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
