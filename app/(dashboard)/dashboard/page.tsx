@@ -337,7 +337,7 @@ export default function DashboardPage() {
 						) : (
 							<>
 								{inboxItems.map((item) => (
-									<Card key={item.id} className="mb-3 cursor-pointer hover:bg-gray-800" onClick={() => { if (item?.refType === 'PROCUREMENT_CASE' && item?.refId) router.push(`/pengadaan/${item.refId}`); }} role="button" tabIndex={0}>
+									<Card key={item.id} className="mb-3 cursor-pointer hover:bg-muted" onClick={() => { if (item?.refType === 'PROCUREMENT_CASE' && item?.refId) router.push(`/pengadaan/${item.refId}`); }} role="button" tabIndex={0}>
 										<CardContent className="flex items-center gap-4 rounded-lg">
 											<div className="shrink-0 rounded-md bg-muted/10">
 												<Mail className="w-5 h-5 text-muted-foreground" />
