@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { Textarea } from "@/components/ui/textarea"; // Add Textarea import
 import { toast } from "sonner";
 import { Key, Smartphone, ShieldCheck } from "lucide-react";
 
@@ -19,6 +20,7 @@ export default function SecurityPage() {
 	const [currentPassword, setCurrentPassword] = useState("");
 	const [newPassword, setNewPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
+	const [generatedToken, setGeneratedToken] = useState(""); // For Graph Token debug
 	const [loading, setLoading] = useState(false);
 
 	const handlePasswordChange = async () => {
@@ -122,11 +124,87 @@ export default function SecurityPage() {
 				</CardContent>
 			</Card>
 
-			{/* 2FA Placeholder */}
+			{/* Microsoft Connection */}
 			<Card>
 				<CardHeader>
 					<div className="flex items-center gap-2">
 						<Smartphone className="h-5 w-5 text-primary" />
+						<CardTitle>Microsoft Connection</CardTitle>
+					</div>
+					<CardDescription>
+						Connect your Microsoft account to enable SharePoint
+						integration.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<div className="flex flex-col gap-2 w-full">
+						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+							<div className="space-y-1">
+								<p className="font-medium">
+									SharePoint Integration (Generate Token)
+								</p>
+								<p className="text-sm text-muted-foreground">
+									Generate a Graph Access Token for debugging
+									or manual API usage.
+								</p>
+							</div>
+							<Button
+								variant="outline"
+								onClick={async () => {
+									try {
+										const { getGraphAccessToken } =
+											await import(
+												"@/lib/get-graphToken"
+											);
+										const token =
+											await getGraphAccessToken();
+										setGeneratedToken(token); // We need to add this state
+										toast.success("Token generated!");
+									} catch (e: any) {
+										console.error(e);
+										toast.error(
+											"Generation failed: " + e.message
+										);
+									}
+								}}
+							>
+								Generate Token
+							</Button>
+						</div>
+
+						{generatedToken && (
+							<div className="mt-4 space-y-2">
+								<Label>Generated Access Token</Label>
+								<div className="flex gap-2">
+									<Textarea
+										readOnly
+										value={generatedToken}
+										className="min-h-[100px] font-mono text-xs"
+									/>
+								</div>
+								<Button
+									size="sm"
+									variant="secondary"
+									onClick={() => {
+										navigator.clipboard.writeText(
+											generatedToken
+										);
+										toast.success("Copied to clipboard");
+									}}
+								>
+									Copy to Clipboard
+								</Button>
+							</div>
+						)}
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* 2FA Placeholder */}
+			<Card>
+				<CardHeader>
+					<div className="flex items-center gap-2">
+						<ShieldCheck className="h-5 w-5 text-primary" />
 						<CardTitle>Two-Factor Authentication</CardTitle>
 					</div>
 					<CardDescription>

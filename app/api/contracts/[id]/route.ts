@@ -25,15 +25,15 @@ export async function GET(
 						id: true,
 						title: true,
 						case_code: true,
-						document: {
-							include: {
-								master_doc_type: true,
-								document_file: true,
-							},
-							orderBy: {
-								created_at: "desc",
-							},
-						},
+						// document: {
+						// 	include: {
+						// 		master_doc_type: true,
+						// 		document_file: true,
+						// 	},
+						// 	orderBy: {
+						// 		created_at: "desc",
+						// 	},
+						// },
 					},
 				},
 				contract_payment_plan: {

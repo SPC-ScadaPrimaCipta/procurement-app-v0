@@ -46,7 +46,9 @@ export function UserMenu() {
 					<DropdownMenuTrigger>
 						<Avatar className="cursor-pointer">
 							<AvatarImage src={user?.image || ""} />
-							<AvatarFallback>{initials}</AvatarFallback>
+							<AvatarFallback suppressHydrationWarning>
+								{initials}
+							</AvatarFallback>
 						</Avatar>
 					</DropdownMenuTrigger>
 				</TooltipTrigger>

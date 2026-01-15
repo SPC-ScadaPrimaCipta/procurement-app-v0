@@ -27,12 +27,6 @@ export async function GET(
 					include: {
 						status: true,
 						unit: true,
-						document: {
-							include: {
-								master_doc_type: true,
-								document_file: true,
-							},
-						},
 					},
 				},
 			},
@@ -79,10 +73,36 @@ export async function GET(
 			}
 		}
 
+		// Fetch relevant documents
+		let documents: any[] = [];
+		if (result.case_id) {
+			const rawDocs = await prisma.document.findMany({
+				where: {
+					ref_type: "PROCUREMENT_CASE",
+					ref_id: result.case_id,
+					master_doc_type: {
+						name: {
+							in: ["SCAN SURAT MASUK", "RAB", "TOR"],
+						},
+					},
+				},
+				include: {
+					master_doc_type: true,
+				},
+			});
+
+			// Handle BigInt serialization
+			documents = rawDocs.map((doc) => ({
+				...doc,
+				file_size: doc.file_size ? doc.file_size.toString() : null,
+			}));
+		}
+
 		return NextResponse.json({
 			...result,
 			created_by: createdByName,
 			currentStepInstanceId,
+			documents,
 		});
 	} catch (error) {
 		console.error("Error fetching nota dinas detail:", error);
