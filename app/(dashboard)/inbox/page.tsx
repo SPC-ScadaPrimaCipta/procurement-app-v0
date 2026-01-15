@@ -1,73 +1,78 @@
 "use client";
 
-import { useState } from "react";
-import { Mail } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { Mail, CheckCircle2, FileText, ArrowRight } from "lucide-react";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { DataTable } from "@/components/datatable/data-table";
 import { columns, InboxItem } from "./columns";
-
-// Mock Data
-const MOCK_INBOX_DATA: InboxItem[] = [
-	{
-		id: "1",
-		title: "Persetujuan Pengadaan PC-2024-001",
-		message: "Mohon tinjau dan setujui pengadaan Laptop Dinas.",
-		type: "approval",
-		reference_code: "PC-2024-001",
-		from: "Budi Santoso",
-		status: "unread",
-		created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
-		link: "/pengadaan/PC-2024-001", // Assuming routing to ID/Code works or will work. For now mock link.
-	},
-	{
-		id: "2",
-		title: "Kontrak Baru Dibuat: CTR-2024-005",
-		message: "Kontrak untuk Pengadaan ATK 2024 telah berhasil dibuat.",
-		type: "notification",
-		reference_code: "CTR-2024-005",
-		from: "System",
-		status: "unread",
-		created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-		link: "/kontrak",
-	},
-	{
-		id: "3",
-		title: "Revisi Dokumen Diperlukan",
-		message: "Dokumen BAST tahap 1 perlu direvisi kelengkapannya.",
-		type: "task",
-		reference_code: "PC-2023-099",
-		from: "Siti Aminah",
-		status: "read",
-		created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-		link: "/pengadaan",
-	},
-	{
-		id: "4",
-		title: "Surat Masuk Baru: ND-2023/XI/001",
-		message: "Nota Dinas dari Bagian Umum perihal permintaan barang.",
-		type: "notification",
-		reference_code: "ND-2023/XI/001",
-		from: "Sekretariat",
-		status: "read",
-		created_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
-		link: "/nota-dinas/surat-masuk",
-	},
-	{
-		id: "5",
-		title: "Persetujuan Pembayaran Termin 2",
-		message:
-			"Menunggu persetujuan pembayaran untuk kontrak Renovasi Gedung.",
-		type: "approval",
-		reference_code: "CTR-2023-012",
-		from: "Finance Dept",
-		status: "unread",
-		created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-		link: "/kontrak",
-	},
-];
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2 } from "lucide-react";
 
 export default function InboxPage() {
-	const [data] = useState<InboxItem[]>(MOCK_INBOX_DATA);
+	const [activeTab, setActiveTab] = useState("pending");
+	const [data, setData] = useState<InboxItem[]>([]);
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		let ignored = false;
+		async function fetchInbox() {
+			setLoading(true);
+			try {
+				const res = await fetch(
+					`/api/workflow-inbox?type=${activeTab}`
+				);
+				if (!res.ok) throw new Error("Failed to fetch inbox");
+				const json = await res.json();
+				if (!ignored) {
+					// Map API response to InboxItem
+					// Note: ID in API response is stepInstanceId, here we want to identify the row.
+					const mapped: InboxItem[] = json.items.map((item: any) => {
+						let link = "#";
+						let title = item.title;
+						let message = `Step: ${item.stepName}`;
+
+						if (item.refType === "PROCUREMENT_CASE") {
+							link = `/pengadaan/${item.refId}`;
+							// We might want to fetch more details about the case if needed, or rely on what's available
+							message = `Request from ${item.requestedBy} for ${item.title}`;
+						} else if (item.refType === "NOTA_DINAS") {
+							// Assuming routing for nota dinas
+							link = `/nota-dinas/surat-masuk/${item.refId}`;
+							message = `Nota Dinas from ${item.requestedBy}`;
+						}
+
+						return {
+							id: item.id,
+							title: title, // Or maybe item.workflowCode + " - " + item.stepName
+							message: message,
+							type: "approval", // Workflow inbox items are usually approvals/tasks
+							reference_code: item.workflowCode,
+							from: item.requestedBy,
+							status: activeTab === "pending" ? "unread" : "read", // Simple heuristic
+							created_at: item.createdAt,
+							link: link,
+						};
+					});
+					setData(mapped);
+				}
+			} catch (error) {
+				console.error("Failed to fetch inbox items", error);
+			} finally {
+				if (!ignored) setLoading(false);
+			}
+		}
+
+		fetchInbox();
+		return () => {
+			ignored = true;
+		};
+	}, [activeTab]);
 
 	return (
 		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
@@ -83,24 +88,54 @@ export default function InboxPage() {
 				</div>
 				<div className="flex items-center gap-2">
 					<div className="bg-muted px-3 py-1 rounded-full text-sm font-medium">
-						{data.filter((i) => i.status === "unread").length} Belum
-						Dibaca
+						{data.length}{" "}
+						{activeTab === "pending" ? "Tasks" : "Items"}
 					</div>
 				</div>
 			</div>
 
-			{/* DataTable wrapped in Card */}
-			<Card>
-				<CardContent className="p-0">
-					<div className="p-4">
-						<DataTable
-							columns={columns}
-							data={data}
-							filterKey="title"
-						/>
-					</div>
-				</CardContent>
-			</Card>
+			<Tabs
+				value={activeTab}
+				onValueChange={setActiveTab}
+				className="w-full"
+			>
+				<TabsList>
+					<TabsTrigger value="pending">Pending</TabsTrigger>
+					<TabsTrigger value="history">History</TabsTrigger>
+				</TabsList>
+
+				<div className="mt-4">
+					<Card>
+						<CardHeader>
+							<CardTitle>
+								{activeTab === "pending"
+									? "Pending Requests"
+									: "Request History"}
+							</CardTitle>
+							<CardDescription>
+								{activeTab === "pending"
+									? "Requests waiting for your approval."
+									: "View past requests and their outcomes."}
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="p-0">
+							{loading ? (
+								<div className="flex justify-center p-8">
+									<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+								</div>
+							) : (
+								<div className="p-4">
+									<DataTable
+										columns={columns}
+										data={data}
+										filterKey="title"
+									/>
+								</div>
+							)}
+						</CardContent>
+					</Card>
+				</div>
+			</Tabs>
 		</div>
 	);
 }

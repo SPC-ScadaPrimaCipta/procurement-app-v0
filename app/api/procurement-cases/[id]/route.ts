@@ -89,6 +89,29 @@ export async function GET(
 			}
 		}
 
+		// Fetch relevant documents
+		let documents: any[] = [];
+		const rawDocs = await prisma.document.findMany({
+			where: {
+				ref_type: "PROCUREMENT_CASE",
+				ref_id: id,
+				master_doc_type: {
+					name: {
+						in: ["SCAN SURAT MASUK", "RAB", "TOR"],
+					},
+				},
+			},
+			include: {
+				master_doc_type: true,
+			},
+		});
+
+		// Handle BigInt serialization
+		documents = rawDocs.map((doc) => ({
+			...doc,
+			file_size: doc.file_size ? doc.file_size.toString() : null,
+		}));
+
 		return NextResponse.json({
 			...data,
 			created_by_name: createdByName,
@@ -107,6 +130,7 @@ export async function GET(
 						disposition_actions: parsedDispositionActions, // Override with parsed array
 				  }
 				: null,
+			documents,
 		});
 	} catch (error) {
 		console.error("Error fetching procurement case details:", error);

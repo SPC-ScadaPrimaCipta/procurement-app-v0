@@ -12,7 +12,9 @@ export interface Document {
 	master_doc_type: {
 		name: string;
 	};
-	document_file: DocumentFile[];
+	file_name: string | null;
+	file_url: string | null;
+	file_size: string | number | null;
 }
 
 export interface CorrespondenceIn {
@@ -65,7 +67,7 @@ export interface ProcurementCaseDetail {
 	correspondence_in: CorrespondenceIn | null;
 	correspondence_out: CorrespondenceOut[];
 	contract: Contract | null;
-	document: Document[];
+	documents: Document[];
 	case_disposition_summary: {
 		agenda_scope?: string | null;
 		agenda_number?: string | null;

@@ -97,9 +97,14 @@ export default function NewSuratMasukPage() {
 			data.append("doc_type_id", docTypeId);
 		}
 
-		// Folder path: Procurement/<case_code>/Surat Masuk
-		// Using caseCode from response
-		const folderPath = `Procurement/${caseCode}/Surat Masuk`;
+		// Folder path: Procurement/<case_code>/<Type>
+		let subFolder = "Surat Masuk";
+		if (docTypeName.toLowerCase().includes("tor")) {
+			subFolder = "ToR";
+		} else if (docTypeName.toLowerCase().includes("rab")) {
+			subFolder = "RAB";
+		}
+		const folderPath = `Procurement/${caseCode}/${subFolder}`;
 		data.append("folder_path", folderPath);
 
 		console.log(
@@ -112,11 +117,8 @@ export default function NewSuratMasukPage() {
 		});
 
 		if (!response.ok) {
-			console.error(`Failed to upload ${docTypeName}`);
 			const errText = await response.text();
-			console.error(errText);
-			// Non-blocking error for now
-			toast.error(`Gagal upload ${docTypeName}: ${errText}`);
+			throw new Error(`Gagal upload ${docTypeName}: ${errText}`);
 		} else {
 			console.log(`Uploaded ${docTypeName} successfully`);
 		}
@@ -126,16 +128,29 @@ export default function NewSuratMasukPage() {
 		setIsLoading(true);
 
 		// Validation (Basic)
+		// Validation (Basic)
 		if (
 			!formData.from_name ||
 			!formData.letter_date ||
 			!formData.letter_number ||
 			!formData.subject
 		) {
-			toast.error("Mohon lengkapi semua field yang wajib diisi.");
+			toast.error(
+				"Mohon lengkapi semua field metadata yang wajib diisi."
+			);
 			setIsLoading(false);
 			return;
 		}
+
+		if (!files.notaDinas || !files.tor || !files.rab) {
+			toast.error(
+				"Mohon lampirkan semua dokumen (Nota Dinas, TOR, dan RAB)."
+			);
+			setIsLoading(false);
+			return;
+		}
+
+		let createdCaseId: string | null = null;
 
 		try {
 			const endpoint = isDraft
@@ -155,6 +170,7 @@ export default function NewSuratMasukPage() {
 			}
 
 			const { case_id, case_code } = await createRes.json();
+			createdCaseId = case_id;
 
 			// 2. Upload Files if present
 			const uploads = [];
@@ -181,9 +197,24 @@ export default function NewSuratMasukPage() {
 			console.log(`${actionText}:`, case_code);
 			toast.success(`${actionText}: ${case_code}`);
 			router.push("/nota-dinas/surat-masuk");
-		} catch (error) {
+		} catch (error: any) {
 			console.error("Error submitting:", error);
-			toast.error("Terjadi kesalahan saat menyimpan data.");
+			toast.error(
+				error.message || "Terjadi kesalahan saat menyimpan data."
+			);
+
+			// Rollback if case was created but uploads failed
+			if (createdCaseId) {
+				try {
+					console.log("Rolling back case creation:", createdCaseId);
+					await fetch(`/api/procurement-cases/${createdCaseId}`, {
+						method: "DELETE",
+					});
+					toast.info("Terjadi kesalahan saat menyimpan data.");
+				} catch (rollbackError) {
+					console.error("Rollback failed:", rollbackError);
+				}
+			}
 		} finally {
 			setIsLoading(false);
 		}
@@ -318,6 +349,7 @@ export default function NewSuratMasukPage() {
 						<div className="space-y-2">
 							<Label htmlFor="file_notadinas">
 								Scan Nota Dinas / Surat Masuk{" "}
+								<span className="text-red-500">*</span>
 							</Label>
 							<div className="flex items-center gap-4">
 								<Input
@@ -339,6 +371,7 @@ export default function NewSuratMasukPage() {
 						<div className="space-y-2">
 							<Label htmlFor="file_tor">
 								TOR (Terms of Reference){" "}
+								<span className="text-red-500">*</span>
 							</Label>
 							<div className="flex items-center gap-4">
 								<Input
@@ -360,6 +393,7 @@ export default function NewSuratMasukPage() {
 						<div className="space-y-2">
 							<Label htmlFor="file_rab">
 								RAB (Rencana Anggaran Biaya){" "}
+								<span className="text-red-500">*</span>
 							</Label>
 							<div className="flex items-center gap-4">
 								<Input
