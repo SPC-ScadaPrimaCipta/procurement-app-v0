@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
+import { deleteItemFromSiteDrive } from "@/lib/sharepoint";
 
 export const dynamic = "force-dynamic";
 
@@ -176,13 +177,76 @@ export async function DELETE(
 			);
 		}
 
-		// Delete regulation (cascade will delete files)
+		// Get documents from document table (if using new system)
+		const documents = await prisma.document.findMany({
+			where: {
+				ref_type: "REGULATION_DOCUMENT",
+				ref_id: id,
+			},
+		});
+
+		// Get Microsoft Access Token for SharePoint deletion
+		const account = await prisma.account.findFirst({
+			where: {
+				userId: session.user.id,
+				providerId: "microsoft",
+			},
+		});
+
+		const siteId = process.env.SP_SITE_ID;
+
+		// Delete files from SharePoint if we have access token
+		if (account?.accessToken && siteId) {
+			// Delete files from document table entries
+			for (const doc of documents) {
+				if (doc.sp_item_id) {
+					try {
+						await deleteItemFromSiteDrive({
+							siteId,
+							accessToken: account.accessToken,
+							itemId: doc.sp_item_id,
+						});
+						console.log(`Deleted SharePoint file: ${doc.file_name}`);
+					} catch (error) {
+						console.error(`Failed to delete SharePoint file ${doc.file_name}:`, error);
+						// Continue with other files even if one fails
+					}
+				}
+			}
+
+			// Delete files from regulation_file table entries (old system)
+			for (const file of existingRegulation.files) {
+				if (file.sp_item_id) {
+					try {
+						await deleteItemFromSiteDrive({
+							siteId,
+							accessToken: account.accessToken,
+							itemId: file.sp_item_id,
+						});
+						console.log(`Deleted SharePoint file: ${file.file_name}`);
+					} catch (error) {
+						console.error(`Failed to delete SharePoint file ${file.file_name}:`, error);
+						// Continue with other files even if one fails
+					}
+				}
+			}
+		}
+
+		// Delete document records from document table
+		await prisma.document.deleteMany({
+			where: {
+				ref_type: "REGULATION_DOCUMENT",
+				ref_id: id,
+			},
+		});
+
+		// Delete regulation (cascade will delete files from regulation_file table)
 		await prisma.regulation_document.delete({
 			where: { id },
 		});
 
 		return NextResponse.json({
-			message: "Regulation deleted successfully",
+			message: "Regulation and associated files deleted successfully",
 		});
 	} catch (error) {
 		console.error("Error deleting regulation:", error);

@@ -46,30 +46,30 @@ export function ReimbursementDetailDialog({
 
 	useEffect(() => {
 		if (open && reimbursement) {
-			// fetchFiles(); // TEMPORARY DISABLED - API not ready
+			fetchFiles();
 		}
 	}, [open, reimbursement]);
 
 	const fetchFiles = async () => {
 		if (!reimbursement) return;
 
-		// TEMPORARY DISABLED - API not ready
-		console.log("File fetching disabled - API not ready");
-		return;
-
-		/* 
 		try {
 			const response = await fetch(
-				`/api/reimbursement/${reimbursement.id}/files`
+				`/api/reimbursement/${reimbursement.id}/document`
 			);
-			if (!response.ok) throw new Error("Failed to fetch files");
-
-			const data = await response.json();
-			setFiles(data);
+			
+			if (response.ok) {
+				const data = await response.json();
+				// Convert single document to array format for compatibility
+				setFiles([data.document]);
+			} else if (response.status === 404) {
+				// No document found
+				setFiles([]);
+			}
 		} catch (error) {
-			console.error("Error fetching files:", error);
+			console.error("Error fetching reimbursement document:", error);
+			setFiles([]);
 		}
-		*/
 	};
 
 	const handleFileUpload = async (
@@ -78,67 +78,78 @@ export function ReimbursementDetailDialog({
 		const file = event.target.files?.[0];
 		if (!file || !reimbursement) return;
 
-		// TEMPORARY DISABLED - API not ready
-		toast.info("Fitur upload file sedang dalam pengembangan");
-		event.target.value = "";
-		return;
+		// Validate file type
+		if (file.type !== "application/pdf") {
+			toast.error("File harus dalam format PDF");
+			event.target.value = "";
+			return;
+		}
 
-		/* 
+		// Validate file size (max 10MB)
+		if (file.size > 10 * 1024 * 1024) {
+			toast.error("Ukuran file maksimal 10MB");
+			event.target.value = "";
+			return;
+		}
+
 		setUploading(true);
 		try {
 			const formData = new FormData();
 			formData.append("file", file);
 
 			const response = await fetch(
-				`/api/reimbursement/${reimbursement.id}/files`,
+				`/api/reimbursement/${reimbursement.id}/document`,
 				{
 					method: "POST",
 					body: formData,
 				}
 			);
 
-			if (!response.ok) throw new Error("Failed to upload file");
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.error || "Failed to upload file");
+			}
 
 			toast.success("File berhasil diupload");
 			fetchFiles();
 			onRefresh();
 		} catch (error) {
-			toast.error("Gagal upload file");
+			toast.error(
+				error instanceof Error ? error.message : "Gagal upload file"
+			);
 			console.error(error);
 		} finally {
 			setUploading(false);
 			event.target.value = "";
 		}
-		*/
 	};
 
 	const handleFileDelete = async (fileId: string) => {
 		if (!reimbursement) return;
 		if (!confirm("Hapus file ini?")) return;
 
-		// TEMPORARY DISABLED - API not ready
-		toast.info("Fitur hapus file sedang dalam pengembangan");
-		return;
-
-		/* 
 		try {
 			const response = await fetch(
-				`/api/reimbursement/${reimbursement.id}/files/${fileId}`,
+				`/api/reimbursement/${reimbursement.id}/document`,
 				{
 					method: "DELETE",
 				}
 			);
 
-			if (!response.ok) throw new Error("Failed to delete file");
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.error || "Failed to delete file");
+			}
 
 			toast.success("File berhasil dihapus");
 			fetchFiles();
 			onRefresh();
 		} catch (error) {
-			toast.error("Gagal menghapus file");
+			toast.error(
+				error instanceof Error ? error.message : "Gagal menghapus file"
+			);
 			console.error(error);
 		}
-		*/
 	};
 
 	const formatFileSize = (bytes: string) => {
@@ -323,7 +334,7 @@ export function ReimbursementDetailDialog({
 									size="sm"
 									disabled={uploading}
 									onClick={() => document.getElementById("file-upload")?.click()}
-									title="Fitur sedang dalam pengembangan"
+
 								>
 									<Upload className="h-4 w-4 mr-2" />
 									{uploading ? "Uploading..." : "Upload File"}
@@ -377,11 +388,8 @@ export function ReimbursementDetailDialog({
 							</div>
 						) : (
 							<div className="text-center py-8">
-								<p className="text-sm text-muted-foreground mb-2">
+								<p className="text-sm text-muted-foreground">
 									Belum ada file yang diupload
-								</p>
-								<p className="text-xs text-amber-600">
-									⚠️ Fitur upload file sedang dalam pengembangan
 								</p>
 							</div>
 						)}

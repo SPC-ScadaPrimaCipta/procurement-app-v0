@@ -193,8 +193,9 @@ export default function NonKontrakPage() {
 
 				<div className="flex-1 overflow-auto p-6">
 					<DataTable
-						columns={createReimbursementColumns(handleRowClick)}
+						columns={createReimbursementColumns()}
 						data={reimbursements}
+						onRowClick={handleRowClick}
 					/>
 				</div>
 			</main>

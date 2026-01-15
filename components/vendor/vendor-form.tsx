@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Upload, X, FileText, Download } from "lucide-react";
 
 interface VendorFormData {
 	vendor_name: string;
@@ -40,6 +41,10 @@ export function VendorForm({ vendorId, initialData }: VendorFormProps) {
 	const [isLoading, setIsLoading] = useState(false);
 	const [supplierTypes, setSupplierTypes] = useState<SupplierType[]>([]);
 	const [loadingSupplierTypes, setLoadingSupplierTypes] = useState(true);
+	const [npwpFile, setNpwpFile] = useState<File | null>(null);
+	const [existingNpwpDoc, setExistingNpwpDoc] = useState<any>(null);
+	const [isUploadingNpwp, setIsUploadingNpwp] = useState(false);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const {
 		register,
@@ -87,6 +92,27 @@ export function VendorForm({ vendorId, initialData }: VendorFormProps) {
 		fetchSupplierTypes();
 	}, []);
 
+	// Fetch existing NPWP document if editing
+	useEffect(() => {
+		if (vendorId) {
+			const fetchNpwpDoc = async () => {
+				try {
+					const response = await fetch(`/api/vendors/${vendorId}/npwp-document`);
+					if (response.ok) {
+						const data = await response.json();
+						if (data.document) {
+							setExistingNpwpDoc(data.document);
+						}
+					}
+				} catch (error) {
+					console.error("Error fetching NPWP document:", error);
+				}
+			};
+
+			fetchNpwpDoc();
+		}
+	}, [vendorId]);
+
 	const onSubmit = async (data: VendorFormData) => {
 		setIsLoading(true);
 
@@ -108,6 +134,11 @@ export function VendorForm({ vendorId, initialData }: VendorFormProps) {
 				throw new Error(result.error || "Failed to save vendor");
 			}
 
+			// Upload NPWP file if selected
+			if (npwpFile) {
+				await uploadNpwpFile(result.id);
+			}
+
 			toast.success(
 				vendorId ? "Vendor updated successfully" : "Vendor created successfully"
 			);
@@ -120,6 +151,92 @@ export function VendorForm({ vendorId, initialData }: VendorFormProps) {
 		} finally {
 			setIsLoading(false);
 		}
+	};
+
+	const uploadNpwpFile = async (vendorIdToUpload: string) => {
+		if (!npwpFile) return;
+
+		setIsUploadingNpwp(true);
+		try {
+			const formData = new FormData();
+			formData.append("file", npwpFile);
+
+			const response = await fetch(`/api/vendors/${vendorIdToUpload}/npwp-document`, {
+				method: "POST",
+				body: formData,
+			});
+
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.error || "Failed to upload NPWP document");
+			}
+
+			toast.success("NPWP document uploaded successfully");
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : "Failed to upload NPWP document"
+			);
+		} finally {
+			setIsUploadingNpwp(false);
+		}
+	};
+
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (file) {
+			// Validate file type (PDF only)
+			if (file.type !== "application/pdf") {
+				toast.error("Only PDF files are allowed");
+				return;
+			}
+
+			// Validate file size (max 10MB)
+			if (file.size > 10 * 1024 * 1024) {
+				toast.error("File size must be less than 10MB");
+				return;
+			}
+
+			setNpwpFile(file);
+		}
+	};
+
+	const handleRemoveFile = () => {
+		setNpwpFile(null);
+		if (fileInputRef.current) {
+			fileInputRef.current.value = "";
+		}
+	};
+
+	const handleDeleteExistingDoc = async () => {
+		if (!vendorId || !existingNpwpDoc) return;
+
+		try {
+			const response = await fetch(`/api/vendors/${vendorId}/npwp-document`, {
+				method: "DELETE",
+			});
+
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.error || "Failed to delete NPWP document");
+			}
+
+			setExistingNpwpDoc(null);
+			toast.success("NPWP document deleted successfully");
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : "Failed to delete NPWP document"
+			);
+		}
+	};
+
+	const handleDownload = (url: string, fileName: string) => {
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = fileName;
+		link.target = "_blank";
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
 	};
 
 	return (
@@ -194,6 +311,95 @@ export function VendorForm({ vendorId, initialData }: VendorFormProps) {
 					/>
 				</div>
 
+				{/* NPWP File Upload */}
+				<div className="space-y-2">
+					<Label htmlFor="npwp_file">Scan NPWP (PDF)</Label>
+
+					{/* Existing Document Display */}
+					{existingNpwpDoc && !npwpFile && (
+						<div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+							<div className="flex items-center gap-3">
+								<FileText className="h-5 w-5 text-muted-foreground" />
+								<div>
+									<p className="text-sm font-medium">{existingNpwpDoc.file_name}</p>
+									<p className="text-xs text-muted-foreground">
+										Uploaded: {new Date(existingNpwpDoc.uploaded_at).toLocaleDateString('id-ID')}
+									</p>
+								</div>
+							</div>
+							<div className="flex gap-2">
+								<Button
+									type="button"
+									size="sm"
+									variant="ghost"
+									onClick={() =>
+										handleDownload(existingNpwpDoc.file_url || "", existingNpwpDoc.file_name || "")
+									}
+								>
+									<Download className="h-4 w-4" />
+								</Button>
+								<Button
+									type="button"
+									size="sm"
+									variant="ghost"
+									onClick={handleDeleteExistingDoc}
+								>
+									<X className="h-4 w-4 text-destructive" />
+								</Button>
+							</div>
+						</div>
+					)}
+
+					{/* New File Selection */}
+					{npwpFile ? (
+						<div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+							<div className="flex items-center gap-3">
+								<FileText className="h-5 w-5 text-muted-foreground" />
+								<div>
+									<p className="text-sm font-medium">{npwpFile.name}</p>
+									<p className="text-xs text-muted-foreground">
+										{(npwpFile.size / 1024).toFixed(2)} KB
+									</p>
+								</div>
+							</div>
+							<Button
+								type="button"
+								size="sm"
+								variant="ghost"
+								onClick={handleRemoveFile}
+							>
+								<X className="h-4 w-4" />
+							</Button>
+						</div>
+					) : !existingNpwpDoc && (
+						<div className="flex items-center gap-2">
+							<Input
+								id="npwp_file"
+								type="file"
+								accept=".pdf"
+								ref={fileInputRef}
+								onChange={handleFileChange}
+								className="hidden"
+							/>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => fileInputRef.current?.click()}
+								className="w-full"
+							>
+								<Upload className="h-4 w-4 mr-2" />
+								Upload Scan NPWP (PDF)
+							</Button>
+						</div>
+					)}
+
+					{!existingNpwpDoc && !npwpFile && (
+						<p className="text-xs text-muted-foreground">
+							Upload scan NPWP dalam format PDF (max 10MB)
+						</p>
+					)}
+				</div>
+
 				{/* Active Status */}
 				<div className="flex items-center justify-between rounded-lg border p-4">
 					<div className="space-y-0.5">
@@ -212,8 +418,8 @@ export function VendorForm({ vendorId, initialData }: VendorFormProps) {
 
 			{/* Form Actions */}
 			<div className="flex items-center gap-4">
-				<Button type="submit" disabled={isLoading}>
-					{isLoading
+				<Button type="submit" disabled={isLoading || isUploadingNpwp}>
+					{isLoading || isUploadingNpwp
 						? "Menyimpan..."
 						: vendorId
 						? "Update Vendor"
@@ -223,7 +429,7 @@ export function VendorForm({ vendorId, initialData }: VendorFormProps) {
 					type="button"
 					variant="outline"
 					onClick={() => router.push("/vendor")}
-					disabled={isLoading}
+					disabled={isLoading || isUploadingNpwp}
 				>
 					Batal
 				</Button>
