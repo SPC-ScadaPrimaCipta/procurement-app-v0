@@ -2,21 +2,21 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, CheckSquare } from "lucide-react";
+import { Plus, FileText, Clock, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { StatsCard } from "@/components/dashboard/stats-card";
 import { DataTable } from "@/components/datatable/data-table";
 import { columns, Contract } from "./columns";
 
 export default function KontrakPage() {
 	const [data, setData] = useState<Contract[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
-	const [totalContracts, setTotalContracts] = useState<number>(0);
 
 	useEffect(() => {
 		const fetchData = async () => {
 			try {
-				const response = await fetch("/api/contracts");
+				const response = await fetch("/api/contracts?all=true");
 				if (!response.ok) throw new Error("Failed to fetch data");
 
 				const result = await response.json();
@@ -31,23 +31,25 @@ export default function KontrakPage() {
 		fetchData();
 	}, []);
 
-	useEffect(() => {
-			const fetchTotalContracts = async () => {
-				try {
-					const res = await fetch("/api/contracts");
-					if (!res.ok) throw new Error("Failed to fetch");
-					const result = await res.json();
-	
-					setTotalContracts(result.data?.length ?? 0);
-				} catch (e) {
-					console.error(e);
-				} finally {
-					setIsLoading(false);
-				}
-			};
-	
-			fetchTotalContracts();
-		}, []);
+	// Calculate Stats
+	const stats = {
+		total: data.length,
+		pending: data.filter((item) =>
+			["DRAFT", "PENDING", "PROGRESS", "BERJALAN"].some((s) =>
+				item.contract_status?.name?.toUpperCase().includes(s)
+			)
+		).length,
+		active: data.filter((item) =>
+			["AKTIF", "ACTIVE", "IN PROGRESS", "BERJALAN"].some((s) =>
+				item.contract_status?.name?.toUpperCase().includes(s)
+			)
+		).length,
+		completed: data.filter((item) =>
+			["SELESAI", "COMPLETED", "DONE"].some((s) =>
+				item.contract_status?.name?.toUpperCase().includes(s)
+			)
+		).length,
+	};
 
 	return (
 		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
@@ -70,19 +72,29 @@ export default function KontrakPage() {
 				</Button> */}
 			</div>
 
-			{/* Quick Stats */}
+			{/* Stat Cards */}
 			<div className="grid gap-4 md:grid-cols-3">
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">
-							Total Kontrak Aktif
-						</CardTitle>
-						<CheckSquare className="h-4 w-4 text-muted-foreground" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">{totalContracts}</div>
-					</CardContent>
-				</Card>
+				<StatsCard
+					title="Total Kontrak"
+					value={stats.total}
+					icon={FileText}
+					iconContainerClassName="bg-primary/10"
+					iconClassName="text-primary"
+				/>
+				<StatsCard
+					title="Kontrak Pending"
+					value={stats.pending}
+					icon={Clock}
+					iconContainerClassName="bg-orange-500/10"
+					iconClassName="text-orange-500"
+				/>
+				<StatsCard
+					title="Selesai"
+					value={stats.completed}
+					icon={CheckCircle2}
+					iconContainerClassName="bg-green-500/10"
+					iconClassName="text-green-500"
+				/>
 			</div>
 
 			{/* DataTable wrapped in Card */}

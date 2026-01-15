@@ -6,6 +6,7 @@ import {
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { refreshMicrosoftToken } from "@/lib/ms-token";
 
 export async function POST(request: NextRequest) {
 	try {
@@ -39,7 +40,35 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const accessToken = account.accessToken;
+		let accessToken = account.accessToken;
+		const expiresAt = account.accessTokenExpiresAt;
+		// Refresh if expired or expiring in less than 5 minutes
+		const isExpired = expiresAt
+			? new Date(expiresAt).getTime() - 5 * 60 * 1000 < Date.now()
+			: true;
+
+		if (isExpired && account.refreshToken) {
+			const newAccessToken = await refreshMicrosoftToken(account);
+			if (!newAccessToken) {
+				return NextResponse.json(
+					{
+						error: "Session expired or invalid. Please sign out and sign in again with Microsoft.",
+					},
+					{ status: 401 }
+				);
+			}
+			accessToken = newAccessToken;
+		}
+
+		if (!accessToken) {
+			return NextResponse.json(
+				{
+					error: "No access token available. Please sign in with Microsoft.",
+				},
+				{ status: 401 }
+			);
+		}
+
 		const siteId = process.env.SP_SITE_ID;
 
 		if (!siteId) {

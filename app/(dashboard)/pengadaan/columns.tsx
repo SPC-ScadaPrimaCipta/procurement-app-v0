@@ -46,15 +46,15 @@ const getStatusColor = (status: string) => {
 };
 
 export const columns: ColumnDef<ProcurementCase>[] = [
-	// {
-	// 	accessorKey: "case_code",
-	// 	header: ({ column }) => (
-	// 		<DataTableColumnHeader column={column} title="Kode Pengadaan" />
-	// 	),
-	// 	cell: ({ row }) => (
-	// 		<div className="font-mono">{row.getValue("case_code") || "-"}</div>
-	// 	),
-	// },
+	{
+		accessorKey: "case_code",
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title="Kode Pengadaan" />
+		),
+		cell: ({ row }) => (
+			<div className="font-mono">{row.getValue("case_code") || "-"}</div>
+		),
+	},
 	{
 		accessorKey: "title",
 		header: ({ column }) => (
@@ -70,13 +70,13 @@ export const columns: ColumnDef<ProcurementCase>[] = [
 		),
 	},
 	{
-		accessorKey: "unit.unit_name",
+		accessorKey: "created_by_name",
 		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title="Unit" />
+			<DataTableColumnHeader column={column} title="Dibuat Oleh" />
 		),
 		cell: ({ row }) => {
-			const unit = row.original.unit?.unit_name;
-			return <div>{unit || "-"}</div>;
+			const creator = row.original.created_by_name;
+			return <div>{creator}</div>;
 		},
 	},
 	{

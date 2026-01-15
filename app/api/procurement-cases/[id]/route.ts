@@ -137,3 +137,67 @@ export async function GET(
 		return new NextResponse("Internal Server Error", { status: 500 });
 	}
 }
+
+export async function DELETE(
+	request: Request,
+	{ params }: { params: Promise<{ id: string }> }
+) {
+	const { id } = await params;
+	// 1. Auth check
+	const session = await auth.api.getSession({
+		headers: await headers(),
+	});
+
+	if (!session?.user) {
+		return new NextResponse("Unauthorized", { status: 401 });
+	}
+
+	try {
+		// 2. Perform deletion in transaction
+		await prisma.$transaction(async (tx) => {
+			// A. Cleanup Workflow (if exists)
+			const wfInstance = await tx.workflow_instance.findUnique({
+				where: {
+					ref_type_ref_id: {
+						ref_type: "PROCUREMENT_CASE",
+						ref_id: id,
+					},
+				},
+			});
+
+			if (wfInstance) {
+				// Delete logs first (foreign key constraint)
+				await tx.workflow_action_log.deleteMany({
+					where: { workflow_instance_id: wfInstance.id },
+				});
+				// Delete step instances
+				await tx.workflow_step_instance.deleteMany({
+					where: { workflow_instance_id: wfInstance.id },
+				});
+				// Delete the instance itself
+				await tx.workflow_instance.delete({
+					where: { id: wfInstance.id },
+				});
+			}
+
+			// B. Cleanup Documents
+			await tx.document.deleteMany({
+				where: {
+					ref_type: "PROCUREMENT_CASE",
+					ref_id: id,
+				},
+			});
+
+			// C. Cleanup Case (cascades to correspondence, etc.)
+			await tx.procurement_case.delete({
+				where: { id },
+			});
+		});
+
+		return new NextResponse("Deleted successfully", { status: 200 });
+	} catch (error) {
+		console.error("Error deleting procurement case:", error);
+		// Return friendly error
+		return new NextResponse("Internal Server Error", { status: 500 });
+	}
+}

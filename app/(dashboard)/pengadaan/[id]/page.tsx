@@ -62,12 +62,10 @@ export default function PengadaanDetailPage() {
 				const pendingIndex = result.workflow_track.findIndex(
 					(step: any) => step.status === "PENDING"
 				);
-				if (
-					pendingIndex !== -1 &&
-					result.workflow_track[pendingIndex + 1]
-				) {
+				if (pendingIndex !== -1) {
 					setNextStepTitle(
-						result.workflow_track[pendingIndex + 1].title
+						result.workflow_track[pendingIndex + 1]?.title ||
+							"Approve"
 					);
 				} else {
 					setNextStepTitle(null);
@@ -261,7 +259,10 @@ export default function PengadaanDetailPage() {
 								value="kontrak"
 								className="animate-in fade-in slide-in-from-left-1"
 							>
-								<TabKontrak data={data} />
+								<TabKontrak
+									data={data}
+									onDataChange={fetchData}
+								/>
 							</TabsContent>
 
 							<TabsContent
@@ -309,7 +310,9 @@ export default function PengadaanDetailPage() {
 									}}
 									onBeforeAction={handleForward}
 									approveLabel={
-										nextStepTitle
+										nextStepTitle?.includes("Approve")
+											? "Approve"
+											: nextStepTitle
 											? `Forward ke ${nextStepTitle}`
 											: "Forward"
 									}
