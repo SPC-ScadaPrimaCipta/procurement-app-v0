@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/datatable/data-table";
 import { columns, ProcurementCase } from "./columns";
 
+import { FileText, Clock, CheckCircle2, TrendingUp } from "lucide-react";
+
 export default function PengadaanPage() {
 	const [data, setData] = useState<ProcurementCase[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
@@ -27,6 +29,21 @@ export default function PengadaanPage() {
 		fetchData();
 	}, []);
 
+	// Calculate Stats
+	const stats = {
+		total: data.length,
+		active: data.filter((item) =>
+			["IN_PROGRESS", "SUBMITTED", "WAITING", "DRAFT"].some((s) =>
+				item.status.name.toUpperCase().includes(s)
+			)
+		).length,
+		completed: data.filter((item) =>
+			["APPROVED", "SELESAI", "COMPLETED", "DONE"].some((s) =>
+				item.status.name.toUpperCase().includes(s)
+			)
+		).length,
+	};
+
 	return (
 		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
 			{/* Header */}
@@ -39,12 +56,55 @@ export default function PengadaanPage() {
 						Manajemen seluruh proses pengadaan barang dan jasa.
 					</p>
 				</div>
-				{/* <Button asChild>
-					<Link href="/pengadaan/new">
-						<Plus className="mr-2 h-4 w-4" />
-						Buat Pengadaan
-					</Link>
-				</Button> */}
+			</div>
+
+			{/* Stat Cards */}
+			<div className="grid gap-4 md:grid-cols-3">
+				<Card>
+					<CardContent className="p-6 flex items-center gap-4">
+						<div className="p-3 bg-primary/10 rounded-full text-primary">
+							<FileText className="h-6 w-6" />
+						</div>
+						<div>
+							<p className="text-sm font-medium text-muted-foreground">
+								Total Pengadaan
+							</p>
+							<h3 className="text-2xl font-bold">
+								{stats.total}
+							</h3>
+						</div>
+					</CardContent>
+				</Card>
+				<Card>
+					<CardContent className="p-6 flex items-center gap-4">
+						<div className="p-3 bg-orange-500/10 rounded-full text-orange-500">
+							<Clock className="h-6 w-6" />
+						</div>
+						<div>
+							<p className="text-sm font-medium text-muted-foreground">
+								Dalam Proses
+							</p>
+							<h3 className="text-2xl font-bold">
+								{stats.active}
+							</h3>
+						</div>
+					</CardContent>
+				</Card>
+				<Card>
+					<CardContent className="p-6 flex items-center gap-4">
+						<div className="p-3 bg-green-500/10 rounded-full text-green-500">
+							<CheckCircle2 className="h-6 w-6" />
+						</div>
+						<div>
+							<p className="text-sm font-medium text-muted-foreground">
+								Selesai
+							</p>
+							<h3 className="text-2xl font-bold">
+								{stats.completed}
+							</h3>
+						</div>
+					</CardContent>
+				</Card>
 			</div>
 
 			{/* DataTable wrapped in Card */}
