@@ -29,51 +29,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/datatable/data-table";
 import { columns } from "../pengadaan/columns";
-import { Container } from "lucide-react";
-
-const KPI = [
-	{ label: "Monthly Recurring Revenue", value: "$82.4K", delta: "+12.4%" },
-	{ label: "Active Subscriptions", value: "5,983", delta: "+4.1%" },
-	{ label: "Support Tickets", value: "126", delta: "-9.2%" },
-	{ label: "Avg. Response Time", value: "2m 14s", delta: "-32%" },
-];
-
-const REVENUE_TREND = [
-	{ label: "Mon", value: 48 },
-	{ label: "Tue", value: 62 },
-	{ label: "Wed", value: 52 },
-	{ label: "Thu", value: 74 },
-	{ label: "Fri", value: 68 },
-	{ label: "Sat", value: 44 },
-	{ label: "Sun", value: 38 },
-];
-
-const PIPELINE = [
-	{
-		company: "Pulse Analytics",
-		owner: "Danika Wu",
-		value: "$28,400",
-		stage: "Contract review",
-	},
-	{
-		company: "Northwind Retail",
-		owner: "Marco Reyes",
-		value: "$16,900",
-		stage: "Proposal sent",
-	},
-	{
-		company: "Quill Systems",
-		owner: "Gabrielle Lee",
-		value: "$11,250",
-		stage: "Demo scheduled",
-	},
-	{
-		company: "Atlas Manufacturing",
-		owner: "Cedric Ruiz",
-		value: "$45,700",
-		stage: "Final approval",
-	},
-];
+import { ArrowRight, Container, Mail } from "lucide-react";
+import { format } from "date-fns";
 
 const ACTIVITY = [
 	{
@@ -106,6 +63,8 @@ export default function DashboardPage() {
 	const [vendorGroup, setVendorGroup] = useState<number>(0);
 	const [vendorTrend, setVendorTrend] = useState<{ label: string; value: number }[]>([]);
 	const [procurementCases, setProcurementCases] = useState<any[]>([]);
+	const [inboxItems, setInboxItems] = useState<any[]>([]);
+	const [inboxLoading, setInboxLoading] = useState<boolean>(true);
 	const router = useRouter();
 
 	useEffect(() => {
@@ -205,6 +164,24 @@ export default function DashboardPage() {
 		};
 
 		fetchVendorGroup();
+	}, []);
+
+	useEffect(() => {
+		const fetchInbox = async () => {
+			setInboxLoading(true);
+			try {
+				const res = await fetch("/api/workflow-inbox");
+				if (!res.ok) throw new Error("Failed to fetch inbox");
+				const result = await res.json();
+				setInboxItems(result.items ?? []);
+			} catch (e) {
+				console.error("Error fetching inbox:", e);
+			} finally {
+				setInboxLoading(false);
+			}
+		};
+
+		fetchInbox();
 	}, []);
 
 	useEffect(() => {
@@ -349,35 +326,47 @@ export default function DashboardPage() {
 					<CardHeader>
 						<CardTitle>Kotak Masuk</CardTitle>
 						<CardDescription>
-							Sekilas kotak masuk.
+							Kotak masuk terbaru.
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-4">
-						{ACTIVITY.map((item) => (
-							<div
-								key={item.id}
-								className="rounded-xl border p-4"
-							>
-								<p className="text-xs font-semibold text-muted-foreground">
-									{item.id}
-								</p>
-								<p className="font-medium">{item.summary}</p>
-								<div className="mt-2 flex items-center justify-between text-sm">
-									<span className="text-muted-foreground">
-										{item.team}
-									</span>
-									<span
-										className={`font-medium ${
-											item.status === "Blocked"
-												? "text-red-500"
-												: "text-emerald-500"
-										}`}
+					<CardContent className="space-y-2">
+						{inboxLoading ? (
+							<p className="text-sm text-muted-foreground">Loading...</p>
+						) : inboxItems.length === 0 ? (
+							<p className="text-sm text-muted-foreground">No inbox items.</p>
+						) : (
+							<>
+								{inboxItems.map((item) => (
+									<Card key={item.id} className="mb-3 cursor-pointer hover:bg-gray-800" onClick={() => { if (item?.refType === 'PROCUREMENT_CASE' && item?.refId) router.push(`/pengadaan/${item.refId}`); }} role="button" tabIndex={0}>
+										<CardContent className="flex items-center gap-4 rounded-lg">
+											<div className="shrink-0 rounded-md bg-muted/10">
+												<Mail className="w-5 h-5 text-muted-foreground" />
+											</div>
+											<div className="min-w-0 flex-1">
+												<p className="text-base font-medium truncate">{item.title}</p>
+												<p className="text-sm text-muted-foreground truncate mt-1">{item.stepName} • {item.requestedBy}</p>
+											</div>
+											<div className="flex flex-col items-end ml-2 pr-4">
+												<span className={`text-sm font-medium ${item.status === 'PENDING' ? 'text-amber-500' : 'text-emerald-500'}`}>{item.status}</span>
+												<span className="text-sm text-muted-foreground mt-1">{item.createdAt ? format(new Date(item.createdAt), 'dd MMM yyyy HH:mm') : ''}</span>
+											</div>
+										</CardContent>
+									</Card>
+								))}
+								<div className="px-5 pb-4 flex justify-end">
+									<Button
+										size="sm"
+										variant="outline"
+										onClick={() => router.push("/inbox")}
+										aria-label="Lihat detail pengadaan pertama"
+										className="mt-1 cursor-pointer"
 									>
-										{item.status}
-									</span>
+										Lihat detail
+										<ArrowRight className="w-4 h-4 ml-2" />
+									</Button>
 								</div>
-							</div>
-						))}
+							</>
+						)}
 					</CardContent>
 				</Card>
 			</div>
