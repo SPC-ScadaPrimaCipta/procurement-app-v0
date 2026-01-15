@@ -13,9 +13,12 @@ export async function GET(req: Request) {
 
 	const { searchParams } = new URL(req.url);
 	const search = searchParams.get("search") || "";
+	const showAll = searchParams.get("all") === "true";
 	const page = parseInt(searchParams.get("page") || "1");
 	const limit = parseInt(searchParams.get("limit") || "10");
-	const skip = (page - 1) * limit;
+
+	const skip = showAll ? undefined : (page - 1) * limit;
+	const take = showAll ? undefined : limit;
 
 	const whereClause = search
 		? {
@@ -57,7 +60,7 @@ export async function GET(req: Request) {
 					created_at: "desc",
 				},
 				skip,
-				take: limit,
+				take,
 			}),
 			prisma.contract.count({ where: whereClause }),
 		]);
@@ -73,9 +76,9 @@ export async function GET(req: Request) {
 			data: enhancedData,
 			meta: {
 				total,
-				page,
-				limit,
-				totalPages: Math.ceil(total / limit),
+				page: showAll ? 1 : page,
+				limit: showAll ? total : limit,
+				totalPages: showAll ? 1 : Math.ceil(total / limit),
 			},
 		});
 	} catch (error) {

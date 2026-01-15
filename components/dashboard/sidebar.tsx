@@ -73,11 +73,7 @@ const rawMenu: MenuItem[] = [
 			},
 		],
 	},
-	{
-		name: "Dokumen",
-		href: "/documents",
-		icon: FileText,
-	},
+
 	{
 		name: "Pengadaan",
 		href: "/pengadaan",
@@ -102,6 +98,11 @@ const rawMenu: MenuItem[] = [
 		name: "Peraturan",
 		href: "/peraturan",
 		icon: FileCog,
+	},
+	{
+		name: "Dokumen",
+		href: "/documents",
+		icon: FileText,
 	},
 	{
 		name: "Master Data",

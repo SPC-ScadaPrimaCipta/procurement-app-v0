@@ -12,9 +12,10 @@ import { ProcurementCaseDetail } from "./types";
 
 interface TabKontrakProps {
 	data: ProcurementCaseDetail;
+	onDataChange?: () => void;
 }
 
-export function TabKontrak({ data }: TabKontrakProps) {
+export function TabKontrak({ data, onDataChange }: TabKontrakProps) {
 	const { contract } = data;
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 	const router = useRouter();
@@ -129,6 +130,7 @@ export function TabKontrak({ data }: TabKontrakProps) {
 				onSuccess={() => {
 					toast.success("Kontrak berhasil dibuat");
 					router.refresh();
+					onDataChange?.();
 				}}
 			/>
 		</>

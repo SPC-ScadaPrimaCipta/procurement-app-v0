@@ -30,16 +30,24 @@ export async function POST(
 		}
 
 		// 2. Find next status (sort_order + 1)
-		const nextStatus = await prisma.case_status.findFirst({
+		// 2. Find next status (sort_order + 1)
+		let nextStatus = await prisma.case_status.findFirst({
 			where: {
 				sort_order: currentCase.status.sort_order + 1,
 				is_active: true,
 			},
 		});
 
+		// Fallback: If no next step defined by sort_order, check if we should move to "DONE"
+		if (!nextStatus) {
+			nextStatus = await prisma.case_status.findUnique({
+				where: { name: "DONE" },
+			});
+		}
+
 		if (!nextStatus) {
 			return new NextResponse("Next status not found", {
-				status: 400, // Or 404, or 422. 400 implies invalid state transition request.
+				status: 400,
 			});
 		}
 

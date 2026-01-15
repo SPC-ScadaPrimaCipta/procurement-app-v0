@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, FileText, Clock, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/datatable/data-table";
 import { columns, SuratKeluar } from "./columns";
+import { StatsCard } from "@/components/dashboard/stats-card";
 
 export default function SuratKeluarPage() {
 	const [data, setData] = useState<SuratKeluar[]>([]);
@@ -46,6 +47,21 @@ export default function SuratKeluarPage() {
 		fetchData();
 	}, []);
 
+	// Calculate Stats
+	const stats = {
+		total: data.length,
+		active: data.filter((item) =>
+			["IN_PROGRESS", "SUBMITTED", "WAITING", "DRAFT"].some((s) =>
+				item.status.toUpperCase().includes(s)
+			)
+		).length,
+		completed: data.filter((item) =>
+			["APPROVED", "SELESAI", "COMPLETED", "DONE"].some((s) =>
+				item.status.toUpperCase().includes(s)
+			)
+		).length,
+	};
+
 	return (
 		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
 			{/* Header */}
@@ -65,6 +81,31 @@ export default function SuratKeluarPage() {
 						Buat Surat Keluar
 					</Link>
 				</Button> */}
+			</div>
+
+			{/* Stat Cards */}
+			<div className="grid gap-4 md:grid-cols-3">
+				<StatsCard
+					title="Total Surat"
+					value={stats.total}
+					icon={FileText}
+					iconContainerClassName="bg-primary/10"
+					iconClassName="text-primary"
+				/>
+				<StatsCard
+					title="Diproses"
+					value={stats.active}
+					icon={Clock}
+					iconContainerClassName="bg-orange-500/10"
+					iconClassName="text-orange-500"
+				/>
+				<StatsCard
+					title="Selesai"
+					value={stats.completed}
+					icon={CheckCircle2}
+					iconContainerClassName="bg-green-500/10"
+					iconClassName="text-green-500"
+				/>
 			</div>
 
 			{/* DataTable wrapped in Card */}
