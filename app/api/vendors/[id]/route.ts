@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { deleteItemFromSiteDrive } from "@/lib/sharepoint";
 
 // GET /api/vendors/[id] - Get vendor by ID
 export async function GET(
@@ -157,6 +158,57 @@ export async function DELETE(
 				},
 				{ status: 400 }
 			);
+		}
+
+		// Get NPWP document if exists
+		const vendorDocType = await prisma.master_doc_type.findFirst({
+			where: {
+				name: "VENDOR",
+				is_active: true,
+			},
+		});
+
+		if (vendorDocType) {
+			const npwpDocument = await prisma.document.findFirst({
+				where: {
+					ref_type: "VENDOR_NPWP",
+					ref_id: id,
+					doc_type_id: vendorDocType.id,
+				},
+			});
+
+			// Delete from SharePoint if exists
+			if (npwpDocument?.sp_item_id) {
+				const account = await prisma.account.findFirst({
+					where: {
+						userId: session.user.id,
+						providerId: "microsoft",
+					},
+				});
+
+				const siteId = process.env.SP_SITE_ID;
+
+				if (account?.accessToken && siteId) {
+					try {
+						await deleteItemFromSiteDrive({
+							siteId,
+							accessToken: account.accessToken,
+							itemId: npwpDocument.sp_item_id,
+						});
+						console.log(`Deleted NPWP file from SharePoint: ${npwpDocument.file_name}`);
+					} catch (error) {
+						console.error("Failed to delete NPWP file from SharePoint:", error);
+						// Continue anyway
+					}
+				}
+			}
+
+			// Delete NPWP document record from database
+			if (npwpDocument) {
+				await prisma.document.delete({
+					where: { id: npwpDocument.id },
+				});
+			}
 		}
 
 		// Soft delete by setting is_active to false

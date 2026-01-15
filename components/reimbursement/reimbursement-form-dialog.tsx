@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
 	Dialog,
 	DialogContent,
@@ -20,6 +20,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Upload, X, FileText, Download } from "lucide-react";
 import { type Reimbursement } from "./reimbursement-columns";
 
 interface ReimbursementFormDialogProps {
@@ -50,6 +51,10 @@ export function ReimbursementFormDialog({
 	const [loading, setLoading] = useState(false);
 	const [vendors, setVendors] = useState<Vendor[]>([]);
 	const [statuses, setStatuses] = useState<Status[]>([]);
+	const [reimbursementFile, setReimbursementFile] = useState<File | null>(null);
+	const [existingReimbDoc, setExistingReimbDoc] = useState<any>(null);
+	const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	// Form state
 	const [formData, setFormData] = useState({
@@ -63,6 +68,31 @@ export function ReimbursementFormDialog({
 		status_id: "",
 		keterangan: "",
 	});
+
+	// Fetch existing document when editing
+	useEffect(() => {
+		if (open && editMode && reimbursement?.id) {
+			fetchExistingDocument();
+		} else if (open && !editMode) {
+			setExistingReimbDoc(null);
+			setReimbursementFile(null);
+		}
+	}, [open, editMode, reimbursement]);
+
+	const fetchExistingDocument = async () => {
+		if (!reimbursement?.id) return;
+		try {
+			const response = await fetch(
+				`/api/reimbursement/${reimbursement.id}/document`
+			);
+			if (response.ok) {
+				const data = await response.json();
+				setExistingReimbDoc(data.document);
+			}
+		} catch (error) {
+			console.error("Error fetching reimbursement document:", error);
+		}
+	};
 
 	// Load dropdowns and populate form
 	useEffect(() => {
@@ -130,6 +160,101 @@ export function ReimbursementFormDialog({
 		});
 	};
 
+	// File handling functions
+	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const file = event.target.files?.[0];
+		if (file) {
+			// Validate file type
+			if (file.type !== "application/pdf") {
+				toast.error("File harus dalam format PDF");
+				return;
+			}
+
+			// Validate file size (max 10MB)
+			if (file.size > 10 * 1024 * 1024) {
+				toast.error("Ukuran file maksimal 10MB");
+				return;
+			}
+
+			setReimbursementFile(file);
+		}
+	};
+
+	const handleRemoveFile = () => {
+		setReimbursementFile(null);
+		if (fileInputRef.current) {
+			fileInputRef.current.value = "";
+		}
+	};
+
+	const handleDownloadExisting = async () => {
+		if (!existingReimbDoc?.sp_download_url) return;
+		window.open(existingReimbDoc.sp_download_url, "_blank");
+	};
+
+	const handleDeleteExisting = async () => {
+		if (!existingReimbDoc || !reimbursement?.id) return;
+
+		if (!confirm("Hapus dokumen ini?")) return;
+
+		setIsUploadingDoc(true);
+		try {
+			const response = await fetch(
+				`/api/reimbursement/${reimbursement.id}/document`,
+				{
+					method: "DELETE",
+				}
+			);
+
+			if (!response.ok) {
+				throw new Error("Gagal menghapus dokumen");
+			}
+
+			toast.success("Dokumen berhasil dihapus");
+			setExistingReimbDoc(null);
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : "Gagal menghapus dokumen"
+			);
+		} finally {
+			setIsUploadingDoc(false);
+		}
+	};
+
+	const uploadReimbursementDocument = async (reimbursementId: string) => {
+		if (!reimbursementFile) return;
+
+		setIsUploadingDoc(true);
+		try {
+			const formData = new FormData();
+			formData.append("file", reimbursementFile);
+
+			const response = await fetch(
+				`/api/reimbursement/${reimbursementId}/document`,
+				{
+					method: "POST",
+					body: formData,
+				}
+			);
+
+			if (!response.ok) {
+				throw new Error("Gagal mengupload dokumen reimbursement");
+			}
+
+			toast.success("Dokumen reimbursement berhasil diupload");
+			setReimbursementFile(null);
+			if (fileInputRef.current) {
+				fileInputRef.current.value = "";
+			}
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : "Gagal mengupload dokumen"
+			);
+		} finally {
+			setIsUploadingDoc(false);
+		}
+	};
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setLoading(true);
@@ -150,6 +275,16 @@ export function ReimbursementFormDialog({
 			if (!response.ok) {
 				const error = await response.json();
 				throw new Error(error.error || "Failed to save");
+			}
+
+			const result = await response.json();
+
+			// Upload reimbursement document if there's a file
+			if (reimbursementFile) {
+				const savedReimbursementId = editMode ? reimbursement?.id : result.id;
+				if (savedReimbursementId) {
+					await uploadReimbursementDocument(savedReimbursementId);
+				}
 			}
 
 			onSuccess();
@@ -329,6 +464,98 @@ export function ReimbursementFormDialog({
 								))}
 							</SelectContent>
 						</Select>
+					</div>
+
+					{/* Upload Scan */}
+					<div className="space-y-2">
+						<Label htmlFor="reimbursement_document">Upload Scan (PDF)</Label>
+
+						{/* Display existing document when editing */}
+						{editMode && existingReimbDoc && !reimbursementFile && (
+							<div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3">
+								<FileText className="h-5 w-5 text-green-600" />
+								<div className="flex-1 min-w-0">
+									<p className="text-sm font-medium text-green-900 truncate">
+										{existingReimbDoc.file_name}
+									</p>
+									<p className="text-xs text-green-700">
+										{existingReimbDoc.file_size
+											? `${(Number(existingReimbDoc.file_size) / 1024).toFixed(1)} KB`
+											: "Unknown size"}
+									</p>
+								</div>
+								<Button
+									type="button"
+									size="sm"
+									variant="ghost"
+									onClick={handleDownloadExisting}
+									disabled={isUploadingDoc}
+								>
+									<Download className="h-4 w-4" />
+								</Button>
+								<Button
+									type="button"
+									size="sm"
+									variant="ghost"
+									onClick={handleDeleteExisting}
+									disabled={isUploadingDoc}
+								>
+									<X className="h-4 w-4" />
+								</Button>
+							</div>
+						)}
+
+						{/* File input for new upload */}
+						<div className="flex items-center gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => fileInputRef.current?.click()}
+								disabled={loading || isUploadingDoc}
+								className="w-full"
+							>
+								<Upload className="mr-2 h-4 w-4" />
+								{reimbursementFile
+									? "Ganti File"
+									: existingReimbDoc
+										? "Upload File Baru"
+										: "Upload File"}
+							</Button>
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept=".pdf"
+								onChange={handleFileChange}
+								className="hidden"
+							/>
+						</div>
+
+						{/* Display selected file preview */}
+						{reimbursementFile && (
+							<div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+								<FileText className="h-5 w-5 text-blue-600" />
+								<div className="flex-1 min-w-0">
+									<p className="text-sm font-medium text-blue-900 truncate">
+										{reimbursementFile.name}
+									</p>
+									<p className="text-xs text-blue-700">
+										{(reimbursementFile.size / 1024).toFixed(1)} KB
+									</p>
+								</div>
+								<Button
+									type="button"
+									size="sm"
+									variant="ghost"
+									onClick={handleRemoveFile}
+								>
+									<X className="h-4 w-4" />
+								</Button>
+							</div>
+						)}
+
+						<p className="text-xs text-muted-foreground">
+							Format: PDF, Ukuran maksimal: 10MB
+						</p>
 					</div>
 
 					{/* Keterangan */}

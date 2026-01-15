@@ -131,13 +131,13 @@ export function PeraturanFormDialog({
 				throw new Error(result.error || "Failed to save peraturan");
 			}
 
-			// Upload file if provided
+			// Upload file if provided (using document table)
 			if (data.file && data.file.length > 0) {
 				const formData = new FormData();
 				formData.append("file", data.file[0]);
 
 				const uploadResponse = await fetch(
-					`/api/peraturan/${result.id}/files`,
+					`/api/peraturan/${result.id}/documents`,
 					{
 						method: "POST",
 						body: formData,
@@ -145,7 +145,7 @@ export function PeraturanFormDialog({
 				);
 
 				if (!uploadResponse.ok) {
-					throw new Error("Failed to upload file");
+					throw new Error("Failed to upload document");
 				}
 			}
 

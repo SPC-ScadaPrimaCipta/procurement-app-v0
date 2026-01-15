@@ -27,12 +27,18 @@ interface PeraturanDetail {
 	type: {
 		name: string;
 	};
-	files: Array<{
+	documents: Array<{
 		id: string;
 		file_name: string;
 		file_url: string;
 		mime_type: string;
-		file_size: bigint;
+		file_size: string;
+		title: string;
+		uploaded_at: string;
+		master_doc_type: {
+			id: string;
+			name: string;
+		};
 	}>;
 }
 
@@ -57,11 +63,23 @@ export function PeraturanDetailDialog({
 
 		setIsLoading(true);
 		try {
+			// Fetch regulation detail
 			const response = await fetch(`/api/peraturan/${peraturanId}`);
 			if (!response.ok) throw new Error("Failed to fetch peraturan detail");
+			const regulationData = await response.json();
 
-			const data = await response.json();
-			setPeraturan(data);
+			// Fetch documents from document table
+			const documentsResponse = await fetch(
+				`/api/peraturan/${peraturanId}/documents`
+			);
+			if (!documentsResponse.ok)
+				throw new Error("Failed to fetch documents");
+			const documentsData = await documentsResponse.json();
+
+			setPeraturan({
+				...regulationData,
+				documents: documentsData,
+			});
 		} catch (error) {
 			toast.error("Failed to load peraturan details");
 			console.error(error);
@@ -83,7 +101,7 @@ export function PeraturanDetailDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-w-2xl">
 				<DialogHeader>
-					<div className="flex items-center justify-between">
+					<div className="flex items-center justify-between pr-8">
 						<DialogTitle className="text-xl">
 							{peraturan?.doc_number}
 						</DialogTitle>
@@ -106,48 +124,49 @@ export function PeraturanDetailDialog({
 							</Button>
 						</div>
 					</div>
-				</DialogHeader>
+			</DialogHeader>
 
-				{isLoading ? (
-					<div className="py-8 text-center text-muted-foreground">
-						Loading...
-					</div>
-				) : peraturan ? (
-					<div className="space-y-6">
-						{/* Basic Info */}
-						<div className="space-y-3">
-							<div>
-								<p className="text-sm text-muted-foreground">Nomor Dokumen</p>
-								<p className="font-medium">{peraturan.doc_number}</p>
-							</div>
-
-							<div>
-								<p className="text-sm text-muted-foreground">Judul Dokumen</p>
-								<p>{peraturan.title}</p>
-							</div>
-
-							<div>
-								<p className="text-sm text-muted-foreground">Tipe Dokumen</p>
-								<p>{peraturan.type.name}</p>
-							</div>
+			{isLoading ? (
+				<div className="py-8 text-center text-muted-foreground">
+					Loading...
+				</div>
+			) : peraturan ? (
+				<div className="space-y-6">
+					{/* Basic Info */}
+					<div className="space-y-3">
+						<div>
+							<p className="text-sm text-muted-foreground">Nomor Dokumen</p>
+							<p className="font-medium">{peraturan.doc_number}</p>
 						</div>
 
-						{/* Files */}
-						{peraturan.files.length > 0 && (
+						<div>
+							<p className="text-sm text-muted-foreground">Judul Dokumen</p>
+							<p>{peraturan.title}</p>
+						</div>
+
+						<div>
+							<p className="text-sm text-muted-foreground">Tipe Dokumen</p>
+							<p>{peraturan.type.name}</p>
+						</div>
+					</div>
+						{peraturan.documents && peraturan.documents.length > 0 && (
 							<div className="space-y-3">
 								<p className="text-sm font-semibold">Lampiran Dokumen</p>
 								<div className="space-y-2">
-									{peraturan.files.map((file) => (
+									{peraturan.documents.map((doc) => (
 										<div
-											key={file.id}
+											key={doc.id}
 											className="flex items-center justify-between p-3 rounded-lg border bg-muted/50"
 										>
 											<div className="flex items-center gap-3">
 												<FileText className="h-5 w-5 text-muted-foreground" />
 												<div>
-													<p className="text-sm font-medium">{file.file_name}</p>
+													<p className="text-sm font-medium">{doc.file_name}</p>
 													<p className="text-xs text-muted-foreground">
-														{file.mime_type}
+														{doc.mime_type} • {doc.master_doc_type.name}
+													</p>
+													<p className="text-xs text-muted-foreground">
+														Uploaded: {new Date(doc.uploaded_at).toLocaleDateString('id-ID')}
 													</p>
 												</div>
 											</div>
@@ -155,7 +174,7 @@ export function PeraturanDetailDialog({
 												size="sm"
 												variant="ghost"
 												onClick={() =>
-													handleDownload(file.file_url, file.file_name)
+													handleDownload(doc.file_url || "", doc.file_name || "")
 												}
 											>
 												Download

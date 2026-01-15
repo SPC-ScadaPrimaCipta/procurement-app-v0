@@ -136,10 +136,10 @@ export async function POST(request: NextRequest) {
 		});
 
 		return NextResponse.json(regulation, { status: 201 });
-	} catch (error) {
+	} catch (error: any) {
 		console.error("Error creating regulation:", error);
 		return NextResponse.json(
-			{ error: "Failed to create regulation" },
+			{ error: error.message || "Failed to create regulation" },
 			{ status: 500 }
 		);
 	}

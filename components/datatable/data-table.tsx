@@ -32,6 +32,7 @@ interface DataTableProps<TData, TValue> {
 	data: TData[];
 	filterKey?: string;
 	enableRowSelection?: boolean;
+	onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -39,6 +40,7 @@ export function DataTable<TData, TValue>({
 	data,
 	filterKey,
 	enableRowSelection = false,
+	onRowClick,
 }: DataTableProps<TData, TValue>) {
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] =
@@ -118,6 +120,8 @@ export function DataTable<TData, TValue>({
 									data-state={
 										row.getIsSelected() && "selected"
 									}
+									onClick={() => onRowClick?.(row.original)}
+									className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
 								>
 									{row.getVisibleCells().map((cell) => (
 										<TableCell key={cell.id}>

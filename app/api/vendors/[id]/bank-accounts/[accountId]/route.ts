@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { deleteItemFromSiteDrive } from "@/lib/sharepoint";
 
 // PUT /api/vendors/[id]/bank-accounts/[accountId] - Update bank account
 export async function PUT(
@@ -134,6 +135,56 @@ export async function DELETE(
 		// Check if account belongs to this vendor
 		if (existingAccount.vendor_id !== vendorId) {
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+		}
+
+		// Delete associated documents from SharePoint and database
+		const documents = await prisma.document.findMany({
+			where: {
+				ref_type: "VENDOR_BANK_ACCOUNT",
+				ref_id: accountId,
+			},
+		});
+
+		if (documents.length > 0) {
+			// Get Microsoft Access Token from database
+			const account = await prisma.account.findFirst({
+				where: {
+					userId: session.user.id,
+					providerId: "microsoft",
+				},
+			});
+
+			if (!account?.accessToken) {
+				console.error(
+					"No Microsoft account linked or access token missing for SharePoint operations"
+				);
+			} else {
+				const accessToken = account.accessToken;
+				// Delete files from SharePoint
+				for (const doc of documents) {
+					if (doc.sp_item_id) {
+						try {
+							await deleteItemFromSiteDrive(accessToken, doc.sp_item_id);
+							console.log(
+								`Deleted bank account document from SharePoint: ${doc.file_name}`
+							);
+						} catch (error) {
+							console.error(
+								`Error deleting file from SharePoint: ${doc.file_name}`,
+								error
+							);
+						}
+					}
+				}
+			}
+
+			// Delete document records from database
+			await prisma.document.deleteMany({
+				where: {
+					ref_type: "VENDOR_BANK_ACCOUNT",
+					ref_id: accountId,
+				},
+			});
 		}
 
 		// Soft delete by setting is_active to false

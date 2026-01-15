@@ -25,9 +25,7 @@ export type Reimbursement = {
 	created_at: Date;
 };
 
-export const createReimbursementColumns = (
-	onRowClick: (reimbursement: Reimbursement) => void
-): ColumnDef<Reimbursement>[] => [
+export const createReimbursementColumns = (): ColumnDef<Reimbursement>[] => [
 	{
 		accessorKey: "reimbursement_no",
 		header: ({ column }) => (
@@ -35,10 +33,7 @@ export const createReimbursementColumns = (
 		),
 		cell: ({ row }) => {
 			return (
-				<div
-					className="font-medium cursor-pointer hover:underline"
-					onClick={() => onRowClick(row.original)}
-				>
+				<div className="font-medium">
 					{row.getValue("reimbursement_no")}
 				</div>
 			);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
+import { deleteItemFromSiteDrive } from "@/lib/sharepoint";
 
 export const dynamic = "force-dynamic";
 
@@ -116,6 +117,56 @@ export async function DELETE(
 				{ error: "Business license not found" },
 				{ status: 404 }
 			);
+		}
+
+		// Delete associated documents from SharePoint and database
+		const documents = await prisma.document.findMany({
+			where: {
+				ref_type: "VENDOR_BUSINESS_LICENSE",
+				ref_id: licenseId,
+			},
+		});
+
+		if (documents.length > 0) {
+			// Get Microsoft Access Token from database
+			const account = await prisma.account.findFirst({
+				where: {
+					userId: session.user.id,
+					providerId: "microsoft",
+				},
+			});
+
+			if (!account?.accessToken) {
+				console.error(
+					"No Microsoft account linked or access token missing for SharePoint operations"
+				);
+			} else {
+				const accessToken = account.accessToken;
+				// Delete files from SharePoint
+				for (const doc of documents) {
+					if (doc.sp_item_id) {
+						try {
+							await deleteItemFromSiteDrive(accessToken, doc.sp_item_id);
+							console.log(
+								`Deleted business license document from SharePoint: ${doc.file_name}`
+							);
+						} catch (error) {
+							console.error(
+								`Error deleting file from SharePoint: ${doc.file_name}`,
+								error
+							);
+						}
+					}
+				}
+			}
+
+			// Delete document records from database
+			await prisma.document.deleteMany({
+				where: {
+					ref_type: "VENDOR_BUSINESS_LICENSE",
+					ref_id: licenseId,
+				},
+			});
 		}
 
 		// Delete permanently
