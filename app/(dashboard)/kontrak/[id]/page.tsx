@@ -409,7 +409,7 @@ export default function ContractDetailPage() {
 										<Table>
 											<TableHeader>
 												<TableRow>
-													<TableHead className="w-[80px]">
+													<TableHead className="w-20">
 														Tahap
 													</TableHead>
 													<TableHead>
