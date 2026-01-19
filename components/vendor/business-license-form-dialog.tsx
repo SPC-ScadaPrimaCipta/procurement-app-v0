@@ -154,7 +154,9 @@ export function BusinessLicenseFormDialog({
 			setExistingLicenseDoc(null);
 		} catch (error) {
 			toast.error(
-				error instanceof Error ? error.message : "Gagal menghapus dokumen"
+				error instanceof Error
+					? error.message
+					: "Gagal menghapus dokumen"
 			);
 		} finally {
 			setIsUploadingDoc(false);
@@ -188,7 +190,9 @@ export function BusinessLicenseFormDialog({
 			}
 		} catch (error) {
 			toast.error(
-				error instanceof Error ? error.message : "Gagal mengupload dokumen"
+				error instanceof Error
+					? error.message
+					: "Gagal mengupload dokumen"
 			);
 		} finally {
 			setIsUploadingDoc(false);
@@ -215,7 +219,9 @@ export function BusinessLicenseFormDialog({
 			const result = await response.json();
 
 			if (!response.ok) {
-				throw new Error(result.error || "Failed to save business license");
+				throw new Error(
+					result.error || "Failed to save business license"
+				);
 			}
 
 			toast.success(
@@ -296,7 +302,7 @@ export function BusinessLicenseFormDialog({
 						<Label htmlFor="qualification">Kualifikasi</Label>
 						<Input
 							id="qualification"
-							placeholder="Kecil, Menengah, Besar"
+							placeholder="Kecil atau Non Kecil"
 							{...register("qualification")}
 						/>
 					</div>
@@ -323,7 +329,9 @@ export function BusinessLicenseFormDialog({
 
 					{/* Upload Izin Usaha */}
 					<div className="space-y-2">
-						<Label htmlFor="license_document">Upload Izin Usaha (PDF)</Label>
+						<Label htmlFor="license_document">
+							Upload Izin Usaha (PDF)
+						</Label>
 
 						{/* Display existing document when editing */}
 						{isEdit && existingLicenseDoc && !licenseFile && (
@@ -335,7 +343,11 @@ export function BusinessLicenseFormDialog({
 									</p>
 									<p className="text-xs text-green-700">
 										{existingLicenseDoc.file_size
-											? `${(Number(existingLicenseDoc.file_size) / 1024).toFixed(1)} KB`
+											? `${(
+													Number(
+														existingLicenseDoc.file_size
+													) / 1024
+											  ).toFixed(1)} KB`
 											: "Unknown size"}
 									</p>
 								</div>
@@ -373,8 +385,8 @@ export function BusinessLicenseFormDialog({
 								{licenseFile
 									? "Ganti File"
 									: existingLicenseDoc
-										? "Upload File Baru"
-										: "Upload File"}
+									? "Upload File Baru"
+									: "Upload File"}
 							</Button>
 							<input
 								ref={fileInputRef}
@@ -394,7 +406,8 @@ export function BusinessLicenseFormDialog({
 										{licenseFile.name}
 									</p>
 									<p className="text-xs text-blue-700">
-										{(licenseFile.size / 1024).toFixed(1)} KB
+										{(licenseFile.size / 1024).toFixed(1)}{" "}
+										KB
 									</p>
 								</div>
 								<Button

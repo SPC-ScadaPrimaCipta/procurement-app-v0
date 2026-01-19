@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { format, differenceInDays } from "date-fns";
-import { CalendarIcon, Loader2, Plus, Trash2 } from "lucide-react";
+import { CalendarIcon, Loader2, Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -15,7 +15,6 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 } from "@/components/ui/dialog";
 import {
 	Form,
@@ -57,7 +56,7 @@ const contractSchema = z.object({
 	duration_days: z.number().optional(), // Processed calculated
 	procurement_method_id: z.string().min(1, "Required"),
 	contract_status_id: z.string().min(1, "Required"),
-	expense_type: z.enum(["BELANJA_BARANG", "BELANJA_JASA"]),
+	expense_type: z.enum(["BELANJA_BARANG", "BELANJA_MODAL"]),
 	// Nested fields for UI only initially
 	payment_plan: z.array(z.any()).optional(),
 	bast: z.array(z.any()).optional(),
@@ -175,8 +174,7 @@ export function ContractCreateDialog({
 				);
 				if (!planRes.ok) {
 					console.error("Failed to save payment plan");
-					// Should we alert user? Or just log?
-					// For now log, as contract is created.
+					toast.error("Gagal menyimpan rencana pembayaran");
 				}
 			}
 
@@ -323,8 +321,8 @@ export function ContractCreateDialog({
 													<SelectItem value="BELANJA_BARANG">
 														Belanja Barang
 													</SelectItem>
-													<SelectItem value="BELANJA_JASA">
-														Belanja Jasa
+													<SelectItem value="BELANJA_MODAL">
+														Belanja Modal
 													</SelectItem>
 												</SelectContent>
 											</Select>
