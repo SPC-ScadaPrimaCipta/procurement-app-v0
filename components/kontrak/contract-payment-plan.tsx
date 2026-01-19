@@ -17,9 +17,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 
-export type PaymentMethod = "BULANAN" | "SEKALIGUS" | "TERMIN";
+export type PaymentMethod = "SEKALIGUS" | "TERMIN";
 
 export interface PaymentPlanItem {
 	payment_method: PaymentMethod;
@@ -53,8 +52,6 @@ export function ContractPaymentPlan({
 		if (onChange) {
 			const newValue = [...value];
 			newValue.splice(index, 1);
-			// Optional: re-index line numbers? User didn't ask, but good UX.
-			// Let's keep it simple for now as user requested manual integer input too ("line no (int)").
 			onChange(newValue);
 		}
 	};
@@ -69,10 +66,6 @@ export function ContractPaymentPlan({
 			newValue[index] = { ...newValue[index], [field]: val };
 			onChange(newValue);
 		}
-	};
-
-	const formatUpdates = (e: React.ChangeEvent<HTMLInputElement>) => {
-		// Helper if we want to format display, but let's stick to simple number input for now
 	};
 
 	return (
@@ -152,9 +145,6 @@ export function ContractPaymentPlan({
 												<SelectContent>
 													<SelectItem value="TERMIN">
 														TERMIN
-													</SelectItem>
-													<SelectItem value="BULANAN">
-														BULANAN
 													</SelectItem>
 													<SelectItem value="SEKALIGUS">
 														SEKALIGUS

@@ -428,6 +428,10 @@ model document {
   created_at       DateTime         @default(now()) @db.Timestamptz(6)
   updated_at       DateTime?        @db.Timestamptz(6)
 
+  is_active        Boolean          @default(true)
+  deleted_by       String?
+  deleted_at       DateTime?
+
   master_doc_type  master_doc_type  @relation(fields: [doc_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   case_step        case_step?       @relation(fields: [step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -732,7 +736,7 @@ enum workflow_step_status {
 
 enum ExpenseType {
   BELANJA_BARANG
-  BELANJA_JASA
+  BELANJA_MODAL
 }
 
 enum BastType {
