@@ -4,8 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, FileText, Send, Save, Cross } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import { ArrowLeft, Upload, FileText, Send } from "lucide-react";
+import { validateMicrosoftSession } from "@/lib/utils";
+import {
+	DispositionSection,
+	DispositionData,
+} from "@/components/disposition/disposition-section";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +35,15 @@ export default function NewSuratMasukPage() {
 		letter_number: "",
 		subject: "",
 		cc: "",
+	});
+
+	const [dispositionData, setDispositionData] = useState<DispositionData>({
+		agenda_scope: "Biro",
+		agenda_number: "",
+		disposition_date: new Date().toISOString().split("T")[0],
+		disposition_actions: [],
+		forward_to_ids: [],
+		disposition_note: "",
 	});
 
 	// File State (separating them for clear handling)
@@ -61,47 +74,10 @@ export default function NewSuratMasukPage() {
 			}
 		};
 		fetchDocTypes();
-
-		// Check Microsoft Token Status
-		const checkMicrosoftToken = async () => {
-			try {
-				// We'll use a dry-run upload or a specific status endpoint
-				// For now, let's try to hit the uploads endpoint with a dummy check or just assume if we fail during upload we fail.
-				// But user asked to check "when user access this page".
-				// So we can try to refresh token via a dedicated endpoint or checking the account status.
-				// Since we don't have a dedicated "check-token" endpoint yet, let's assume we proceed.
-				// Wait, the user specifically asked for this check.
-				// "call function to check expiration of microsoft... prevent this happen"
-				// I will create a simple API endpoint to validate the token.
-			} catch (e) {
-				//
-			}
-		};
 	}, []);
 
-	// Actually, let's just create a new useEffect that calls a new API route for checking token.
 	useEffect(() => {
-		const validateMicrosoftSession = async () => {
-			try {
-				const res = await fetch("/api/auth/check-microsoft-token");
-				if (!res.ok) {
-					const data = await res.json();
-					if (
-						data.error === "consent_required" ||
-						data.error === "invalid_grant"
-					) {
-						toast.error(
-							"Sesi Microsoft kadaluarsa. Mohon login ulang."
-						);
-						await authClient.signOut();
-						router.push("/auth/login");
-					}
-				}
-			} catch (error) {
-				console.error("Token validation error", error);
-			}
-		};
-		validateMicrosoftSession();
+		validateMicrosoftSession(router);
 	}, [router]);
 
 	const handleInputChange = (
@@ -170,7 +146,6 @@ export default function NewSuratMasukPage() {
 		setIsLoading(true);
 
 		// Validation (Basic)
-		// Validation (Basic)
 		if (
 			!formData.from_name ||
 			!formData.letter_date ||
@@ -180,6 +155,12 @@ export default function NewSuratMasukPage() {
 			toast.error(
 				"Mohon lengkapi semua field metadata yang wajib diisi."
 			);
+			setIsLoading(false);
+			return;
+		}
+
+		if (!dispositionData.agenda_number) {
+			toast.error("Nomor Agenda Disposisi wajib diisi");
 			setIsLoading(false);
 			return;
 		}
@@ -203,7 +184,10 @@ export default function NewSuratMasukPage() {
 			const createRes = await fetch(endpoint, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(formData),
+				body: JSON.stringify({
+					...formData,
+					disposition: dispositionData,
+				}),
 			});
 
 			if (!createRes.ok) {
@@ -282,13 +266,53 @@ export default function NewSuratMasukPage() {
 			</div>
 
 			<form onSubmit={(e) => e.preventDefault()} className="space-y-8">
+				{/* Upload Nota Dinas Section (OCR) */}
+				<Card className="border-primary/20 bg-primary/5">
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<Upload className="h-5 w-5 text-primary" />
+							Upload Nota Dinas
+						</CardTitle>
+						<CardDescription>
+							Upload file scan surat masuk/nota dinas di sini.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<div className="p-4 border border-dashed border-primary/30 rounded-lg bg-background">
+							<div className="space-y-2">
+								<Label htmlFor="file_notadinas">
+									Scan Nota Dinas / Surat Masuk{" "}
+									<span className="text-red-500">*</span>
+								</Label>
+								<div className="flex items-center gap-4">
+									<Input
+										id="file_notadinas"
+										type="file"
+										accept=".pdf,.jpg,.jpeg,.png"
+										onChange={handleFileChange("notaDinas")}
+										className="cursor-pointer"
+									/>
+								</div>
+								<div className="flex items-center gap-2 mt-2 text-sm text-amber-600 bg-muted p-2 rounded">
+									<span className="text-xs font-medium">
+										Fitur OCR (Pengisian Otomatis) akan
+										segera hadir (Coming Soon)
+									</span>
+								</div>
+								<p className="text-xs text-muted-foreground mt-1">
+									Format: PDF, JPG, PNG. Max 10MB.
+								</p>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
 				{/* Metadata Section */}
 				<Card>
 					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<FileText className="h-5 w-5" />
-							Metadata Surat
-						</CardTitle>
+						<div className="flex items-center gap-2">
+							<FileText className="h-5 w-5 text-primary" />
+							<CardTitle>Metadata Surat</CardTitle>
+						</div>
 						<CardDescription>
 							Informasi utama mengenai surat masuk.
 						</CardDescription>
@@ -374,41 +398,25 @@ export default function NewSuratMasukPage() {
 					</CardContent>
 				</Card>
 
+				{/* Disposition Section */}
+				<DispositionSection
+					data={dispositionData}
+					onChange={setDispositionData}
+				/>
+
 				{/* Attachments Section */}
 				<Card>
 					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<Upload className="h-5 w-5" />
-							Lampiran Dokumen
-						</CardTitle>
+						<div className="flex items-center gap-2">
+							<Upload className="h-5 w-5 text-primary" />
+							<CardTitle>Lampiran Dokumen</CardTitle>
+						</div>
 						<CardDescription>
 							Dokumen pendukung yang wajib dilampirkan untuk
 							proses pengadaan.
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-6">
-						{/* Scan Nota Dinas */}
-						<div className="space-y-2">
-							<Label htmlFor="file_notadinas">
-								Scan Nota Dinas / Surat Masuk{" "}
-								<span className="text-red-500">*</span>
-							</Label>
-							<div className="flex items-center gap-4">
-								<Input
-									id="file_notadinas"
-									type="file"
-									accept=".pdf,.jpg,.jpeg,.png"
-									onChange={handleFileChange("notaDinas")}
-									className="cursor-pointer"
-								/>
-							</div>
-							<p className="text-xs text-muted-foreground">
-								Format: PDF, JPG, PNG. Max 10MB.
-							</p>
-						</div>
-
-						<Separator />
-
 						{/* TOR */}
 						<div className="space-y-2">
 							<Label htmlFor="file_tor">
