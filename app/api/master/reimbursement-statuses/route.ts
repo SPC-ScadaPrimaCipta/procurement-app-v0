@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 				created_at: true,
 			},
 			orderBy: {
-				name: "asc",
+				sort_order: "asc",
 			},
 		});
 
@@ -57,13 +57,20 @@ export async function POST(request: Request) {
 
 		const body = await request.json();
 
+		// Get next sort_order
+		const maxOrderRecord = await prisma.reimbursement_status.findFirst({
+			orderBy: { sort_order: "desc" },
+			select: { sort_order: true },
+		});
+		const nextOrder = (maxOrderRecord?.sort_order ?? 0) + 1;
+
 		const data: any = {
 			...body,
+			sort_order: nextOrder,
 			created_by: session.user.id,
 		};
 
 		if (data.is_active === undefined) data.is_active = true;
-		if (data.sort_order === undefined) data.sort_order = 0;
 
 		const existing = await prisma.reimbursement_status.findUnique({
 			where: { name: data.name },

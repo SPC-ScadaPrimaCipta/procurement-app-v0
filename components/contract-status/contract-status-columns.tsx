@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/datatable/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 
 export type ContractStatus = {
 	id: string;
@@ -17,11 +17,19 @@ export type ContractStatus = {
 interface ContractStatusColumnsProps {
 	onEdit: (status: ContractStatus) => void;
 	onDelete: (status: ContractStatus) => void;
+	onMoveUp: (status: ContractStatus) => void;
+	onMoveDown: (status: ContractStatus) => void;
+	canMoveUp: (status: ContractStatus) => boolean;
+	canMoveDown: (status: ContractStatus) => boolean;
 }
 
 export const createContractStatusColumns = ({
 	onEdit,
 	onDelete,
+	onMoveUp,
+	onMoveDown,
+	canMoveUp,
+	canMoveDown,
 }: ContractStatusColumnsProps): ColumnDef<ContractStatus>[] => [
 	{
 		accessorKey: "name",
@@ -47,15 +55,6 @@ export const createContractStatusColumns = ({
 		},
 	},
 	{
-		accessorKey: "sort_order",
-		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title="Urutan" />
-		),
-		cell: ({ row }) => {
-			return <div className="text-center">{row.getValue("sort_order")}</div>;
-		},
-	},
-	{
 		accessorKey: "created_at",
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Tanggal Dibuat" />
@@ -72,6 +71,22 @@ export const createContractStatusColumns = ({
 			const status = row.original;
 			return (
 				<div className="flex items-center gap-2">
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => onMoveUp(status)}
+						disabled={!canMoveUp(status)}
+					>
+						<ArrowUp className="h-4 w-4" />
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => onMoveDown(status)}
+						disabled={!canMoveDown(status)}
+					>
+						<ArrowDown className="h-4 w-4" />
+					</Button>
 					<Button
 						variant="ghost"
 						size="sm"

@@ -19,7 +19,7 @@ export async function GET() {
 
 		const recipients = await prisma.master_disposition_recipient.findMany({
 			orderBy: {
-				name: "asc",
+				sort_order: "asc",
 			},
 			select: {
 				id: true,
@@ -59,13 +59,21 @@ export async function POST(request: Request) {
 
 		const body = await request.json();
 
+		// Get max sort_order and auto assign next order
+		const maxOrder = await prisma.master_disposition_recipient.findFirst({
+			orderBy: { sort_order: "desc" },
+			select: { sort_order: true },
+		});
+
+		const nextOrder = maxOrder ? maxOrder.sort_order + 1 : 1;
+
 		const data: any = {
 			...body,
+			sort_order: nextOrder,
 			created_by: session.user.id,
 		};
 
 		if (data.is_active === undefined) data.is_active = true;
-		if (data.sort_order === undefined) data.sort_order = 0;
 
 		const existing = await prisma.master_disposition_recipient.findUnique({
 			where: { name: data.name },
