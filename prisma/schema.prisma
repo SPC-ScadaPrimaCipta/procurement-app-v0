@@ -732,7 +732,7 @@ enum workflow_step_status {
 
 enum ExpenseType {
   BELANJA_BARANG
-  BELANJA_JASA
+  BELANJA_MODAL
 }
 
 enum BastType {
