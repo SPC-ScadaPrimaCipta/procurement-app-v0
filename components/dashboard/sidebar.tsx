@@ -30,6 +30,7 @@ import {
 	ShoppingBasket,
 	Store,
 	Scale,
+	Trash,
 } from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
@@ -103,6 +104,11 @@ const rawMenu: MenuItem[] = [
 		name: "Dokumen",
 		href: "/documents",
 		icon: FileText,
+	},
+	{
+		name: "Recycle Bin",
+		href: "/recycle-bin",
+		icon: Trash,
 	},
 	{
 		name: "Master Data",
