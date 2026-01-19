@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { PasswordInput } from "@/components/ui/password-input";
 import { ProfileSkeleton } from "@/components/skeletons/profile-skeleton";
+import { Activity, User } from "lucide-react";
 
 export default function ProfilePage() {
 	const [loadingProfile, setLoadingProfile] = useState(false);
@@ -193,7 +194,10 @@ export default function ProfilePage() {
 			{/* Profile Information */}
 			<Card>
 				<CardHeader>
-					<CardTitle>Profile Information</CardTitle>
+					<div className="flex items-center gap-2">
+						<User className="h-5 w-5 text-primary" />
+						<CardTitle>Profile Information</CardTitle>
+					</div>
 					<CardDescription>
 						Update your name and email address.
 					</CardDescription>
@@ -226,7 +230,7 @@ export default function ProfilePage() {
 			</Card>
 
 			{/* Password Section */}
-			<Card>
+			{/* <Card>
 				<CardHeader>
 					<CardTitle>Change Password</CardTitle>
 					<CardDescription>
@@ -269,12 +273,15 @@ export default function ProfilePage() {
 						{loadingPassword ? "Updating..." : "Update Password"}
 					</Button>
 				</CardContent>
-			</Card>
+			</Card> */}
 
 			{/* Session Details (Debug) */}
 			<Card>
 				<CardHeader>
-					<CardTitle>Session Details</CardTitle>
+					<div className="flex items-center gap-2">
+						<Activity className="h-5 w-5 text-primary" />
+						<CardTitle>Session Details</CardTitle>
+					</div>
 					<CardDescription>
 						View your current session data, including roles and
 						permissions.
