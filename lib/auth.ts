@@ -30,7 +30,7 @@ export const auth = betterAuth({
 			// Optional
 			// tenantId: 'common', // use common for all tenants
 			// authority: "https://login.microsoftonline.com", // Authentication authority URL
-			// prompt: "consent", // Forces account selection
+			prompt: "consent", // Forces account selection
 		},
 	},
 

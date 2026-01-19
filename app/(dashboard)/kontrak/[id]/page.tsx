@@ -39,6 +39,10 @@ import {
 } from "@/components/ui/table";
 
 import { formatIDR } from "@/lib/utils";
+import { ContractDetailTab } from "./tabs/detail-tab";
+import { PaymentPlanTab } from "./tabs/payment-tab";
+import { BastTab } from "./tabs/bast-tab";
+import { DocumentsTab } from "./tabs/documents-tab";
 
 // --- Interfaces ---
 interface ContractDetail {
@@ -70,10 +74,8 @@ interface ContractDetail {
 			title: string;
 			created_at: string;
 			master_doc_type: { name: string };
-			document_file: Array<{
-				file_name: string;
-				file_url: string;
-			}>;
+			file_name?: string;
+			file_url?: string;
 		}>;
 	};
 	contract_payment_plan: Array<{
@@ -83,6 +85,17 @@ interface ContractDetail {
 		line_amount: number;
 		planned_date: string | null;
 		notes: string | null;
+		bast: Array<{
+			id: string;
+			bast_number: string;
+			bast_date: string;
+			progress_percent: number;
+			notes: string;
+			document: {
+				file_url?: string;
+				file_name?: string;
+			} | null;
+		}>;
 	}>;
 	bast: Array<{
 		id: string;
@@ -91,6 +104,10 @@ interface ContractDetail {
 		bast_date: string;
 		progress_percent: number;
 		notes: string;
+		document: Array<{
+			file_url?: string;
+			file_name?: string;
+		}>;
 	}>;
 	created_by_name: string;
 }
@@ -313,321 +330,35 @@ export default function ContractDetailPage() {
 								value="detail"
 								className="animate-in fade-in slide-in-from-left-1"
 							>
-								<Card>
-									<CardHeader>
-										<CardTitle className="text-base">
-											Detail Kontrak
-										</CardTitle>
-									</CardHeader>
-									<CardContent className="space-y-6">
-										<div className="grid md:grid-cols-2 gap-6">
-											<div className="space-y-1">
-												<p className="text-sm text-muted-foreground">
-													Nomor Kontrak
-												</p>
-												<p className="font-medium">
-													{contract_number}
-												</p>
-											</div>
-											<div className="space-y-1">
-												<p className="text-sm text-muted-foreground">
-													Tanggal Kontrak
-												</p>
-												<p className="font-medium">
-													{formatDate(contract_date)}
-												</p>
-											</div>
-											<div className="space-y-1">
-												<p className="text-sm text-muted-foreground">
-													Metode Pemilihan
-												</p>
-												<p className="font-medium">
-													{procurement_method?.name ||
-														"-"}
-												</p>
-											</div>
-											<div className="space-y-1">
-												<p className="text-sm text-muted-foreground">
-													Status
-												</p>
-												<Badge
-													variant={statusVariant}
-													className="font-normal"
-												>
-													{contract_status.name}
-												</Badge>
-											</div>
-											<div className="space-y-1">
-												<p className="text-sm text-muted-foreground">
-													Mulai Pelaksanaan
-												</p>
-												<p className="font-medium">
-													{formatDate(start_date)}
-												</p>
-											</div>
-											<div className="space-y-1">
-												<p className="text-sm text-muted-foreground">
-													Selesai Pelaksanaan
-												</p>
-												<p className="font-medium">
-													{formatDate(end_date)}
-												</p>
-											</div>
-										</div>
-										<Separator />
-										<div className="space-y-2">
-											<p className="text-sm text-muted-foreground">
-												Uraian Pekerjaan
-											</p>
-											<div className="bg-muted/10 p-4 rounded-md border text-sm whitespace-pre-wrap leading-relaxed">
-												{work_description}
-											</div>
-										</div>
-									</CardContent>
-								</Card>
+								<ContractDetailTab data={data} />
 							</TabsContent>
-							{/* ... (Other Tabs Content unchanged for this tool call, but I will include them to match EndLine correctly if possible, or just break here. Breaking here leaves the rest unchanged which is fine, I just need to return the FULL replacement if I span the interface and all logic.
-                            actually I will replace just the interface through the detail tab, but the sidebar is near the end.
-                            Given the logic, I should replace everything from interface start to sidebar end to be safe and clean.)
-                            */}
 
 							<TabsContent
 								value="payment"
 								className="animate-in fade-in slide-in-from-left-1"
 							>
-								<Card>
-									<CardHeader>
-										<CardTitle className="text-base">
-											Rencana & Jadwal Pembayaran
-										</CardTitle>
-										<CardDescription>
-											Jadwal pembayaran yang disepakati
-											dalam kontrak
-										</CardDescription>
-									</CardHeader>
-									<CardContent className="p-0">
-										<Table>
-											<TableHeader>
-												<TableRow>
-													<TableHead className="w-20">
-														Tahap
-													</TableHead>
-													<TableHead>
-														Metode
-													</TableHead>
-													<TableHead>
-														Tanggal Rencana
-													</TableHead>
-													<TableHead className="text-right">
-														Nilai (IDR)
-													</TableHead>
-												</TableRow>
-											</TableHeader>
-											<TableBody>
-												{contract_payment_plan.map(
-													(item) => (
-														<TableRow key={item.id}>
-															<TableCell className="font-medium text-center">
-																{item.line_no}
-															</TableCell>
-															<TableCell>
-																{
-																	item.payment_method
-																}
-															</TableCell>
-															<TableCell>
-																{formatDate(
-																	item.planned_date
-																)}
-															</TableCell>
-															<TableCell className="text-right font-medium">
-																{formatIDR(
-																	Number(
-																		item.line_amount
-																	)
-																)}
-															</TableCell>
-														</TableRow>
-													)
-												)}
-												{contract_payment_plan.length ===
-													0 && (
-													<TableRow>
-														<TableCell
-															colSpan={4}
-															className="text-center py-8 text-muted-foreground"
-														>
-															Belum ada rencana
-															pembayaran.
-														</TableCell>
-													</TableRow>
-												)}
-											</TableBody>
-										</Table>
-									</CardContent>
-								</Card>
+								<PaymentPlanTab
+									contractId={id}
+									contract_payment_plan={
+										contract_payment_plan
+									}
+								/>
 							</TabsContent>
 
 							<TabsContent
 								value="bast"
 								className="animate-in fade-in slide-in-from-left-1"
 							>
-								<Card>
-									<CardHeader>
-										<CardTitle className="text-base">
-											Berita Acara Serah Terima (BAST)
-										</CardTitle>
-										<CardDescription>
-											Riwayat serah terima pekerjaan
-										</CardDescription>
-									</CardHeader>
-									<CardContent className="p-0">
-										<Table>
-											<TableHeader>
-												<TableRow>
-													<TableHead>
-														No. BAST
-													</TableHead>
-													<TableHead>
-														Tanggal
-													</TableHead>
-													<TableHead>Tipe</TableHead>
-													<TableHead className="text-right">
-														Progress
-													</TableHead>
-												</TableRow>
-											</TableHeader>
-											<TableBody>
-												{bast.map((item) => (
-													<TableRow key={item.id}>
-														<TableCell className="font-medium">
-															{item.bast_number ||
-																"-"}
-														</TableCell>
-														<TableCell>
-															{formatDate(
-																item.bast_date
-															)}
-														</TableCell>
-														<TableCell>
-															<Badge variant="outline">
-																{item.bast_type}
-															</Badge>
-														</TableCell>
-														<TableCell className="text-right font-medium">
-															{
-																item.progress_percent
-															}
-															%
-														</TableCell>
-													</TableRow>
-												))}
-												{bast.length === 0 && (
-													<TableRow>
-														<TableCell
-															colSpan={4}
-															className="text-center py-8 text-muted-foreground"
-														>
-															Belum ada data BAST.
-														</TableCell>
-													</TableRow>
-												)}
-											</TableBody>
-										</Table>
-									</CardContent>
-								</Card>
+								<BastTab bast={bast} />
 							</TabsContent>
 
 							<TabsContent
 								value="documents"
 								className="animate-in fade-in slide-in-from-left-1"
 							>
-								<Card>
-									<CardHeader>
-										<CardTitle className="text-base">
-											Dokumen Terkait
-										</CardTitle>
-										<CardDescription>
-											Dokumen dari pengadaan{" "}
-											{procurement_case.case_code}
-										</CardDescription>
-									</CardHeader>
-									<CardContent>
-										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-											{procurement_case?.document?.map(
-												(doc) => (
-													<div
-														key={doc.id}
-														className="flex items-start justify-between p-3 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors"
-													>
-														<div className="flex items-start gap-3 overflow-hidden">
-															<div className="h-8 w-8 rounded bg-primary/10 text-primary flex items-center justify-center shrink-0">
-																<FileText className="h-4 w-4" />
-															</div>
-															<div className="min-w-0">
-																<p className="text-sm font-medium truncate">
-																	{doc.title ||
-																		doc
-																			.document_file[0]
-																			?.file_name ||
-																		"Dokumen"}
-																</p>
-																<div className="flex items-center gap-2 mt-1">
-																	<Badge
-																		variant="outline"
-																		className="text-[10px] h-4 px-1 font-normal"
-																	>
-																		{
-																			doc
-																				.master_doc_type
-																				.name
-																		}
-																	</Badge>
-																	<span className="text-[10px] text-muted-foreground">
-																		{formatDate(
-																			doc.created_at
-																		)}
-																	</span>
-																</div>
-															</div>
-														</div>
-														{doc.document_file[0]
-															?.file_url && (
-															<Button
-																variant="ghost"
-																size="icon"
-																className="h-8 w-8 shrink-0"
-																asChild
-															>
-																<a
-																	href={
-																		doc
-																			.document_file[0]
-																			.file_url
-																	}
-																	target="_blank"
-																	rel="noopener noreferrer"
-																>
-																	<Download className="h-4 w-4 text-muted-foreground" />
-																</a>
-															</Button>
-														)}
-													</div>
-												)
-											)}
-											{procurement_case?.document
-												?.length === 0 && (
-												<div className="col-span-full flex flex-col items-center justify-center py-8 text-muted-foreground">
-													<FileText className="h-8 w-8 mb-2 opacity-50" />
-													<p>
-														Tidak ada dokumen
-														tersedia.
-													</p>
-												</div>
-											)}
-										</div>
-									</CardContent>
-								</Card>
+								<DocumentsTab
+									procurement_case={procurement_case}
+								/>
 							</TabsContent>
 						</div>
 					</Tabs>

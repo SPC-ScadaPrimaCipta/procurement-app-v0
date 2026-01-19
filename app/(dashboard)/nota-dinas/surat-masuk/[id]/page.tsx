@@ -11,9 +11,9 @@ import {
 	Calendar,
 	Mail,
 	FileIcon,
-	Hash,
 	User,
 	Tag,
+	Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +26,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { WorkflowActions } from "@/components/workflow/workflow-actions";
 
 interface Document {
 	id: string;
@@ -174,7 +173,7 @@ export default function NotaDinasDetailPage() {
 							router.push(`/pengadaan/${data.case_id}`)
 						}
 					>
-						<Building2 className="mr-2 h-4 w-4" />
+						<Package className="mr-2 h-4 w-4" />
 						Lihat Pengadaan
 					</Button>
 					<Badge variant={statusColor} className="text-sm px-3 py-1">

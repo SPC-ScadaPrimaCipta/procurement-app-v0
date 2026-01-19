@@ -25,7 +25,7 @@ export default function InboxPage() {
 			setLoading(true);
 			try {
 				const res = await fetch(
-					`/api/workflow-inbox?type=${activeTab}`
+					`/api/workflow-inbox?type=${activeTab}&all=true`
 				);
 				if (!res.ok) throw new Error("Failed to fetch inbox");
 				const json = await res.json();
