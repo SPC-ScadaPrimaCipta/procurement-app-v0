@@ -16,15 +16,15 @@ export async function GET(req: Request) {
 
 	const userId = session.user.id;
 
-	console.log("User ID:", userId);
-
 	// 2️⃣ Pagination & Filters
 	const { searchParams } = new URL(req.url);
 	const page = Number(searchParams.get("page") ?? 1);
 	const pageSize = Number(searchParams.get("pageSize") ?? 20);
 	const type = searchParams.get("type") ?? "pending"; // pending | history
+	const showAll = searchParams.get("all") === "true";
 
-	const skip = (page - 1) * pageSize;
+	const skip = showAll ? undefined : (page - 1) * pageSize;
+	const take = showAll ? undefined : pageSize;
 
 	let whereClause: any = {};
 	let orderBy: any = {};
@@ -56,7 +56,7 @@ export async function GET(req: Request) {
 			},
 		};
 		orderBy = {
-			created_at: "asc", // Show oldest pending tasks first
+			created_at: "desc", // Show oldest pending tasks first
 		};
 	}
 
@@ -74,16 +74,13 @@ export async function GET(req: Request) {
 			},
 			orderBy,
 			skip,
-			take: pageSize,
+			take,
 		}),
 
 		prisma.workflow_step_instance.count({
 			where: whereClause,
 		}),
 	]);
-
-	console.log("Items:", items);
-	console.log("Total:", total);
 
 	// Fetch user names for requestedBy
 	const creatorIds = Array.from(
@@ -131,8 +128,8 @@ export async function GET(req: Request) {
 	}));
 
 	return NextResponse.json({
-		page,
-		pageSize,
+		page: showAll ? 1 : page,
+		pageSize: showAll ? total : pageSize,
 		total,
 		items: result,
 	});

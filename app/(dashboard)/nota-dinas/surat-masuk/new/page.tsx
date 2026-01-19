@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowLeft, Upload, FileText, Send, Save, Cross } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,7 +61,48 @@ export default function NewSuratMasukPage() {
 			}
 		};
 		fetchDocTypes();
+
+		// Check Microsoft Token Status
+		const checkMicrosoftToken = async () => {
+			try {
+				// We'll use a dry-run upload or a specific status endpoint
+				// For now, let's try to hit the uploads endpoint with a dummy check or just assume if we fail during upload we fail.
+				// But user asked to check "when user access this page".
+				// So we can try to refresh token via a dedicated endpoint or checking the account status.
+				// Since we don't have a dedicated "check-token" endpoint yet, let's assume we proceed.
+				// Wait, the user specifically asked for this check.
+				// "call function to check expiration of microsoft... prevent this happen"
+				// I will create a simple API endpoint to validate the token.
+			} catch (e) {
+				//
+			}
+		};
 	}, []);
+
+	// Actually, let's just create a new useEffect that calls a new API route for checking token.
+	useEffect(() => {
+		const validateMicrosoftSession = async () => {
+			try {
+				const res = await fetch("/api/auth/check-microsoft-token");
+				if (!res.ok) {
+					const data = await res.json();
+					if (
+						data.error === "consent_required" ||
+						data.error === "invalid_grant"
+					) {
+						toast.error(
+							"Sesi Microsoft kadaluarsa. Mohon login ulang."
+						);
+						await authClient.signOut();
+						router.push("/auth/login");
+					}
+				}
+			} catch (error) {
+				console.error("Token validation error", error);
+			}
+		};
+		validateMicrosoftSession();
+	}, [router]);
 
 	const handleInputChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

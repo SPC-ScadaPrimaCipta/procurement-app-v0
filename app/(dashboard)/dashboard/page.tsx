@@ -31,6 +31,7 @@ import { DataTable } from "@/components/datatable/data-table";
 import { columns } from "../pengadaan/columns";
 import { ArrowRight, Container, Mail } from "lucide-react";
 import { format } from "date-fns";
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 
 const ACTIVITY = [
 	{
@@ -54,14 +55,29 @@ const ACTIVITY = [
 ];
 
 export default function DashboardPage() {
-	const [isLoading, setIsLoading] = useState(true);
+	const [loading, setLoading] = useState({
+		contracts: true,
+		reimbursement: true,
+		corrIn: true,
+		corrOut: true,
+		vendors: true,
+		cases: true,
+		inbox: true,
+	});
+	// const [isLoading, setIsLoading] = useState(true); // Removed simple state
 	const [totalContracts, setTotalContracts] = useState<number>(0);
 	const [totalReimbursement, setTotalReimbursement] = useState<number>(0);
-	const [totalCorrespondenceIn, setTotalCorrespondenceIn] = useState<number>(0);
-	const [totalCorrespondenceOut, setTotalCorrespondenceOut] = useState<number>(0);
-	const [vendors, setVendors] = useState<{ supplier_type?: { name?: string } }[]>([]);
+	const [totalCorrespondenceIn, setTotalCorrespondenceIn] =
+		useState<number>(0);
+	const [totalCorrespondenceOut, setTotalCorrespondenceOut] =
+		useState<number>(0);
+	const [vendors, setVendors] = useState<
+		{ supplier_type?: { name?: string } }[]
+	>([]);
 	const [vendorGroup, setVendorGroup] = useState<number>(0);
-	const [vendorTrend, setVendorTrend] = useState<{ label: string; value: number }[]>([]);
+	const [vendorTrend, setVendorTrend] = useState<
+		{ label: string; value: number }[]
+	>([]);
 	const [procurementCases, setProcurementCases] = useState<any[]>([]);
 	const [inboxItems, setInboxItems] = useState<any[]>([]);
 	const [inboxLoading, setInboxLoading] = useState<boolean>(true);
@@ -78,7 +94,7 @@ export default function DashboardPage() {
 			} catch (e) {
 				console.error(e);
 			} finally {
-				setIsLoading(false);
+				setLoading((prev) => ({ ...prev, contracts: false }));
 			}
 		};
 
@@ -96,7 +112,7 @@ export default function DashboardPage() {
 			} catch (e) {
 				console.error(e);
 			} finally {
-				setIsLoading(false);
+				setLoading((prev) => ({ ...prev, reimbursement: false }));
 			}
 		};
 
@@ -114,7 +130,7 @@ export default function DashboardPage() {
 			} catch (e) {
 				console.error(e);
 			} finally {
-				setIsLoading(false);
+				setLoading((prev) => ({ ...prev, corrIn: false }));
 			}
 		};
 
@@ -132,7 +148,7 @@ export default function DashboardPage() {
 			} catch (e) {
 				console.error(e);
 			} finally {
-				setIsLoading(false);
+				setLoading((prev) => ({ ...prev, corrOut: false }));
 			}
 		};
 
@@ -159,7 +175,7 @@ export default function DashboardPage() {
 			} catch (e) {
 				console.error("Error fetching vendor group:", e);
 			} finally {
-				setIsLoading(false);
+				setLoading((prev) => ({ ...prev, vendors: false }));
 			}
 		};
 
@@ -173,17 +189,23 @@ export default function DashboardPage() {
 				const res = await fetch("/api/workflow-inbox");
 				if (!res.ok) throw new Error("Failed to fetch inbox");
 				const result = await res.json();
-					const items = result.items ?? [];
-					items.sort((a: any, b: any) => {
-						const ta = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
-						const tb = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
-						return tb - ta;
-					});
-					setInboxItems(items.slice(0, 3));
+
+				const items = result.items ?? [];
+				items.sort((a: any, b: any) => {
+					const ta = a?.createdAt
+						? new Date(a.createdAt).getTime()
+						: 0;
+					const tb = b?.createdAt
+						? new Date(b.createdAt).getTime()
+						: 0;
+					return tb - ta;
+				});
+				setInboxItems(items.slice(0, 3));
 			} catch (e) {
 				console.error("Error fetching inbox:", e);
 			} finally {
 				setInboxLoading(false);
+				setLoading((prev) => ({ ...prev, inbox: false }));
 			}
 		};
 
@@ -217,12 +239,18 @@ export default function DashboardPage() {
 			} catch (error) {
 				console.error("Error fetching procurement cases:", error);
 			} finally {
-				setIsLoading(false);
+				setLoading((prev) => ({ ...prev, cases: false }));
 			}
 		};
 
 		fetchProcurementCases();
 	}, []);
+
+	const isPageLoading = Object.values(loading).some(Boolean);
+
+	if (isPageLoading) {
+		return <DashboardSkeleton />;
+	}
 
 	return (
 		<div className="space-y-8">
@@ -257,7 +285,7 @@ export default function DashboardPage() {
 					<CardHeader>
 						<CardDescription>Semua Kontrak</CardDescription>
 						<CardTitle className="text-3xl">
-							{isLoading ? "Loading..." : totalContracts}
+							{totalContracts}
 						</CardTitle>
 					</CardHeader>
 				</Card>
@@ -266,95 +294,157 @@ export default function DashboardPage() {
 					<CardHeader>
 						<CardDescription>Semua Non Kontrak</CardDescription>
 						<CardTitle className="text-3xl">
-							{isLoading ? "Loading..." : totalReimbursement}
+							{totalReimbursement}
 						</CardTitle>
 					</CardHeader>
 				</Card>
 
 				<Card>
 					<CardHeader>
-						<CardDescription>Semua Nota Dinas Masuk</CardDescription>
+						<CardDescription>
+							Semua Nota Dinas Masuk
+						</CardDescription>
 						<CardTitle className="text-3xl">
-							{isLoading ? "Loading..." : totalCorrespondenceIn}
+							{totalCorrespondenceIn}
 						</CardTitle>
 					</CardHeader>
 				</Card>
 
 				<Card>
 					<CardHeader>
-						<CardDescription>Semua Nota Dinas Keluar</CardDescription>
+						<CardDescription>
+							Semua Nota Dinas Keluar
+						</CardDescription>
 						<CardTitle className="text-3xl">
-							{isLoading ? "Loading..." : totalCorrespondenceOut}
+							{totalCorrespondenceOut}
 						</CardTitle>
 					</CardHeader>
 				</Card>
-
 			</section>
 
 			<div className="grid gap-6 lg:grid-cols-3">
 				<Card className="lg:col-span-2">
 					<CardHeader>
 						<CardTitle>Pengelompokan Penyedia</CardTitle>
-						<CardDescription>Dikelompokan berdasarkan jenis penyedia</CardDescription>
+						<CardDescription>
+							Dikelompokan berdasarkan jenis penyedia
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						{isLoading ? (
-							<p className="text-sm text-muted-foreground">Loading...</p>
-						) : (
-							<div className="w-full h-96">
-								<ResponsiveContainer width="100%" height="100%">
-									<BarChart data={[...vendorTrend].sort((a, b) => a.value - b.value)} responsive margin={{top: 5, bottom: 5, left: 0, right: 0}}>
-										<CartesianGrid stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
-										<XAxis
-											dataKey="label"
-											stroke="rgba(255,255,255,0.6)"
-											tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 12 }}
-										/>
-										<YAxis
-											stroke="rgba(255,255,255,0.6)"
-											tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 12 }}
-										/>
-										<RechartsTooltip
-											contentStyle={{
-												background: "#1e1e1e",
-												border: "1px solid rgba(255,255,255,0.2)",
-												color: "white",
-											}}
-										/>
-										<Bar dataKey="value" fill="#4F46E5" radius={[10, 10, 0, 0]} /> {/* indigo/primary */}
-									</BarChart>
-								</ResponsiveContainer >
-							</div>
-						)}
+						<div className="w-full h-96">
+							<ResponsiveContainer width="100%" height="100%">
+								<BarChart
+									data={[...vendorTrend].sort(
+										(a, b) => a.value - b.value
+									)}
+									responsive
+									margin={{
+										top: 5,
+										bottom: 5,
+										left: 0,
+										right: 0,
+									}}
+								>
+									<CartesianGrid
+										stroke="rgba(255,255,255,0.2)"
+										strokeDasharray="3 3"
+									/>
+									<XAxis
+										dataKey="label"
+										stroke="rgba(255,255,255,0.6)"
+										tick={{
+											fill: "rgba(255,255,255,0.8)",
+											fontSize: 12,
+										}}
+									/>
+									<YAxis
+										stroke="rgba(255,255,255,0.6)"
+										tick={{
+											fill: "rgba(255,255,255,0.8)",
+											fontSize: 12,
+										}}
+									/>
+									<RechartsTooltip
+										contentStyle={{
+											background: "#1e1e1e",
+											border: "1px solid rgba(255,255,255,0.2)",
+											color: "white",
+										}}
+									/>
+									<Bar
+										dataKey="value"
+										fill="#4F46E5"
+										radius={[10, 10, 0, 0]}
+									/>{" "}
+									{/* indigo/primary */}
+								</BarChart>
+							</ResponsiveContainer>
+						</div>
 					</CardContent>
 				</Card>
 				<Card>
 					<CardHeader>
 						<CardTitle>Kotak Masuk</CardTitle>
-						<CardDescription>
-							Kotak masuk terbaru.
-						</CardDescription>
+						<CardDescription>Kotak masuk terbaru.</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-2">
-						{inboxLoading ? (
-							<p className="text-sm text-muted-foreground">Loading...</p>
-						) : inboxItems.length === 0 ? (
-							<p className="text-sm text-muted-foreground">No inbox items.</p>
+						{inboxItems.length === 0 ? (
+							<p className="text-sm text-muted-foreground">
+								No inbox items.
+							</p>
 						) : (
 							<>
 								{inboxItems.map((item) => (
-									<Card key={item.id} className="mb-3 cursor-pointer hover:bg-muted" onClick={() => { if (item?.refType === 'PROCUREMENT_CASE' && item?.refId) router.push(`/pengadaan/${item.refId}`); }} role="button" tabIndex={0}>
+									<Card
+										key={item.id}
+										className="mb-3 cursor-pointer hover:bg-muted"
+										onClick={() => {
+											if (
+												item?.refType ===
+													"PROCUREMENT_CASE" &&
+												item?.refId
+											)
+												router.push(
+													`/pengadaan/${item.refId}`
+												);
+										}}
+										role="button"
+										tabIndex={0}
+									>
 										<CardContent className="flex items-center gap-4 rounded-lg">
 											<div className="shrink-0 rounded-md bg-muted/10">
 												<Mail className="w-5 h-5 text-muted-foreground" />
 											</div>
 											<div className="min-w-0 flex-1">
-												<p className="text-base font-medium truncate">{item.title}</p>
-												<p className="text-sm text-muted-foreground truncate mt-1">{item.stepName} • {item.requestedBy}</p>
+												<p className="text-base font-medium truncate">
+													{item.title}
+												</p>
+												<p className="text-sm text-muted-foreground truncate mt-1">
+													{item.stepName} •{" "}
+													{item.requestedBy}
+												</p>
 											</div>
 											<div className="flex flex-col items-end ml-2 pr-4">
-												<span className={`text-sm font-medium ${item.status === 'PENDING' ? 'text-amber-500' : 'text-emerald-500'}`}>{item.status}</span>
-												<span className="text-sm text-muted-foreground mt-1">{item.createdAt ? format(new Date(item.createdAt), 'dd MMM yyyy HH:mm') : ''}</span>
+												<span
+													className={`text-sm font-medium ${
+														item.status ===
+														"PENDING"
+															? "text-amber-500"
+															: "text-emerald-500"
+													}`}
+												>
+													{item.status}
+												</span>
+												<span className="text-sm text-muted-foreground mt-1">
+													{item.createdAt
+														? format(
+																new Date(
+																	item.createdAt
+																),
+																"dd MMM yyyy HH:mm"
+														  )
+														: ""}
+												</span>
 											</div>
 										</CardContent>
 									</Card>
@@ -382,9 +472,7 @@ export default function DashboardPage() {
 					<CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 						<div>
 							<CardTitle>Pengadaan</CardTitle>
-							<CardDescription>
-								Pengadaan terkini
-							</CardDescription>
+							<CardDescription>Pengadaan terkini</CardDescription>
 						</div>
 					</CardHeader>
 					<CardContent className="p-0">
@@ -424,7 +512,7 @@ export default function DashboardPage() {
 							variant="outline"
 							onClick={() => router.push("/admin/roles")}
 						>
-							Tetapkan Peran Pada Pengguna 
+							Tetapkan Peran Pada Pengguna
 						</Button>
 						<Button
 							className="w-full justify-start"
@@ -446,4 +534,3 @@ export default function DashboardPage() {
 		</div>
 	);
 }
-
