@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { MoreHorizontal, Eye, Copy } from "lucide-react";
+import { MoreHorizontal, Eye, Copy, FileText } from "lucide-react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -25,6 +25,7 @@ export type NotaDinas = {
 	subject: string;
 	status: string;
 	created_at: string;
+	procurement_id: string;
 };
 
 // Helper for Status Color
@@ -59,6 +60,14 @@ export const columns: ColumnDef<NotaDinas>[] = [
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Dari" />
 		),
+		cell: ({ row }) => (
+			<div
+				className="max-w-[200px] truncate"
+				title={row.getValue("from")}
+			>
+				{row.getValue("from")}
+			</div>
+		),
 	},
 	{
 		accessorKey: "subject",
@@ -67,7 +76,7 @@ export const columns: ColumnDef<NotaDinas>[] = [
 		),
 		cell: ({ row }) => (
 			<div
-				className="max-w-[300px] truncate"
+				className="max-w-[400px] truncate"
 				title={row.getValue("subject")}
 			>
 				{row.getValue("subject")}
@@ -124,7 +133,13 @@ export const columns: ColumnDef<NotaDinas>[] = [
 						<DropdownMenuItem asChild>
 							<Link href={`/nota-dinas/surat-masuk/${item.id}`}>
 								<Eye className="mr-2 h-4 w-4" />
-								Detail
+								Detail Surat
+							</Link>
+						</DropdownMenuItem>
+						<DropdownMenuItem asChild>
+							<Link href={`/pengadaan/${item.procurement_id}`}>
+								<FileText className="mr-2 h-4 w-4" />
+								Lihat Pengadaan
 							</Link>
 						</DropdownMenuItem>
 					</DropdownMenuContent>

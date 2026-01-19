@@ -95,11 +95,11 @@ export async function GET(
 			where: {
 				ref_type: "PROCUREMENT_CASE",
 				ref_id: id,
-				master_doc_type: {
-					name: {
-						in: ["SCAN SURAT MASUK", "RAB", "TOR"],
-					},
-				},
+				// master_doc_type: {
+				// 	name: {
+				// 		in: ["SCAN SURAT MASUK", "RAB", "TOR"],
+				// 	},
+				// },
 			},
 			include: {
 				master_doc_type: true,
