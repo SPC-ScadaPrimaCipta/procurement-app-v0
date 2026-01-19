@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { DataTable } from "@/components/datatable/data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
 	createProcurementMethodColumns,
@@ -18,6 +18,8 @@ export function ProcurementMethodTable() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [refreshTrigger, setRefreshTrigger] = useState(0);
+	const [hasChanges, setHasChanges] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 
 	// Dialog states
 	const [formDialogOpen, setFormDialogOpen] = useState(false);
@@ -75,6 +77,7 @@ export function ProcurementMethodTable() {
 	const handleFormSuccess = () => {
 		setFormDialogOpen(false);
 		refetchProcurementMethods();
+		setHasChanges(false);
 		toast.success(
 			editingProcurementMethod
 				? "Jenis pengadaan berhasil diupdate"
@@ -88,9 +91,87 @@ export function ProcurementMethodTable() {
 		toast.success("Jenis pengadaan berhasil dihapus");
 	};
 
+	const handleMoveUp = (method: ProcurementMethod) => {
+		const currentIndex = procurementMethods.findIndex((m) => m.id === method.id);
+		if (currentIndex <= 0) return;
+
+		const newMethods = [...procurementMethods];
+		[newMethods[currentIndex - 1], newMethods[currentIndex]] = [
+			newMethods[currentIndex],
+			newMethods[currentIndex - 1],
+		];
+
+		newMethods.forEach((m, idx) => {
+			m.sort_order = idx + 1;
+		});
+
+		setProcurementMethods(newMethods);
+		setHasChanges(true);
+	};
+
+	const handleMoveDown = (method: ProcurementMethod) => {
+		const currentIndex = procurementMethods.findIndex((m) => m.id === method.id);
+		if (currentIndex >= procurementMethods.length - 1) return;
+
+		const newMethods = [...procurementMethods];
+		[newMethods[currentIndex], newMethods[currentIndex + 1]] = [
+			newMethods[currentIndex + 1],
+			newMethods[currentIndex],
+		];
+
+		newMethods.forEach((m, idx) => {
+			m.sort_order = idx + 1;
+		});
+
+		setProcurementMethods(newMethods);
+		setHasChanges(true);
+	};
+
+	const canMoveUp = (method: ProcurementMethod) => {
+		return procurementMethods.findIndex((m) => m.id === method.id) > 0;
+	};
+
+	const canMoveDown = (method: ProcurementMethod) => {
+		const idx = procurementMethods.findIndex((m) => m.id === method.id);
+		return idx >= 0 && idx < procurementMethods.length - 1;
+	};
+
+	const handleSaveChanges = async () => {
+		setIsSaving(true);
+		try {
+			const updates = procurementMethods.map((method) => ({
+				id: method.id,
+				sort_order: method.sort_order,
+			}));
+
+			const response = await fetch("/api/master/procurement-method/reorder", {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ methods: updates }),
+			});
+
+			if (!response.ok) {
+				throw new Error("Failed to update sort order");
+			}
+
+			toast.success("Urutan berhasil disimpan");
+			setHasChanges(false);
+			refetchProcurementMethods();
+		} catch (error) {
+			toast.error("Gagal menyimpan urutan");
+			console.error(error);
+		} finally {
+			setIsSaving(false);
+		}
+	};
+
 	const columns = createProcurementMethodColumns({
 		onEdit: handleEdit,
 		onDelete: handleDelete,
+		onMoveUp: handleMoveUp,
+		onMoveDown: handleMoveDown,
+		canMoveUp,
+		canMoveDown,
 	});
 
 	return (
@@ -106,10 +187,31 @@ export function ProcurementMethodTable() {
 						className="pl-9"
 					/>
 				</div>
-				<Button onClick={handleAddNew}>
-					<Plus className="h-4 w-4 mr-2" />
-					Tambah Jenis Pengadaan
-				</Button>
+				<div className="flex gap-2">
+					{hasChanges && (
+						<Button
+							onClick={handleSaveChanges}
+							disabled={isSaving}
+							variant="default"
+						>
+							{isSaving ? (
+								<>
+									<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+									Menyimpan...
+								</>
+							) : (
+								<>
+									<Save className="h-4 w-4 mr-2" />
+									Save Changes
+								</>
+							)}
+						</Button>
+					)}
+					<Button onClick={handleAddNew}>
+						<Plus className="h-4 w-4 mr-2" />
+						Tambah Jenis Pengadaan
+					</Button>
+				</div>
 			</div>
 
 			{/* Table */}

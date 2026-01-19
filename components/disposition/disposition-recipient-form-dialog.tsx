@@ -113,26 +113,6 @@ export function DispositionRecipientFormDialog({
 							/>
 						</div>
 
-						{/* Sort Order */}
-						<div className="space-y-2">
-							<Label htmlFor="sort_order">Urutan</Label>
-							<Input
-								id="sort_order"
-								type="number"
-								value={formData.sort_order}
-								onChange={(e) =>
-									setFormData({
-										...formData,
-										sort_order: parseInt(e.target.value) || 0,
-									})
-								}
-								min="0"
-							/>
-							<p className="text-xs text-muted-foreground">
-								Urutan tampilan dalam daftar (semakin kecil semakin atas)
-							</p>
-						</div>
-
 						{/* Is Active */}
 						<div className="flex items-center justify-between">
 							<div className="space-y-0.5">

@@ -54,19 +54,26 @@ export async function POST(request: Request) {
 
         const body = await request.json();
 
-        const data: any = {
-            ...body,
-            created_by: session.user.id,
-        };
+		// Get next sort_order
+		const maxOrderRecord = await prisma.master_procurement_method.findFirst({
+			orderBy: { sort_order: "desc" },
+			select: { sort_order: true },
+		});
+		const nextOrder = (maxOrderRecord?.sort_order ?? 0) + 1;
 
-        if (data.is_active === undefined) data.is_active = true;
-        if (data.sort_order === undefined) data.sort_order = 0;
+		const data: any = {
+			...body,
+			sort_order: nextOrder,
+			created_by: session.user.id,
+		};
 
-        const existing = await prisma.master_procurement_method.findUnique({
-            where: { name: data.name },
-        });
+		if (data.is_active === undefined) data.is_active = true;
 
-        if (existing) {
+		const existing = await prisma.master_procurement_method.findUnique({
+			where: { name: data.name },
+		});
+
+		if (existing) {
             return NextResponse.json(
                 { error: `Procurement method '${data.name}' already exists.` },
                 { status: 409 }, // Conflict
