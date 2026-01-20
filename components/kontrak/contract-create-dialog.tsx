@@ -63,6 +63,7 @@ const contractSchema = z.object({
 		"PENGADAAN_BARANG",
 		"LAINNYA",
 	]),
+	procurement_type_id: z.string().min(1, "Required"),
 	// Nested fields for UI only initially
 	payment_plan: z.array(z.any()).optional(),
 	bast: z.array(z.any()).optional(),
@@ -92,6 +93,9 @@ export function ContractCreateDialog({
 	const [procurementMethods, setProcurementMethods] = useState<
 		{ id: string; name: string }[]
 	>([]);
+	const [procurementTypes, setProcurementTypes] = useState<
+		{ id: string; name: string }[]
+	>([]);
 	const [contractStatuses, setContractStatuses] = useState<
 		{ id: string; name: string }[]
 	>([]);
@@ -119,6 +123,23 @@ export function ContractCreateDialog({
 		}
 	}, [open]);
 
+	useEffect(() => {
+		if (open) {
+			const fetchProcurementTypes = async () => {
+				try {
+					const res = await fetch("/api/master/procurement-type");
+					if (res.ok) {
+						const data = await res.json();
+						setProcurementTypes(data || []);
+					}
+				} catch (error) {
+					console.error("Failed to fetch procurement types", error);
+				}
+			};
+			fetchProcurementTypes();
+		}
+	}, [open]);
+
 	const form = useForm<ContractFormValues>({
 		resolver: zodResolver(contractSchema),
 		defaultValues: {
@@ -126,7 +147,6 @@ export function ContractCreateDialog({
 			work_description: "",
 			contract_value: 0,
 			expense_type: "BELANJA_BARANG",
-			procurement_type: "KONSULTASI",
 			payment_plan: [],
 		},
 	});
@@ -340,12 +360,16 @@ export function ContractCreateDialog({
 
 									<FormField
 										control={form.control}
-										name="procurement_type"
+										name="procurement_type_id"
 										render={({ field }) => (
 											<FormItem>
-												<FormLabel>Jenis Pengadaan</FormLabel>
+												<FormLabel>
+													Jenis Pengadaan
+												</FormLabel>
 												<Select
-													onValueChange={field.onChange}
+													onValueChange={
+														field.onChange
+													}
 													defaultValue={field.value}
 												>
 													<FormControl>
@@ -354,18 +378,16 @@ export function ContractCreateDialog({
 														</SelectTrigger>
 													</FormControl>
 													<SelectContent>
-														<SelectItem value="KONSULTASI">
-															Konsultasi
-														</SelectItem>
-														<SelectItem value="KONSTRUKSI">
-															Konstruksi
-														</SelectItem>
-														<SelectItem value="PENGADAAN_BARANG">
-															Pengadaan Barang
-														</SelectItem>
-														<SelectItem value="LAINNYA">
-															Lainnya
-														</SelectItem>
+														{procurementTypes.map(
+															(t) => (
+																<SelectItem
+																	key={t.id}
+																	value={t.id}
+																>
+																	{t.name}
+																</SelectItem>
+															)
+														)}
 													</SelectContent>
 												</Select>
 												<FormMessage />

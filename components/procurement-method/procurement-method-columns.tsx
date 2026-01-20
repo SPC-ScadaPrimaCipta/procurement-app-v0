@@ -34,7 +34,7 @@ export const createProcurementMethodColumns = ({
 	{
 		accessorKey: "name",
 		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title="Nama Jenis Pengadaan" />
+			<DataTableColumnHeader column={column} title="Nama metode Pengadaan" />
 		),
 		cell: ({ row }) => {
 			return <div className="font-medium">{row.getValue("name")}</div>;
