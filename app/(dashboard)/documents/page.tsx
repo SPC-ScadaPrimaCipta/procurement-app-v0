@@ -48,13 +48,6 @@ export default function DokumenPage() {
                         List semua dokumen tersedia.
                     </p>
                 </div>
-                {/* Optional: Add button later if needed. Usually contracts are created from Procurement Case */}
-                {/* <Button asChild>
-                    <Link href="/kontrak/new">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Buat Kontrak Manual
-                    </Link>
-                </Button> */}
             </div>
 
             {/* Quick Stats */}
