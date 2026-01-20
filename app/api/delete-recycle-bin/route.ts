@@ -76,7 +76,14 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { ids } = await request.json();
+        let body;
+        try {
+            body = await request.json();
+        } catch (e) {
+            return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+        }
+
+        const { ids } = body;
 
         if (!ids || !Array.isArray(ids) || ids.length === 0) {
             return NextResponse.json(
@@ -85,17 +92,15 @@ export async function DELETE(request: NextRequest) {
             );
         }
 
-        await prisma.document.deleteMany({
+        const deleteResult = await prisma.document.deleteMany({
             where: {
-                id: {
-                    in: ids,
-                },
+                id: { in: ids },
             },
         });
 
         return NextResponse.json({
             success: true,
-            deletedCount: ids.length,
+            deletedCount: deleteResult.count,
             message: "Documents permanently deleted",
         });
     } catch (error) {

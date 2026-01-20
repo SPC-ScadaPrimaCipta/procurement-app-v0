@@ -50,7 +50,7 @@ export type DocumentItem = {
 };
 
 
-export const columns: ColumnDef<DocumentItem>[] = [
+export const columns: (fetchData: () => Promise<void>) => ColumnDef<DocumentItem>[] = (fetchData) => [
     {
         accessorKey: "doc_name",
         header: ({ column }) => (
@@ -122,6 +122,7 @@ export const columns: ColumnDef<DocumentItem>[] = [
                 if (res.ok) {
                     toast.success("Dokumen berhasil dihapus");
                     router.refresh();
+                    fetchData();
                 } else {
                     toast.error("Gagal menghapus dokumen");
                 }
@@ -135,6 +136,7 @@ export const columns: ColumnDef<DocumentItem>[] = [
                 if (res.ok) {
                     toast.success("Dokumen berhasil direstore");
                     router.refresh();
+                    fetchData();
                 } else {
                     toast.error("Gagal merestore dokumen");
                 }

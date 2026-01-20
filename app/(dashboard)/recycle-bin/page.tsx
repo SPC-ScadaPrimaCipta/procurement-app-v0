@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 export default function DokumenPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [open, setOpen] = useState(false);
+    const [open2, setOpen2] = useState(false);
     const [totalDocuments, setTotalDocuments] = useState<number>(0);
     const [data, setData] = useState<DocumentItem[]>([]);
     const router = useRouter();
@@ -55,49 +56,77 @@ export default function DokumenPage() {
         fetchData();
     }, []);
 
+    const column = columns(fetchData);
+
     const handleDeleteAll = async () => {
+        if (data.length === 0) {
+            toast.error("Recycle bin sudah kosong.");
+            return;
+        }
+
         try {
             setIsLoading(true);
+
+            const documentIds = data.map((doc) => doc.id);
+
             const response = await fetch("/api/delete-recycle-bin", {
                 method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ ids: documentIds }),
             });
-
-            setIsLoading(false);
-
-            if (!response.ok) {
-                toast.success("Recycle bin berhasil dikosongkan.");
-                router.refresh();
-                setOpen(false);
-            }
 
             const result = await response.json();
 
-            fetchData();
+            if (response.ok) {
+                toast.success("Recycle bin berhasil dikosongkan.");
+                setOpen(false);
+                fetchData();
+                router.refresh();
+            } else {
+                toast.error(result.error || "Gagal mengosongkan recycle bin.");
+            }
         } catch (error) {
+            console.error("Delete Error:", error);
             toast.error("Gagal mengosongkan recycle bin.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const handleRestoreAll = async () => {
+        if (data.length === 0) {
+            toast.error("Tidak ada dokumen untuk dipulihkan.");
+            return;
+        }
+
         try {
             setIsLoading(true);
 
+            const documentIds = data.map((doc) => doc.id);
+
             const response = await fetch("/api/restore-recycle-bin", {
-                method: "POST",
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ ids: documentIds }),
             });
 
             setIsLoading(false);
 
-            if (!response.ok) {
+            if (response.ok) {
                 toast.success("Dokumen berhasil dipulihkan.");
-                router.refresh();
-                setOpen(false);
+                setOpen2(false);
+                fetchData();
+            } else {
+                const errorData = await response.json();
+                toast.error(errorData.error || "Gagal memulihkan dokumen.");
             }
-
-            const result = await response.json();
-
-            fetchData();
         } catch (error) {
+            setIsLoading(false);
+            console.error("Restore Error:", error);
             toast.error("Gagal memulihkan dokumen.");
         }
     };
@@ -152,7 +181,7 @@ export default function DokumenPage() {
                         </AlertDialogContent>
                     </AlertDialog>
 
-                    <AlertDialog open={open} onOpenChange={setOpen}>
+                    <AlertDialog open={open2} onOpenChange={setOpen2}>
                         <AlertDialogTrigger asChild>
                             <Button
                                 className="flex items-center gap-2 bg-green-600 cursor-pointer"
@@ -166,23 +195,24 @@ export default function DokumenPage() {
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Konfirmasi Pengosongan</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Semua dokumen yang berada di dalam Recycle Bin akan dihapus secara permanen.
+                                    Semua dokumen yang berada di dalam Recycle Bin akan dipulihkan.
                                     Tindakan ini tidak dapat dibatalkan. Yakin ingin melanjutkan?
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
 
                             <AlertDialogFooter>
-                                <Button variant="outline" onClick={() => setOpen(false)}>
+                                <Button variant="outline" onClick={() => setOpen2(false)}>
                                     Batal
                                 </Button>
 
                                 <Button
-                                    variant="destructive"
-                                    onClick={handleDeleteAll}
+                                    onClick={handleRestoreAll}
                                     disabled={isLoading}
+                                    onSelect={(e) => e.preventDefault()}
+                                    className="bg-green-600"
                                 >
                                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Hapus Permanen
+                                    Pulihkan Semua
                                 </Button>
                             </AlertDialogFooter>
                         </AlertDialogContent>
@@ -207,7 +237,7 @@ export default function DokumenPage() {
                 <CardContent className="p-0">
                     <div className="px-4">
                         <DataTable
-                            columns={columns}
+                            columns={column}
                             data={data}
                             filterKey="doc_name"
                         />

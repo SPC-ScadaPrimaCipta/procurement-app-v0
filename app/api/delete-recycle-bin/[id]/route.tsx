@@ -5,10 +5,10 @@ import { headers } from "next/headers";
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
-    const { id: documentId } = params;
-    
+    const { id: documentId } = await context.params;
+
     try {
         const session = await auth.api.getSession({
             headers: await headers(),
