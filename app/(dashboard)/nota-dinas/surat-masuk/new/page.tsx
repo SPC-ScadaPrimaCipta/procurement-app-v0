@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, FileText, Send } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Send, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { validateMicrosoftSession } from "@/lib/utils";
+import { matchMultiple } from "@/lib/fuzzy-match";
+import { convertPdfToImage } from "@/lib/pdf-to-image";
 import {
 	DispositionSection,
 	DispositionData,
@@ -23,10 +25,12 @@ import {
 	CardDescription,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function NewSuratMasukPage() {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
+	const [ocrLoading, setOcrLoading] = useState(false);
 
 	// Form State
 	const [formData, setFormData] = useState({
@@ -60,6 +64,8 @@ export default function NewSuratMasukPage() {
 	const [docTypes, setDocTypes] = useState<{ id: string; name: string }[]>(
 		[]
 	);
+	const [masterActions, setMasterActions] = useState<any[]>([]);
+	const [masterRecipients, setMasterRecipients] = useState<any[]>([]);
 
 	useEffect(() => {
 		const fetchDocTypes = async () => {
@@ -74,6 +80,23 @@ export default function NewSuratMasukPage() {
 			}
 		};
 		fetchDocTypes();
+	}, []);
+
+	useEffect(() => {
+		const fetchMasters = async () => {
+			try {
+				const [actionsRes, recipientsRes] = await Promise.all([
+					fetch("/api/master/disposition-action"),
+					fetch("/api/master/disposition-recipient"),
+				]);
+				if (actionsRes.ok) setMasterActions(await actionsRes.json());
+				if (recipientsRes.ok)
+					setMasterRecipients(await recipientsRes.json());
+			} catch (e) {
+				console.error("Failed to load master disposition data", e);
+			}
+		};
+		fetchMasters();
 	}, []);
 
 	useEffect(() => {
@@ -94,6 +117,110 @@ export default function NewSuratMasukPage() {
 				setFiles((prev) => ({ ...prev, [key]: e.target.files![0] }));
 			}
 		};
+
+	// Convert DD/MM/YYYY to YYYY-MM-DD for date input
+	const convertDateFormat = (ddmmyyyy: string): string => {
+		if (!ddmmyyyy || ddmmyyyy === "null") return "";
+		const parts = ddmmyyyy.split("/");
+		if (parts.length === 3) {
+			const [day, month, year] = parts;
+			return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+		}
+		return "";
+	};
+
+	const handleProcessOCR = async () => {
+		if (!files.notaDinas) {
+			toast.error("Pilih file Nota Dinas terlebih dahulu");
+			return;
+		}
+
+		setOcrLoading(true);
+
+		try {
+			let fileToProcess = files.notaDinas;
+
+			// Convert PDF to image if needed (client-side)
+			if (files.notaDinas.type === "application/pdf") {
+				fileToProcess = await convertPdfToImage(files.notaDinas);
+			}
+
+			const formData = new FormData();
+			formData.append("file", fileToProcess);
+
+			const res = await fetch("/api/document/ocr", {
+				method: "POST",
+				body: formData,
+			});
+
+			const result = await res.json();
+
+			if (!res.ok) {
+				throw new Error(result.details || result.error || "OCR failed");
+			}
+
+			const ocrData = result.data;
+
+			// Auto-fill metadata surat
+			setFormData((prev) => ({
+				...prev,
+				letter_number: ocrData.nomor_surat || prev.letter_number,
+				letter_date: convertDateFormat(ocrData.tanggal_surat) || prev.letter_date,
+				from_name: ocrData.dari_asal || prev.from_name,
+				cc: ocrData.cc_tembusan || prev.cc,
+				subject: ocrData.perihal || prev.subject,
+			}));
+
+			// Auto-fill disposition data
+			const updatedDisposition: Partial<DispositionData> = {
+				disposition_note: ocrData.disposition_note || dispositionData.disposition_note,
+			};
+
+			if (ocrData.agenda_scope) {
+				updatedDisposition.agenda_scope = ocrData.agenda_scope;
+			}
+			if (ocrData.agenda_number) {
+				updatedDisposition.agenda_number = ocrData.agenda_number;
+			}
+			if (ocrData.disposition_date) {
+				updatedDisposition.disposition_date = convertDateFormat(ocrData.disposition_date);
+			}
+
+			// Fuzzy match disposition actions
+			if (ocrData.disposition_actions && Array.isArray(ocrData.disposition_actions)) {
+				const matchedActions = matchMultiple(
+					ocrData.disposition_actions,
+					masterActions,
+					(action) => action.name,
+					0.6 // 60% similarity threshold
+				);
+				updatedDisposition.disposition_actions = matchedActions.map((a) => a.name);
+			}
+
+			// Fuzzy match forward_to recipients
+			if (ocrData.forward_to && Array.isArray(ocrData.forward_to)) {
+				const matchedRecipients = matchMultiple(
+					ocrData.forward_to,
+					masterRecipients,
+					(recipient) => recipient.name,
+					0.6 // 60% similarity threshold
+				);
+				updatedDisposition.forward_to_ids = matchedRecipients.map((r) => r.id);
+			}
+
+			setDispositionData((prev) => ({ ...prev, ...updatedDisposition }));
+
+			toast.success("✨ Data berhasil terisi otomatis!", {
+				description: "Mohon periksa kembali keakuratan data sebelum menyimpan.",
+				duration: 6000,
+			});
+		} catch (error: any) {
+			console.error("OCR Error:", error);
+			toast.error(error.message || "Gagal memproses OCR");
+		} finally {
+			setOcrLoading(false);
+		}
+	};
 
 	const uploadFile = async (
 		caseId: string,
@@ -279,12 +406,12 @@ export default function NewSuratMasukPage() {
 					</CardHeader>
 					<CardContent className="space-y-4">
 						<div className="p-4 border border-dashed border-primary/30 rounded-lg bg-background">
-							<div className="space-y-2">
-								<Label htmlFor="file_notadinas">
-									Scan Nota Dinas / Surat Masuk{" "}
-									<span className="text-red-500">*</span>
-								</Label>
-								<div className="flex items-center gap-4">
+							<div className="space-y-4">
+								<div className="space-y-2">
+									<Label htmlFor="file_notadinas">
+										Scan Nota Dinas / Surat Masuk{" "}
+										<span className="text-red-500">*</span>
+									</Label>
 									<Input
 										id="file_notadinas"
 										type="file"
@@ -292,20 +419,54 @@ export default function NewSuratMasukPage() {
 										onChange={handleFileChange("notaDinas")}
 										className="cursor-pointer"
 									/>
+									<p className="text-xs text-muted-foreground">
+										Format: PDF, JPG, PNG. Max 10MB. (Untuk PDF, hanya halaman pertama yang diproses OCR)
+									</p>
 								</div>
-								<div className="flex items-center gap-2 mt-2 text-sm text-amber-600 bg-muted p-2 rounded">
-									<span className="text-xs font-medium">
-										Fitur OCR (Pengisian Otomatis) akan
-										segera hadir (Coming Soon)
-									</span>
-								</div>
-								<p className="text-xs text-muted-foreground mt-1">
-									Format: PDF, JPG, PNG. Max 10MB.
-								</p>
+
+								{/* OCR Button */}
+								{files.notaDinas && (
+									<Button
+										type="button"
+										onClick={handleProcessOCR}
+										disabled={ocrLoading}
+										className="w-full"
+									>
+										{ocrLoading ? (
+											<>
+												<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+												Processing OCR...
+											</>
+										) : (
+											<>
+												<Sparkles className="mr-2 h-4 w-4" />
+												Process OCR - Auto Fill Form
+											</>
+										)}
+									</Button>
+								)}
+
+								{files.notaDinas && (
+									<div className="flex items-center gap-2 text-xs text-muted-foreground bg-blue-50 p-3 rounded border border-blue-200">
+										<Sparkles className="h-4 w-4 text-blue-600" />
+										<span>
+											<strong>OCR Ready:</strong> Klik tombol di atas untuk otomatis mengisi form dari dokumen scan
+										</span>
+									</div>
+								)}
 							</div>
 						</div>
 					</CardContent>
 				</Card>
+				
+				{/* Alert Warning OCR */}
+				<Alert className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
+					<AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
+					<AlertDescription className="text-sm text-amber-800 dark:text-amber-200">
+						<strong>Perhatian:</strong> Jika menggunakan OCR, mohon periksa kembali keakuratan semua data sebelum menyimpan.
+					</AlertDescription>
+				</Alert>
+
 				{/* Metadata Section */}
 				<Card>
 					<CardHeader>
