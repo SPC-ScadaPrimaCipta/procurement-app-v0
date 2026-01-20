@@ -9,7 +9,7 @@ import { getWorkflowData } from "@/lib/workflow/get-workflow-data";
 
 export async function GET(
 	request: Request,
-	{ params }: { params: Promise<{ id: string }> }
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	const { id } = await params;
 	const canRead = await hasPermission("read", "pengadaan");
@@ -63,13 +63,13 @@ export async function GET(
 			data.correspondence_out.map(async (item) => ({
 				...item,
 				created_by_name: await resolveUserName(item.created_by),
-			}))
+			})),
 		);
 
 		const { currentStepInstanceId, workflowTrack } = await getWorkflowData(
 			"PROCUREMENT_CASE",
 			id,
-			session?.user?.id
+			session?.user?.id,
 		);
 
 		// Parse disposition actions to ensure array
@@ -119,7 +119,7 @@ export async function GET(
 				? {
 						...data.correspondence_in,
 						created_by_name: correspondenceInCreator,
-				  }
+					}
 				: null,
 			correspondence_out: correspondenceOutWithNames,
 			currentStepInstanceId,
@@ -128,7 +128,7 @@ export async function GET(
 				? {
 						...data.case_disposition_summary,
 						disposition_actions: parsedDispositionActions, // Override with parsed array
-				  }
+					}
 				: null,
 			documents,
 		});
@@ -140,7 +140,7 @@ export async function GET(
 
 export async function DELETE(
 	request: Request,
-	{ params }: { params: Promise<{ id: string }> }
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	const { id } = await params;
 	// 1. Auth check

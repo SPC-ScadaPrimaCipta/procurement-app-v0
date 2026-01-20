@@ -1,11 +1,12 @@
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { checkUserAssignmentByStepId } from "@/lib/workflow/utils";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET(
 	request: Request,
-	{ params }: { params: Promise<{ id: string }> }
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	const { id: caseId } = await params;
 
@@ -21,7 +22,7 @@ export async function GET(
 	const user = session.user;
 	const url = new URL(request.url);
 	const workflowStepInstanceId = url.searchParams.get(
-		"workflowStepInstanceId"
+		"workflowStepInstanceId",
 	);
 	const workflowStepId = url.searchParams.get("workflowStepId");
 	const includeDocs = url.searchParams.get("includeDocs") === "true";
@@ -40,11 +41,19 @@ export async function GET(
 		// Allow if has role KPA/PPK/Admin/Superadmin or is created_by
 		const userRoles = (user as any).roles || [];
 		const hasElevatedRole = userRoles.some((r: string) =>
-			["admin", "superadmin", "kpa", "ppk"].includes(r.toLowerCase())
+			["admin", "superadmin", "kpa", "ppk"].includes(r.toLowerCase()),
 		);
 		const isCreator = procurementCase.created_by === user.id;
 
-		if (!hasElevatedRole && !isCreator) {
+		let isAssigned = false;
+		if (workflowStepInstanceId) {
+			isAssigned = await checkUserAssignmentByStepId(
+				workflowStepInstanceId,
+				user,
+			);
+		}
+
+		if (!hasElevatedRole && !isCreator && !isAssigned) {
 			return new NextResponse("Forbidden", { status: 403 });
 		}
 
@@ -60,7 +69,7 @@ export async function GET(
 						workflow_instance: true,
 						step: true, // This is the workflow_step
 					},
-				}
+				},
 			);
 
 			if (!stepInstance) {
@@ -91,7 +100,7 @@ export async function GET(
 					"Workflow step has no case_step mapping",
 					{
 						status: 400,
-					}
+					},
 				);
 			}
 		} else if (workflowStepId) {
@@ -104,7 +113,7 @@ export async function GET(
 					"Invalid workflowStepId or no mapping",
 					{
 						status: 400,
-					}
+					},
 				);
 			}
 
