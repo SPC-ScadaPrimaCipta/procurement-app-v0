@@ -30,7 +30,6 @@ export function ProcurementMethodFormDialog({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [formData, setFormData] = useState({
 		name: "",
-		sort_order: 0,
 		is_active: true,
 	});
 
@@ -38,13 +37,11 @@ export function ProcurementMethodFormDialog({
 		if (procurementMethod) {
 			setFormData({
 				name: procurementMethod.name,
-				sort_order: procurementMethod.sort_order,
 				is_active: procurementMethod.is_active,
 			});
 		} else {
 			setFormData({
 				name: "",
-				sort_order: 0,
 				is_active: true,
 			});
 		}
@@ -108,22 +105,6 @@ export function ProcurementMethodFormDialog({
 							}
 							placeholder="Contoh: Lelang Umum, Penunjukan Langsung, Pengadaan Langsung"
 							required
-						/>
-					</div>
-
-					<div className="space-y-2">
-						<Label htmlFor="sort_order">Urutan</Label>
-						<Input
-							id="sort_order"
-							type="number"
-							value={formData.sort_order}
-							onChange={(e) =>
-								setFormData({
-									...formData,
-									sort_order: parseInt(e.target.value) || 0,
-								})
-							}
-							placeholder="0"
 						/>
 					</div>
 

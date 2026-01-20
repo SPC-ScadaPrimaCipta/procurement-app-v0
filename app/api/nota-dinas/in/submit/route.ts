@@ -77,6 +77,71 @@ export async function POST(req: Request) {
 			return procurementCase;
 		});
 
+		// 5. Handle Disposition if present
+		if (body.disposition) {
+			const {
+				agenda_scope,
+				agenda_number,
+				disposition_date,
+				disposition_actions,
+				disposition_note,
+				forward_to_ids,
+			} = body.disposition;
+
+			if (agenda_number) {
+				const dispositionDate = disposition_date
+					? new Date(disposition_date)
+					: new Date();
+
+				const actionsString = Array.isArray(disposition_actions)
+					? JSON.stringify(disposition_actions)
+					: disposition_actions;
+
+				await prisma.$transaction(async (tx) => {
+					// Upsert Summary
+					const summary = await tx.case_disposition_summary.upsert({
+						where: { case_id: result.id },
+						create: {
+							case_id: result.id,
+							agenda_scope,
+							agenda_number,
+							disposition_date: dispositionDate,
+							disposition_actions: actionsString,
+							disposition_note,
+							updated_by: session.user.id,
+							updated_at: new Date(),
+						},
+						update: {
+							agenda_scope,
+							agenda_number,
+							disposition_date: dispositionDate,
+							disposition_actions: actionsString,
+							disposition_note,
+							updated_by: session.user.id,
+							updated_at: new Date(),
+						},
+					});
+
+					// Update Forward To
+					await tx.case_disposition_forward_to.deleteMany({
+						where: { case_disposition_summary_id: summary.id },
+					});
+
+					if (
+						Array.isArray(forward_to_ids) &&
+						forward_to_ids.length > 0
+					) {
+						await tx.case_disposition_forward_to.createMany({
+							data: forward_to_ids.map((recipientId: string) => ({
+								case_disposition_summary_id: summary.id,
+								recipient_id: recipientId,
+							})),
+						});
+					}
+				});
+			}
+		}
+
 		try {
 			await startWorkflow({
 				workflowCode: "PROCUREMENT",

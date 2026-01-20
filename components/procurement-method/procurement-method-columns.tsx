@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/datatable/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 
 export type ProcurementMethod = {
 	id: string;
@@ -17,11 +17,19 @@ export type ProcurementMethod = {
 interface ProcurementMethodColumnsProps {
 	onEdit: (procurementMethod: ProcurementMethod) => void;
 	onDelete: (procurementMethod: ProcurementMethod) => void;
+	onMoveUp: (procurementMethod: ProcurementMethod) => void;
+	onMoveDown: (procurementMethod: ProcurementMethod) => void;
+	canMoveUp: (procurementMethod: ProcurementMethod) => boolean;
+	canMoveDown: (procurementMethod: ProcurementMethod) => boolean;
 }
 
 export const createProcurementMethodColumns = ({
 	onEdit,
 	onDelete,
+	onMoveUp,
+	onMoveDown,
+	canMoveUp,
+	canMoveDown,
 }: ProcurementMethodColumnsProps): ColumnDef<ProcurementMethod>[] => [
 	{
 		accessorKey: "name",
@@ -30,15 +38,6 @@ export const createProcurementMethodColumns = ({
 		),
 		cell: ({ row }) => {
 			return <div className="font-medium">{row.getValue("name")}</div>;
-		},
-	},
-	{
-		accessorKey: "sort_order",
-		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title="Urutan" />
-		),
-		cell: ({ row }) => {
-			return <div>{row.getValue("sort_order")}</div>;
 		},
 	},
 	{
@@ -72,6 +71,22 @@ export const createProcurementMethodColumns = ({
 			const procurementMethod = row.original;
 			return (
 				<div className="flex items-center gap-2">
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => onMoveUp(procurementMethod)}
+						disabled={!canMoveUp(procurementMethod)}
+					>
+						<ArrowUp className="h-4 w-4" />
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => onMoveDown(procurementMethod)}
+						disabled={!canMoveDown(procurementMethod)}
+					>
+						<ArrowDown className="h-4 w-4" />
+					</Button>
 					<Button
 						variant="ghost"
 						size="sm"

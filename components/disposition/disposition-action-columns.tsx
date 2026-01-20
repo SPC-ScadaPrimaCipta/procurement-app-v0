@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/datatable/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 
 export type DispositionAction = {
 	id: string;
@@ -17,11 +17,19 @@ export type DispositionAction = {
 interface DispositionActionColumnsProps {
 	onEdit: (action: DispositionAction) => void;
 	onDelete: (action: DispositionAction) => void;
+	onMoveUp: (action: DispositionAction) => void;
+	onMoveDown: (action: DispositionAction) => void;
+	canMoveUp: (action: DispositionAction) => boolean;
+	canMoveDown: (action: DispositionAction) => boolean;
 }
 
 export const createDispositionActionColumns = ({
 	onEdit,
 	onDelete,
+	onMoveUp,
+	onMoveDown,
+	canMoveUp,
+	canMoveDown,
 }: DispositionActionColumnsProps): ColumnDef<DispositionAction>[] => [
 	{
 		accessorKey: "name",
@@ -47,15 +55,6 @@ export const createDispositionActionColumns = ({
 		},
 	},
 	{
-		accessorKey: "sort_order",
-		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title="Urutan" />
-		),
-		cell: ({ row }) => {
-			return <div className="text-center">{row.getValue("sort_order")}</div>;
-		},
-	},
-	{
 		accessorKey: "created_at",
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Tanggal Dibuat" />
@@ -71,17 +70,37 @@ export const createDispositionActionColumns = ({
 		cell: ({ row }) => {
 			const action = row.original;
 			return (
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-1">
 					<Button
 						variant="ghost"
-						size="sm"
+						size="icon"
+						className="h-8 w-8"
+						onClick={() => onMoveUp(action)}
+						disabled={!canMoveUp(action)}
+					>
+						<ArrowUp className="h-4 w-4" />
+					</Button>
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-8 w-8"
+						onClick={() => onMoveDown(action)}
+						disabled={!canMoveDown(action)}
+					>
+						<ArrowDown className="h-4 w-4" />
+					</Button>
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-8 w-8"
 						onClick={() => onEdit(action)}
 					>
 						<Edit className="h-4 w-4" />
 					</Button>
 					<Button
 						variant="ghost"
-						size="sm"
+						size="icon"
+						className="h-8 w-8"
 						onClick={() => onDelete(action)}
 					>
 						<Trash2 className="h-4 w-4 text-destructive" />

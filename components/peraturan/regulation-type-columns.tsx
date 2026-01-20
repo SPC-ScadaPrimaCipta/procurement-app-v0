@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/datatable/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 
 export type RegulationType = {
 	id: string;
@@ -17,11 +17,19 @@ export type RegulationType = {
 interface RegulationTypeColumnsProps {
 	onEdit: (regulationType: RegulationType) => void;
 	onDelete: (regulationType: RegulationType) => void;
+	onMoveUp: (regulationType: RegulationType) => void;
+	onMoveDown: (regulationType: RegulationType) => void;
+	canMoveUp: (regulationType: RegulationType) => boolean;
+	canMoveDown: (regulationType: RegulationType) => boolean;
 }
 
 export const createRegulationTypeColumns = ({
 	onEdit,
 	onDelete,
+	onMoveUp,
+	onMoveDown,
+	canMoveUp,
+	canMoveDown,
 }: RegulationTypeColumnsProps): ColumnDef<RegulationType>[] => [
 	{
 		accessorKey: "name",
@@ -30,15 +38,6 @@ export const createRegulationTypeColumns = ({
 		),
 		cell: ({ row }) => {
 			return <div className="font-medium">{row.getValue("name")}</div>;
-		},
-	},
-	{
-		accessorKey: "sort_order",
-		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title="Urutan" />
-		),
-		cell: ({ row }) => {
-			return <div>{row.getValue("sort_order")}</div>;
 		},
 	},
 	{
@@ -72,6 +71,22 @@ export const createRegulationTypeColumns = ({
 			const regulationType = row.original;
 			return (
 				<div className="flex items-center gap-2">
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => onMoveUp(regulationType)}
+						disabled={!canMoveUp(regulationType)}
+					>
+						<ArrowUp className="h-4 w-4" />
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => onMoveDown(regulationType)}
+						disabled={!canMoveDown(regulationType)}
+					>
+						<ArrowDown className="h-4 w-4" />
+					</Button>
 					<Button
 						variant="ghost"
 						size="sm"

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { DataTable } from "@/components/datatable/data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
 	createRegulationTypeColumns,
@@ -18,6 +18,8 @@ export function RegulationTypeTable() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [refreshTrigger, setRefreshTrigger] = useState(0);
+	const [hasChanges, setHasChanges] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 
 	// Dialog states
 	const [formDialogOpen, setFormDialogOpen] = useState(false);
@@ -75,6 +77,7 @@ export function RegulationTypeTable() {
 	const handleFormSuccess = () => {
 		setFormDialogOpen(false);
 		refetchRegulationTypes();
+		setHasChanges(false);
 		toast.success(
 			editingRegulationType
 				? "Jenis regulasi berhasil diupdate"
@@ -88,9 +91,87 @@ export function RegulationTypeTable() {
 		toast.success("Jenis regulasi berhasil dihapus");
 	};
 
+	const handleMoveUp = (type: RegulationType) => {
+		const currentIndex = regulationTypes.findIndex((t) => t.id === type.id);
+		if (currentIndex <= 0) return;
+
+		const newTypes = [...regulationTypes];
+		[newTypes[currentIndex - 1], newTypes[currentIndex]] = [
+			newTypes[currentIndex],
+			newTypes[currentIndex - 1],
+		];
+
+		newTypes.forEach((t, idx) => {
+			t.sort_order = idx + 1;
+		});
+
+		setRegulationTypes(newTypes);
+		setHasChanges(true);
+	};
+
+	const handleMoveDown = (type: RegulationType) => {
+		const currentIndex = regulationTypes.findIndex((t) => t.id === type.id);
+		if (currentIndex >= regulationTypes.length - 1) return;
+
+		const newTypes = [...regulationTypes];
+		[newTypes[currentIndex], newTypes[currentIndex + 1]] = [
+			newTypes[currentIndex + 1],
+			newTypes[currentIndex],
+		];
+
+		newTypes.forEach((t, idx) => {
+			t.sort_order = idx + 1;
+		});
+
+		setRegulationTypes(newTypes);
+		setHasChanges(true);
+	};
+
+	const canMoveUp = (type: RegulationType) => {
+		return regulationTypes.findIndex((t) => t.id === type.id) > 0;
+	};
+
+	const canMoveDown = (type: RegulationType) => {
+		const idx = regulationTypes.findIndex((t) => t.id === type.id);
+		return idx >= 0 && idx < regulationTypes.length - 1;
+	};
+
+	const handleSaveChanges = async () => {
+		setIsSaving(true);
+		try {
+			const updates = regulationTypes.map((type) => ({
+				id: type.id,
+				sort_order: type.sort_order,
+			}));
+
+			const response = await fetch("/api/master/regulation-types/reorder", {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ types: updates }),
+			});
+
+			if (!response.ok) {
+				throw new Error("Failed to update sort order");
+			}
+
+			toast.success("Urutan berhasil disimpan");
+			setHasChanges(false);
+			refetchRegulationTypes();
+		} catch (error) {
+			toast.error("Gagal menyimpan urutan");
+			console.error(error);
+		} finally {
+			setIsSaving(false);
+		}
+	};
+
 	const columns = createRegulationTypeColumns({
 		onEdit: handleEdit,
 		onDelete: handleDelete,
+		onMoveUp: handleMoveUp,
+		onMoveDown: handleMoveDown,
+		canMoveUp,
+		canMoveDown,
 	});
 
 	return (
@@ -106,10 +187,31 @@ export function RegulationTypeTable() {
 						className="pl-9"
 					/>
 				</div>
-				<Button onClick={handleAddNew}>
-					<Plus className="h-4 w-4 mr-2" />
-					Tambah Jenis Regulasi
-				</Button>
+				<div className="flex gap-2">
+					{hasChanges && (
+						<Button
+							onClick={handleSaveChanges}
+							disabled={isSaving}
+							variant="default"
+						>
+							{isSaving ? (
+								<>
+									<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+									Menyimpan...
+								</>
+							) : (
+								<>
+									<Save className="h-4 w-4 mr-2" />
+									Save Changes
+								</>
+							)}
+						</Button>
+					)}
+					<Button onClick={handleAddNew}>
+						<Plus className="h-4 w-4 mr-2" />
+						Tambah Jenis Regulasi
+					</Button>
+				</div>
 			</div>
 
 			{/* Table */}

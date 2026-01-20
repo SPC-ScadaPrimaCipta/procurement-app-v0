@@ -16,12 +16,36 @@ import { Textarea } from "@/components/ui/textarea"; // Add Textarea import
 import { toast } from "sonner";
 import { Key, Smartphone, ShieldCheck } from "lucide-react";
 
+import { Separator } from "@/components/ui/separator";
+
 export default function SecurityPage() {
 	const [currentPassword, setCurrentPassword] = useState("");
 	const [newPassword, setNewPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [generatedToken, setGeneratedToken] = useState(""); // For Graph Token debug
 	const [loading, setLoading] = useState(false);
+	const [tokenStatus, setTokenStatus] = useState<string | null>(null);
+	const [loadingTokenCheck, setLoadingTokenCheck] = useState(false);
+
+	const checkToken = async () => {
+		setLoadingTokenCheck(true);
+		try {
+			const res = await fetch("/api/auth/check-microsoft-token");
+			if (res.ok) {
+				setTokenStatus("Active");
+				toast.success("Microsoft Session is Active");
+			} else {
+				const data = await res.json();
+				setTokenStatus("Expired / Invalid");
+				toast.error(data.message || "Session Expired");
+			}
+		} catch (e) {
+			setTokenStatus("Error");
+			toast.error("Failed to check token");
+		} finally {
+			setLoadingTokenCheck(false);
+		}
+	};
 
 	const handlePasswordChange = async () => {
 		if (!currentPassword || !newPassword || !confirmPassword) {
@@ -136,7 +160,42 @@ export default function SecurityPage() {
 						integration.
 					</CardDescription>
 				</CardHeader>
-				<CardContent>
+				<CardContent className="space-y-6">
+					{/* Token Status Check */}
+					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+						<div className="space-y-1">
+							<p className="font-medium">Access Token Status</p>
+							<p className="text-sm text-muted-foreground">
+								Check if your Microsoft session is active and
+								ready for file uploads.
+							</p>
+						</div>
+						<div className="flex items-center gap-4">
+							{tokenStatus && (
+								<div
+									className={`px-3 py-1 rounded-full text-xs font-medium ${
+										tokenStatus === "Active"
+											? "bg-green-100 text-green-700"
+											: "bg-red-100 text-red-700"
+									}`}
+								>
+									{tokenStatus}
+								</div>
+							)}
+							<Button
+								variant="outline"
+								onClick={checkToken}
+								disabled={loadingTokenCheck}
+							>
+								{loadingTokenCheck
+									? "Checking..."
+									: "Check Status"}
+							</Button>
+						</div>
+					</div>
+
+					{/* <Separator />
+
 					<div className="flex flex-col gap-2 w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 							<div className="space-y-1">
@@ -196,7 +255,7 @@ export default function SecurityPage() {
 								</Button>
 							</div>
 						)}
-					</div>
+					</div> */}
 				</CardContent>
 			</Card>
 
