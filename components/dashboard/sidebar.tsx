@@ -148,6 +148,12 @@ const rawMenu: MenuItem[] = [
 				permissions: [{ resource: "jenis-dokumen", action: "read" }],
 			},
 			{
+				name: "Metode Pengadaan",
+				href: "/master-data/metode-pengadaan",
+				icon: ShoppingBasket,
+				permissions: [{ resource: "metode-pengadaan", action: "read" }],
+			},
+			{
 				name: "Jenis Pengadaan",
 				href: "/master-data/jenis-pengadaan",
 				icon: ShoppingBasket,
