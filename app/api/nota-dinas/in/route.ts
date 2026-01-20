@@ -45,6 +45,7 @@ export async function GET(req: Request) {
 				include: {
 					procurement_case: {
 						select: {
+							id: true,
 							case_code: true,
 							title: true,
 							status_id: true,

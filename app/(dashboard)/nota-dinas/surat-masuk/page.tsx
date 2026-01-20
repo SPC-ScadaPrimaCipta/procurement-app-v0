@@ -43,6 +43,7 @@ export default function NotaDinasPage() {
 						status:
 							item.procurement_case?.status?.name || "Unknown",
 						created_at: item.created_at,
+						procurement_id: item.procurement_case?.id || "",
 					})
 				);
 

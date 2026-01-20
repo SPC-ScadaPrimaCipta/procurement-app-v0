@@ -108,6 +108,13 @@ export async function POST(request: NextRequest) {
 				: null;
 		const folderPathInput = formData.get("folder_path") as string;
 
+		if (!refType || !refId || !docTypeId) {
+			return NextResponse.json(
+				{ error: "Missing required metadata." },
+				{ status: 400 }
+			);
+		}
+
 		// Default folder path if not provided
 		const targetFolderPath = folderPathInput || "General/Uploads";
 

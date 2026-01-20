@@ -29,6 +29,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WorkflowActions } from "@/components/workflow/workflow-actions";
 import { WorkflowProgress } from "@/components/workflow/workflow-progress";
+import {
+	ChecklistCard,
+	ChecklistData,
+} from "@/components/checklist/checklist-card";
 
 import { ProcurementCaseDetail } from "./types";
 import { TabSuratMasuk } from "./tab-surat-masuk";
@@ -45,6 +49,7 @@ export default function PengadaanDetailPage() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [nextStepTitle, setNextStepTitle] = useState<string | null>(null);
+	const [checklist, setChecklist] = useState<ChecklistData | null>(null);
 
 	const fetchData = async () => {
 		try {
@@ -60,16 +65,32 @@ export default function PengadaanDetailPage() {
 			// Determine next step title for forward label
 			if (result.workflow_track) {
 				const pendingIndex = result.workflow_track.findIndex(
-					(step: any) => step.status === "PENDING"
+					(step: any) => step.status === "PENDING",
 				);
 				if (pendingIndex !== -1) {
 					setNextStepTitle(
 						result.workflow_track[pendingIndex + 1]?.title ||
-							"Approve"
+							"Approve",
 					);
 				} else {
 					setNextStepTitle(null);
 				}
+			}
+
+			// Fetch checklist
+			try {
+				const stepParam = result.currentStepInstanceId
+					? `workflowStepInstanceId=${result.currentStepInstanceId}`
+					: "";
+				const clRes = await fetch(
+					`/api/procurement-cases/${id}/checklist?includeDocs=true&${stepParam}`,
+				);
+				if (clRes.ok) {
+					const clData = await clRes.json();
+					setChecklist(clData);
+				}
+			} catch (e) {
+				console.error("Failed to fetch checklist", e);
 			}
 		} catch (err: any) {
 			setError(err.message);
@@ -89,7 +110,7 @@ export default function PengadaanDetailPage() {
 					`/api/procurement-cases/${id}/forward`,
 					{
 						method: "POST",
-					}
+					},
 				);
 				if (!res.ok) {
 					console.error("Failed to forward case");
@@ -147,8 +168,8 @@ export default function PengadaanDetailPage() {
 		status.name === "APPROVED"
 			? "default"
 			: status.name === "REJECTED"
-			? "destructive"
-			: "secondary";
+				? "destructive"
+				: "secondary";
 
 	return (
 		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
@@ -182,7 +203,7 @@ export default function PengadaanDetailPage() {
 					{/* Hero Card: Title & Key Meta */}
 					<Card className="border-l-4 border-l-primary/40">
 						<CardContent className="p-6">
-							<div className="mb-6">
+							<div className="">
 								<div className="flex items-start justify-between gap-4 mb-2">
 									<h2 className="text-2xl font-bold leading-tight">
 										{title}
@@ -195,16 +216,16 @@ export default function PengadaanDetailPage() {
 									</Badge>
 								</div>
 								<div className="flex flex-wrap gap-4 text-sm text-muted-foreground items-center">
-									<div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-md">
+									{/* <div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-md">
 										<Building2 className="w-4 h-4" />
 										<span>{unit?.unit_name || "-"}</span>
-									</div>
+									</div> */}
 									<div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-md">
 										<Calendar className="w-4 h-4" />
 										<span>
 											{format(
 												new Date(created_at),
-												"dd MMM yyyy"
+												"dd MMM yyyy",
 											)}
 										</span>
 									</div>
@@ -304,7 +325,11 @@ export default function PengadaanDetailPage() {
 									// 		?.disposition_note || ""
 									// }
 									// useExternalComment={true}
-									disabled={!data.case_disposition_summary}
+									disabled={
+										!data.case_disposition_summary ||
+										(!!checklist &&
+											!checklist.summary.isComplete)
+									}
 									onSuccess={() => {
 										window.location.reload();
 									}}
@@ -313,14 +338,26 @@ export default function PengadaanDetailPage() {
 										nextStepTitle?.includes("Approve")
 											? "Approve"
 											: nextStepTitle
-											? `Forward ke ${nextStepTitle}`
-											: "Forward"
+												? `Forward ke ${nextStepTitle}`
+												: "Forward"
 									}
 									sendBackLabel="Kembali ke Satker"
 								/>
 							</CardContent>
 						</Card>
 					)}
+
+					{/* Status Checklist */}
+					<ChecklistCard
+						checklist={checklist}
+						onUploadDocType={(dtId) =>
+							console.log("Upload doc type", dtId)
+						}
+						caseId={id}
+						caseCode={case_code || ""}
+						onRefresh={fetchData}
+						canVerify={data?.currentStepInstanceId ? true : false}
+					/>
 
 					{/* Workflow Progress */}
 					<Card>
@@ -333,63 +370,6 @@ export default function PengadaanDetailPage() {
 							<WorkflowProgress
 								steps={data?.workflow_track || []}
 							/>
-						</CardContent>
-					</Card>
-
-					{/* Status Checklist */}
-					<Card>
-						<CardHeader>
-							<CardTitle className="text-base">
-								Status Kelengkapan
-							</CardTitle>
-						</CardHeader>
-						<CardContent className="p-0">
-							<div className="divide-y">
-								<div className="flex items-center justify-between p-4">
-									<div className="flex items-center gap-3">
-										<Mail className="w-4 h-4 text-muted-foreground" />
-										<span className="text-sm font-medium">
-											Nota Dinas
-										</span>
-									</div>
-									{correspondence_in ? (
-										<CheckCircle2 className="w-5 h-5 text-green-600" />
-									) : (
-										<span className="text-xs text-muted-foreground italic">
-											Pending
-										</span>
-									)}
-								</div>
-								<div className="flex items-center justify-between p-4">
-									<div className="flex items-center gap-3">
-										<FileCheck className="w-4 h-4 text-muted-foreground" />
-										<span className="text-sm font-medium">
-											Kontrak
-										</span>
-									</div>
-									{contract ? (
-										<CheckCircle2 className="w-5 h-5 text-green-600" />
-									) : (
-										<span className="text-xs text-muted-foreground italic">
-											Pending
-										</span>
-									)}
-								</div>
-								<div className="flex items-center justify-between p-4">
-									<div className="flex items-center gap-3">
-										<Paperclip className="w-4 h-4 text-muted-foreground" />
-										<span className="text-sm font-medium">
-											Lampiran
-										</span>
-									</div>
-									<Badge
-										variant="secondary"
-										className="rounded-full px-2"
-									>
-										{documents?.length || 0}
-									</Badge>
-								</div>
-							</div>
 						</CardContent>
 					</Card>
 				</div>

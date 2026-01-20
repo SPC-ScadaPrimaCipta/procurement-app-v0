@@ -172,8 +172,12 @@ model workflow_step {
   workflow               workflow                 @relation(fields: [workflow_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   workflow_step_instance workflow_step_instance[]
 
+  case_step_id           String?                  @db.Uuid
+  case_step              case_step?               @relation(fields: [case_step_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
   @@unique([workflow_id, step_key], map: "uq_workflow_step_key")
   @@unique([workflow_id, step_order], map: "uq_workflow_step_order")
+  @@index([case_step_id], map: "idx_workflow_step_case_step")
 }
 
 model workflow_step_instance {
@@ -227,6 +231,8 @@ model procurement_case {
   unit_id                  String?                   @db.Uuid
   agenda_scope             String?
   status_id                String                    @db.Uuid
+
+  pic                      String?                   @db.VarChar(255)
   created_by               String
   created_at               DateTime                  @default(now()) @db.Timestamptz(6)
   updated_at               DateTime?                 @db.Timestamptz(6)
@@ -235,7 +241,9 @@ model procurement_case {
   correspondence_in        correspondence_in?
   correspondence_out       correspondence_out[]
   status                   case_status               @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
   unit                     org_unit?                 @relation(fields: [unit_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  case_requirement_check   case_requirement_check[]
 
   @@map("procurement_case")
 }
@@ -305,6 +313,7 @@ model contract {
   end_date              DateTime                  @db.Date
   duration_days         Int?
   procurement_method_id String                    @db.Uuid
+  procurement_type_id   String?                   @db.Uuid
   contract_status_id    String                    @db.Uuid
   expense_type          ExpenseType
   created_by            String
@@ -314,6 +323,7 @@ model contract {
   procurement_case      procurement_case          @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   contract_status       master_contract_status    @relation(fields: [contract_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   procurement_method    master_procurement_method @relation(fields: [procurement_method_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  procurement_type      master_procurement_type?  @relation(fields: [procurement_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   vendor                vendor?                   @relation(fields: [vendor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   contract_payment_plan contract_payment_plan[]
   payment_schedule      payment_schedule[]
@@ -384,7 +394,8 @@ model master_doc_type {
   is_active  Boolean
   created_by String
   created_at DateTime   @default(now()) @db.Timestamptz(6)
-  document   document[]
+  document         document[]
+  step_requirement step_requirement[]
 
   @@map("master_doc_type")
 }
@@ -395,7 +406,10 @@ model case_step {
   sort_order Int
   created_by String
   created_at DateTime   @default(now()) @db.Timestamptz(6)
-  document   document[]
+  document         document[]
+  step_requirement step_requirement[]
+
+  workflow_steps workflow_step[]
 
   @@map("case_step")
 }
@@ -434,6 +448,7 @@ model document {
 
   master_doc_type  master_doc_type  @relation(fields: [doc_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   case_step        case_step?       @relation(fields: [step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  case_requirement_check case_requirement_check[]
 
   @@index([doc_type_id])
   @@index([step_id])
@@ -490,6 +505,18 @@ model master_procurement_method {
   contract   contract[]
 
   @@map("master_procurement_method")
+}
+
+model master_procurement_type {
+  id               String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name             String             @unique @db.VarChar(150)
+  is_active        Boolean
+  sort_order       Int
+  created_by       String
+  created_at       DateTime           @default(now()) @db.Timestamptz(6)
+  contract         contract[]
+
+  @@map("master_procurement_type")
 }
 
 model master_contract_status {
@@ -777,4 +804,73 @@ model case_disposition_forward_to {
   @@unique([case_disposition_summary_id, recipient_id], map: "uq_dispo_forward_unique")
   @@index([recipient_id], map: "idx_dispo_forward_recipient")
   @@map("case_disposition_forward_to")
+}
+
+enum requirement_check_mode {
+  AUTO
+  MANUAL
+}
+
+enum requirement_check_status {
+  PENDING
+  PASS
+  FAIL
+}
+
+model step_requirement {
+  id         String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  step_id    String  @db.Uuid
+  name       String  @db.VarChar(200)
+  doc_type_id String? @db.Uuid
+
+  check_mode requirement_check_mode
+  is_required Boolean @default(true)
+  sort_order  Int     @default(0)
+
+  rule_json   Json?
+  is_active   Boolean @default(true)
+
+  created_by  String
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @db.Timestamptz(6)
+
+  // relations
+  case_step       case_step       @relation(fields: [step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  master_doc_type master_doc_type? @relation(fields: [doc_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  checks case_requirement_check[]
+
+  @@index([step_id, is_active, sort_order], map: "idx_step_req_step_active_sort")
+  @@index([doc_type_id], map: "idx_step_req_doc_type")
+  @@unique([step_id, name], map: "uq_step_req_step_name") // optional biar ga dobel label per step
+  @@map("step_requirement")
+}
+
+model case_requirement_check {
+  id             String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  case_id        String  @db.Uuid
+  requirement_id String  @db.Uuid
+
+  status         requirement_check_status @default(PENDING)
+  checked_by     String?
+  checked_at     DateTime? @db.Timestamptz(6)
+  notes          String?
+
+  evidence_document_id String? @db.Uuid
+
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime? @db.Timestamptz(6)
+
+  // relations
+  procurement_case procurement_case @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  step_requirement step_requirement @relation(fields: [requirement_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  document         document?        @relation(fields: [evidence_document_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([case_id, requirement_id], map: "uq_case_req_check_case_req")
+  @@index([case_id], map: "idx_case_req_check_case")
+  @@index([requirement_id], map: "idx_case_req_check_requirement")
+  @@index([evidence_document_id], map: "idx_case_req_check_evidence_doc")
+  @@map("case_requirement_check")
 }
