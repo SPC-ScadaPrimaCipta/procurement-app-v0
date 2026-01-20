@@ -51,7 +51,7 @@ export function ProcurementMethodFormDialog({
 		e.preventDefault();
 
 		if (!formData.name.trim()) {
-			toast.error("Nama jenis pengadaan harus diisi");
+			toast.error("Nama metode pengadaan harus diisi");
 			return;
 		}
 
@@ -77,7 +77,7 @@ export function ProcurementMethodFormDialog({
 
 			onSuccess();
 		} catch (error: any) {
-			toast.error(error.message || "Gagal menyimpan jenis pengadaan");
+			toast.error(error.message || "Gagal menyimpan metode pengadaan");
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -88,14 +88,14 @@ export function ProcurementMethodFormDialog({
 			<DialogContent className="sm:max-w-[500px]">
 				<DialogHeader className="pr-8">
 					<DialogTitle>
-						{procurementMethod ? "Edit Jenis Pengadaan" : "Tambah Jenis Pengadaan"}
+						{procurementMethod ? "Edit metode Pengadaan" : "Tambah metode Pengadaan"}
 					</DialogTitle>
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div className="space-y-2">
 						<Label htmlFor="name">
-							Nama Jenis Pengadaan <span className="text-destructive">*</span>
+							Nama metode Pengadaan <span className="text-destructive">*</span>
 						</Label>
 						<Input
 							id="name"

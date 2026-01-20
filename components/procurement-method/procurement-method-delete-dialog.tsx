@@ -46,7 +46,7 @@ export function ProcurementMethodDeleteDialog({
 
 			onSuccess();
 		} catch (error: any) {
-			toast.error(error.message || "Gagal menghapus jenis pengadaan");
+			toast.error(error.message || "Gagal menghapus metode pengadaan");
 		} finally {
 			setIsDeleting(false);
 		}
@@ -58,9 +58,9 @@ export function ProcurementMethodDeleteDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-[450px]">
 				<DialogHeader className="pr-8">
-					<DialogTitle>Hapus Jenis Pengadaan</DialogTitle>
+					<DialogTitle>Hapus metode Pengadaan</DialogTitle>
 					<DialogDescription>
-						Apakah Anda yakin ingin menghapus jenis pengadaan ini? Tindakan
+						Apakah Anda yakin ingin menghapus metode pengadaan ini? Tindakan
 						ini tidak dapat dibatalkan.
 					</DialogDescription>
 				</DialogHeader>
@@ -68,7 +68,7 @@ export function ProcurementMethodDeleteDialog({
 				<div className="space-y-4 py-4">
 					<div className="rounded-lg border p-4 space-y-2">
 						<div className="flex items-center justify-between">
-							<span className="text-sm font-medium">Nama Jenis Pengadaan:</span>
+							<span className="text-sm font-medium">Nama metode Pengadaan:</span>
 							<span className="font-semibold">{procurementMethod.name}</span>
 						</div>
 						<div className="flex items-center justify-between">
