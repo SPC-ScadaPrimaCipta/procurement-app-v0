@@ -57,6 +57,12 @@ const contractSchema = z.object({
 	procurement_method_id: z.string().min(1, "Required"),
 	contract_status_id: z.string().min(1, "Required"),
 	expense_type: z.enum(["BELANJA_BARANG", "BELANJA_MODAL"]),
+	procurement_type: z.enum([
+		"KONSULTASI",
+		"KONSTRUKSI",
+		"PENGADAAN_BARANG",
+		"LAINNYA",
+	]),
 	// Nested fields for UI only initially
 	payment_plan: z.array(z.any()).optional(),
 	bast: z.array(z.any()).optional(),
@@ -120,6 +126,7 @@ export function ContractCreateDialog({
 			work_description: "",
 			contract_value: 0,
 			expense_type: "BELANJA_BARANG",
+			procurement_type: "KONSULTASI",
 			payment_plan: [],
 		},
 	});
@@ -301,35 +308,71 @@ export function ContractCreateDialog({
 										</FormItem>
 									)}
 								/>
+								<div className="grid grid-cols-2 gap-4">
+									<FormField
+										control={form.control}
+										name="expense_type"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Jenis Belanja</FormLabel>
+												<Select
+													onValueChange={field.onChange}
+													defaultValue={field.value}
+												>
+													<FormControl>
+														<SelectTrigger>
+															<SelectValue placeholder="Pilih Jenis Belanja" />
+														</SelectTrigger>
+													</FormControl>
+													<SelectContent>
+														<SelectItem value="BELANJA_BARANG">
+															Belanja Barang
+														</SelectItem>
+														<SelectItem value="BELANJA_MODAL">
+															Belanja Modal
+														</SelectItem>
+													</SelectContent>
+												</Select>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
 
-								<FormField
-									control={form.control}
-									name="expense_type"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Jenis Belanja</FormLabel>
-											<Select
-												onValueChange={field.onChange}
-												defaultValue={field.value}
-											>
-												<FormControl>
-													<SelectTrigger>
-														<SelectValue placeholder="Pilih Jenis Belanja" />
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													<SelectItem value="BELANJA_BARANG">
-														Belanja Barang
-													</SelectItem>
-													<SelectItem value="BELANJA_MODAL">
-														Belanja Modal
-													</SelectItem>
-												</SelectContent>
-											</Select>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
+									<FormField
+										control={form.control}
+										name="procurement_type"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Jenis Pengadaan</FormLabel>
+												<Select
+													onValueChange={field.onChange}
+													defaultValue={field.value}
+												>
+													<FormControl>
+														<SelectTrigger>
+															<SelectValue placeholder="Pilih Jenis Pengadaan" />
+														</SelectTrigger>
+													</FormControl>
+													<SelectContent>
+														<SelectItem value="KONSULTASI">
+															Konsultasi
+														</SelectItem>
+														<SelectItem value="KONSTRUKSI">
+															Konstruksi
+														</SelectItem>
+														<SelectItem value="PENGADAAN_BARANG">
+															Pengadaan Barang
+														</SelectItem>
+														<SelectItem value="LAINNYA">
+															Lainnya
+														</SelectItem>
+													</SelectContent>
+												</Select>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								</div>
 
 								<div className="grid grid-cols-2 gap-4">
 									<FormField

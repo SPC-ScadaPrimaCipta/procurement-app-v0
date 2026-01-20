@@ -24,8 +24,14 @@ import {
 	Tooltip as RechartsTooltip,
 	Bar,
 	ResponsiveContainer,
+	PieChart,
+	Pie,
+	Legend,
+	Label,
+	Cell,
+	Sector,
 } from "recharts";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/datatable/data-table";
 import { columns } from "../pengadaan/columns";
@@ -54,6 +60,18 @@ const ACTIVITY = [
 	},
 ];
 
+const COLORS = [
+  "#4F46E5", // indigo
+  "#10B981", // emerald
+  "#EAB308", // amber
+  "#F97316", // orange
+  "#EF4444", // red
+  "#3B82F6", // blue
+  "#9333EA", // purple
+  "#14B8A6", // teal
+];
+
+
 export default function DashboardPage() {
 	const [loading, setLoading] = useState({
 		contracts: true,
@@ -64,7 +82,7 @@ export default function DashboardPage() {
 		cases: true,
 		inbox: true,
 	});
-	// const [isLoading, setIsLoading] = useState(true); // Removed simple state
+	const [isLoading, setIsLoading] = useState(true); // Removed simple state
 	const [totalContracts, setTotalContracts] = useState<number>(0);
 	const [totalReimbursement, setTotalReimbursement] = useState<number>(0);
 	const [totalCorrespondenceIn, setTotalCorrespondenceIn] =
@@ -75,13 +93,16 @@ export default function DashboardPage() {
 		{ supplier_type?: { name?: string } }[]
 	>([]);
 	const [vendorGroup, setVendorGroup] = useState<number>(0);
-	const [vendorTrend, setVendorTrend] = useState<
-		{ label: string; value: number }[]
-	>([]);
+	const [contractStatuses, setContractStatuses] = useState<any[]>([]);
+	const [vendorTrend, setVendorTrend] = useState<{ label: string; value: number }[]>([]);
 	const [procurementCases, setProcurementCases] = useState<any[]>([]);
 	const [inboxItems, setInboxItems] = useState<any[]>([]);
 	const [inboxLoading, setInboxLoading] = useState<boolean>(true);
 	const router = useRouter();
+	const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+	const onPieEnter = (_: any, index: number) => setActiveIndex(index);
+	const onPieLeave = () => setActiveIndex(null);
 
 	useEffect(() => {
 		const fetchContracts = async () => {
@@ -166,7 +187,6 @@ export default function DashboardPage() {
 
 				setVendors(data);
 
-				// --- changed grouping logic here ---
 				const uniqueTypes = new Set(
 					data.map((v: any) => v.supplier_type?.name?.trim())
 				);
@@ -180,6 +200,57 @@ export default function DashboardPage() {
 		};
 
 		fetchVendorGroup();
+	}, []);
+
+	useEffect(() => {
+		const fetchContractStatuses = async () => {
+			try {
+				const res = await fetch("/api/contracts");
+			if (!res.ok) throw new Error("Failed to fetch");
+
+			const result = await res.json();
+			const data = result.data ?? [];
+
+			const statusMap = new Map<
+				string,
+				{ count: number; sortOrder: number | null }
+			>();
+
+			data.forEach((item: any) => {
+				const statusName = item.contract_status?.name || "Unknown";
+				const sortOrder = item.contract_status?.sort_order ?? null;
+
+				if (!statusMap.has(statusName)) {
+					statusMap.set(statusName, { count: 1, sortOrder });
+				} else {
+					statusMap.get(statusName)!.count++;
+				}
+			});
+
+			// Convert map to array
+			let formatted = [...statusMap.entries()].map(([name, val]) => ({
+				name,
+				count: val.count,
+				sortOrder: val.sortOrder,
+			}));
+
+			// Optional: sort based on DB sort_order
+			formatted.sort((a, b) => {
+				if (a.sortOrder == null) return 1;
+				if (b.sortOrder == null) return -1;
+				return a.sortOrder - b.sortOrder;
+			});
+
+			setContractStatuses(formatted);
+				console.log("Computed contract statuses:", formatted);
+			} catch (e) {
+				console.error("Error fetching contract statuses:", e);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchContractStatuses();
 	}, []);
 
 	useEffect(() => {
@@ -322,7 +393,7 @@ export default function DashboardPage() {
 				</Card>
 			</section>
 
-			<div className="grid gap-6 lg:grid-cols-3">
+			<div className="grid gap-6 lg:grid-cols-4">
 				<Card className="lg:col-span-2">
 					<CardHeader>
 						<CardTitle>Pengelompokan Penyedia</CardTitle>
@@ -331,55 +402,85 @@ export default function DashboardPage() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="w-full h-96">
-							<ResponsiveContainer width="100%" height="100%">
-								<BarChart
-									data={[...vendorTrend].sort(
-										(a, b) => a.value - b.value
-									)}
-									responsive
-									margin={{
-										top: 5,
-										bottom: 5,
-										left: 0,
-										right: 0,
-									}}
-								>
-									<CartesianGrid
-										stroke="rgba(255,255,255,0.2)"
-										strokeDasharray="3 3"
-									/>
-									<XAxis
-										dataKey="label"
-										stroke="rgba(255,255,255,0.6)"
-										tick={{
-											fill: "rgba(255,255,255,0.8)",
-											fontSize: 12,
-										}}
-									/>
-									<YAxis
-										stroke="rgba(255,255,255,0.6)"
-										tick={{
-											fill: "rgba(255,255,255,0.8)",
-											fontSize: 12,
-										}}
-									/>
-									<RechartsTooltip
-										contentStyle={{
-											background: "#1e1e1e",
-											border: "1px solid rgba(255,255,255,0.2)",
-											color: "white",
-										}}
-									/>
-									<Bar
-										dataKey="value"
-										fill="#4F46E5"
-										radius={[10, 10, 0, 0]}
-									/>{" "}
-									{/* indigo/primary */}
-								</BarChart>
-							</ResponsiveContainer>
-						</div>
+						{isLoading ? (
+							<p className="text-sm text-muted-foreground">Loading...</p>
+						) : (
+							<div className="w-full h-96">
+								<ResponsiveContainer width="100%" height="100%">
+									<BarChart data={[...vendorTrend].sort((a, b) => a.value - b.value)} responsive margin={{top: 5, bottom: 5, left: 0, right: 0}}>
+										<CartesianGrid stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
+										<XAxis
+											dataKey="label"
+											stroke="rgba(255,255,255,0.6)"
+											tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 12 }}
+										/>
+										<YAxis
+											stroke="rgba(255,255,255,0.6)"
+											tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 12 }}
+										/>
+										<RechartsTooltip
+											contentStyle={{
+												background: "#1e1e1e",
+												border: "1px solid rgba(255,255,255,0.2)",
+												color: "white",
+											}}
+										/>
+										<Bar dataKey="value" fill="#4F46E5" radius={[10, 10, 0, 0]} /> {/* indigo/primary */}
+									</BarChart>
+								</ResponsiveContainer >
+							</div>
+						)}
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader>
+						<CardTitle>Pengelompokan Status Kontrak</CardTitle>
+						<CardDescription>
+							Pengelompokan status kontrak terkini
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="p-0">
+						{isLoading ? (
+							<p className="text-sm text-muted-foreground p-4">Loading...</p>
+						) : (
+							<div className="w-full h-96">
+								<ResponsiveContainer width="100%" height="100%">
+									<PieChart
+										data={contractStatuses}
+											margin={{ top: 5, bottom: 5, left: 0, right: 0 }}
+										>
+										<RechartsTooltip
+											contentStyle={{
+												background: "#1e1e1e",
+												border: "1px solid rgba(255,255,255,0.2)",
+												color: "white",
+											}}
+											itemStyle={{ color: "white" }}
+											labelStyle={{ color: "white" }}
+										/>
+
+										<Legend
+											formatter={(value) => <span className="text-primary">{value}</span>}
+										/>
+
+										<Pie
+											data={contractStatuses}
+											dataKey="count"
+											nameKey="name"
+											cx="50%"
+											cy="50%"
+											outerRadius={80}
+											onMouseEnter={onPieEnter}
+											onMouseLeave={() => setActiveIndex(null)}
+										>
+											{contractStatuses.map((entry, index) => (
+												<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+											))}
+										</Pie>
+									</PieChart>
+								</ResponsiveContainer>
+							</div>
+						)}
 					</CardContent>
 				</Card>
 				<Card>
