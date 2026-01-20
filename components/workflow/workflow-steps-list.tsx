@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
 import { AddStepDialog, DraftStep } from "./add-step-dialog";
 
 export type Step = {
@@ -40,6 +41,7 @@ type WorkflowStepsListProps = {
 	onAddStep: (step: Step) => void;
 	onDeleteStep: (index: number) => void;
 	onMoveStep: (index: number, direction: "up" | "down") => void;
+	onUpdateStep?: (step: Step) => void;
 };
 
 export function WorkflowStepsList({
@@ -48,8 +50,22 @@ export function WorkflowStepsList({
 	onAddStep,
 	onDeleteStep,
 	onMoveStep,
+	onUpdateStep,
 }: WorkflowStepsListProps) {
+	const router = useRouter();
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+	const handleStepClick = (step: Step) => {
+		if (step.id) {
+			router.push(`/workflow/manage/${workflowId}/steps/${step.id}`);
+		} else {
+			// Fallback for new un-saved steps?
+			// We might just show a toast or allow editing via the old dialog if we kept it,
+			// but for "migration" we assume they have IDs or we deal with it.
+			// For now, do nothing or toast.
+			console.warn("Step has no ID, cannot navigate");
+		}
+	};
 
 	const handleAddStep = (draft: DraftStep) => {
 		onAddStep({
@@ -102,7 +118,10 @@ export function WorkflowStepsList({
 							className={`hidden md:block absolute left-0 top-1/2 rounded-full border-4 border-background bg-primary w-5 h-5 -ml-2.5`}
 						/>
 
-						<Card className="group relative transition-all hover:shadow-md border-muted-foreground/20">
+						<Card
+							className="group relative transition-all hover:shadow-md border-muted-foreground/20 cursor-pointer hover:border-primary/50"
+							onClick={() => handleStepClick(step)}
+						>
 							<CardContent className="px-5 flex flex-col md:flex-row items-start gap-4">
 								{/* Step Order Circle */}
 								<div className="shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
@@ -114,12 +133,13 @@ export function WorkflowStepsList({
 										variant="ghost"
 										size="icon"
 										className="h-8 w-8"
-										onClick={() =>
+										onClick={(e) => {
+											e.stopPropagation();
 											onMoveStep(
 												step.step_order - 1,
-												"up"
-											)
-										}
+												"up",
+											);
+										}}
 										disabled={step.step_order === 1}
 									>
 										<ArrowUp className="h-4 w-4" />
@@ -128,12 +148,13 @@ export function WorkflowStepsList({
 										variant="ghost"
 										size="icon"
 										className="h-8 w-8"
-										onClick={() =>
+										onClick={(e) => {
+											e.stopPropagation();
 											onMoveStep(
 												step.step_order - 1,
-												"down"
-											)
-										}
+												"down",
+											);
+										}}
 										disabled={
 											step.step_order === steps.length
 										}
@@ -144,9 +165,10 @@ export function WorkflowStepsList({
 										variant="ghost"
 										size="icon"
 										className="h-8 w-8 text-destructive hover:text-destructive"
-										onClick={() =>
-											onDeleteStep(step.step_order - 1)
-										}
+										onClick={(e) => {
+											e.stopPropagation();
+											onDeleteStep(step.step_order - 1);
+										}}
 									>
 										<Trash2 className="h-4 w-4" />
 									</Button>
@@ -183,7 +205,7 @@ export function WorkflowStepsList({
 														>
 															{val.name.trim()}
 														</Badge>
-													)
+													),
 												)}
 											</div>
 										</div>
@@ -208,17 +230,17 @@ export function WorkflowStepsList({
 																	const target =
 																		steps.find(
 																			(
-																				s
+																				s,
 																			) =>
 																				s.id ===
 																					step.reject_target_step_id ||
 																				s.tempId ===
-																					step.reject_target_step_id
+																					step.reject_target_step_id,
 																		);
 																	return target
 																		? `Step: ${target.name}`
 																		: "Unknown Step";
-															  })()
+																})()
 															: step.reject_target_type}
 													</span>
 												</>
