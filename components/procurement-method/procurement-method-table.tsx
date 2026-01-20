@@ -46,7 +46,7 @@ export function ProcurementMethodTable() {
 
 				setProcurementMethods(filteredData);
 			} catch (error) {
-				toast.error("Gagal memuat data jenis pengadaan");
+				toast.error("Gagal memuat data metode pengadaan");
 				console.error(error);
 			} finally {
 				setIsLoading(false);
@@ -80,15 +80,15 @@ export function ProcurementMethodTable() {
 		setHasChanges(false);
 		toast.success(
 			editingProcurementMethod
-				? "Jenis pengadaan berhasil diupdate"
-				: "Jenis pengadaan berhasil ditambahkan"
+				? "metode pengadaan berhasil diupdate"
+				: "metode pengadaan berhasil ditambahkan"
 		);
 	};
 
 	const handleDeleteSuccess = () => {
 		setDeleteDialogOpen(false);
 		refetchProcurementMethods();
-		toast.success("Jenis pengadaan berhasil dihapus");
+		toast.success("metode pengadaan berhasil dihapus");
 	};
 
 	const handleMoveUp = (method: ProcurementMethod) => {
@@ -181,7 +181,7 @@ export function ProcurementMethodTable() {
 				<div className="relative flex-1 max-w-sm">
 					<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 					<Input
-						placeholder="Cari jenis pengadaan..."
+						placeholder="Cari metode pengadaan..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						className="pl-9"
@@ -209,7 +209,7 @@ export function ProcurementMethodTable() {
 					)}
 					<Button onClick={handleAddNew}>
 						<Plus className="h-4 w-4 mr-2" />
-						Tambah Jenis Pengadaan
+						Tambah metode Pengadaan
 					</Button>
 				</div>
 			</div>
