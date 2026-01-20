@@ -65,12 +65,12 @@ export default function PengadaanDetailPage() {
 			// Determine next step title for forward label
 			if (result.workflow_track) {
 				const pendingIndex = result.workflow_track.findIndex(
-					(step: any) => step.status === "PENDING"
+					(step: any) => step.status === "PENDING",
 				);
 				if (pendingIndex !== -1) {
 					setNextStepTitle(
 						result.workflow_track[pendingIndex + 1]?.title ||
-							"Approve"
+							"Approve",
 					);
 				} else {
 					setNextStepTitle(null);
@@ -83,7 +83,7 @@ export default function PengadaanDetailPage() {
 					? `workflowStepInstanceId=${result.currentStepInstanceId}`
 					: "";
 				const clRes = await fetch(
-					`/api/procurement-cases/${id}/checklist?includeDocs=true&${stepParam}`
+					`/api/procurement-cases/${id}/checklist?includeDocs=true&${stepParam}`,
 				);
 				if (clRes.ok) {
 					const clData = await clRes.json();
@@ -110,7 +110,7 @@ export default function PengadaanDetailPage() {
 					`/api/procurement-cases/${id}/forward`,
 					{
 						method: "POST",
-					}
+					},
 				);
 				if (!res.ok) {
 					console.error("Failed to forward case");
@@ -168,8 +168,8 @@ export default function PengadaanDetailPage() {
 		status.name === "APPROVED"
 			? "default"
 			: status.name === "REJECTED"
-			? "destructive"
-			: "secondary";
+				? "destructive"
+				: "secondary";
 
 	return (
 		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
@@ -225,7 +225,7 @@ export default function PengadaanDetailPage() {
 										<span>
 											{format(
 												new Date(created_at),
-												"dd MMM yyyy"
+												"dd MMM yyyy",
 											)}
 										</span>
 									</div>
@@ -338,8 +338,8 @@ export default function PengadaanDetailPage() {
 										nextStepTitle?.includes("Approve")
 											? "Approve"
 											: nextStepTitle
-											? `Forward ke ${nextStepTitle}`
-											: "Forward"
+												? `Forward ke ${nextStepTitle}`
+												: "Forward"
 									}
 									sendBackLabel="Kembali ke Satker"
 								/>
@@ -356,6 +356,7 @@ export default function PengadaanDetailPage() {
 						caseId={id}
 						caseCode={case_code || ""}
 						onRefresh={fetchData}
+						canVerify={data?.currentStepInstanceId ? true : false}
 					/>
 
 					{/* Workflow Progress */}

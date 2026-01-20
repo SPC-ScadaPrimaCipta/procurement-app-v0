@@ -51,12 +51,14 @@ export function ChecklistCard({
 	caseId,
 	caseCode,
 	onRefresh,
+	canVerify = false,
 }: {
 	checklist: ChecklistData | null;
 	onUploadDocType: (docTypeId: string) => void;
 	caseId?: string; // Add caseId
 	caseCode?: string; // Add caseCode
 	onRefresh?: () => void; // Add refresh handler
+	canVerify?: boolean;
 }) {
 	const summary = checklist?.summary;
 	const items = checklist?.items ?? [];
@@ -172,7 +174,7 @@ export function ChecklistCard({
 											onClick={() =>
 												handleUploadClick(
 													it.docTypeId!,
-													it.name
+													it.name,
 												)
 											}
 										>
@@ -189,7 +191,7 @@ export function ChecklistCard({
 											onClick={() =>
 												window.open(
 													it.evidence!.fileUrl,
-													"_blank"
+													"_blank",
 												)
 											}
 										>
@@ -199,7 +201,7 @@ export function ChecklistCard({
 									) : null}
 
 									{/* Manual verify (phase 2) */}
-									{it.mode === "MANUAL" ? (
+									{it.mode === "MANUAL" && canVerify ? (
 										<Button
 											size="sm"
 											variant={
@@ -210,7 +212,7 @@ export function ChecklistCard({
 											onClick={() =>
 												handleVerifyClick(
 													it.requirementId,
-													it.name
+													it.name,
 												)
 											}
 										>

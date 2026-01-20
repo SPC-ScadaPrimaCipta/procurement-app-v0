@@ -231,7 +231,7 @@ model procurement_case {
   unit_id                  String?                   @db.Uuid
   agenda_scope             String?
   status_id                String                    @db.Uuid
-  procurement_type_id      String?                   @db.Uuid
+
   pic                      String?                   @db.VarChar(255)
   created_by               String
   created_at               DateTime                  @default(now()) @db.Timestamptz(6)
@@ -241,7 +241,7 @@ model procurement_case {
   correspondence_in        correspondence_in?
   correspondence_out       correspondence_out[]
   status                   case_status               @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  procurement_type         master_procurement_type?  @relation(fields: [procurement_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
   unit                     org_unit?                 @relation(fields: [unit_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   case_requirement_check   case_requirement_check[]
 
@@ -313,6 +313,7 @@ model contract {
   end_date              DateTime                  @db.Date
   duration_days         Int?
   procurement_method_id String                    @db.Uuid
+  procurement_type_id   String?                   @db.Uuid
   contract_status_id    String                    @db.Uuid
   expense_type          ExpenseType
   created_by            String
@@ -322,6 +323,7 @@ model contract {
   procurement_case      procurement_case          @relation(fields: [case_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   contract_status       master_contract_status    @relation(fields: [contract_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   procurement_method    master_procurement_method @relation(fields: [procurement_method_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  procurement_type      master_procurement_type?  @relation(fields: [procurement_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   vendor                vendor?                   @relation(fields: [vendor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   contract_payment_plan contract_payment_plan[]
   payment_schedule      payment_schedule[]
@@ -512,7 +514,7 @@ model master_procurement_type {
   sort_order       Int
   created_by       String
   created_at       DateTime           @default(now()) @db.Timestamptz(6)
-  procurement_case procurement_case[]
+  contract         contract[]
 
   @@map("master_procurement_type")
 }
