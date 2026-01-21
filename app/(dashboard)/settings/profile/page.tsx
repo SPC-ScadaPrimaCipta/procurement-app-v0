@@ -15,7 +15,8 @@ import {
 import { toast } from "sonner";
 import { PasswordInput } from "@/components/ui/password-input";
 import { ProfileSkeleton } from "@/components/skeletons/profile-skeleton";
-import { Activity, User } from "lucide-react";
+import { Activity, User, Camera, X } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function ProfilePage() {
 	const [loadingProfile, setLoadingProfile] = useState(false);
@@ -26,6 +27,9 @@ export default function ProfilePage() {
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [initialEmail, setInitialEmail] = useState("");
+	const [image, setImage] = useState<string | null>(null);
+	const [previewImage, setPreviewImage] = useState<string | null>(null);
+	const [uploadingImage, setUploadingImage] = useState(false);
 
 	// Password fields
 	const [currentPassword, setCurrentPassword] = useState("");
@@ -47,12 +51,90 @@ export default function ProfilePage() {
 			setName(data.user.name || "");
 			setEmail(data.user.email || "");
 			setInitialEmail(data.user.email || "");
+			setImage(data.user.image || null);
 
 			setProfileLoaded(true);
 		}
 
 		loadUser();
 	}, []);
+
+	// ------------------------------
+	// Handle Profile Picture Upload (Preview Only)
+	// ------------------------------
+	async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		// Validate file type
+		if (!file.type.startsWith('image/')) {
+			toast.error('Please select an image file');
+			return;
+		}
+
+		// Validate file size (max 2MB)
+		if (file.size > 2 * 1024 * 1024) {
+			toast.error('Image size must be less than 2MB');
+			return;
+		}
+
+		// Convert to base64 for preview
+		const reader = new FileReader();
+		reader.onloadend = () => {
+			setPreviewImage(reader.result as string);
+		};
+		reader.readAsDataURL(file);
+	}
+
+	async function handleSaveProfilePicture() {
+		if (!previewImage) return;
+		
+		setUploadingImage(true);
+		try {
+			const res = await authClient.updateUser({
+				image: previewImage,
+			});
+
+			if (res.error) {
+				toast.error(res.error.message || 'Failed to upload image');
+			} else {
+				setImage(previewImage);
+				setPreviewImage(null);
+				toast.success('Profile picture updated successfully');
+			}
+		} catch (err) {
+			toast.error('Failed to upload image');
+		} finally {
+			setUploadingImage(false);
+		}
+	}
+
+	async function handleCancelPreview() {
+		setPreviewImage(null);
+		// Reset file input
+		const fileInput = document.getElementById('profile-picture') as HTMLInputElement;
+		if (fileInput) fileInput.value = '';
+	}
+
+	async function handleRemoveImage() {
+		setUploadingImage(true);
+		try {
+			const res = await authClient.updateUser({
+				image: null,
+			});
+
+			if (res.error) {
+				toast.error(res.error.message || 'Failed to remove image');
+			} else {
+				setImage(null);
+				toast.success('Profile picture removed');
+			}
+		} catch (err) {
+			toast.error('Failed to remove image');
+		} finally {
+			setUploadingImage(false);
+		}
+	}
 
 	// ------------------------------
 	// Update Profile Information
@@ -190,6 +272,92 @@ export default function ProfilePage() {
 					</p>
 				</div>
 			</header>
+
+			{/* Profile Picture */}
+			<Card>
+				<CardHeader>
+					<div className="flex items-center gap-2">
+						<Camera className="h-5 w-5 text-primary" />
+						<CardTitle>Profile Picture</CardTitle>
+					</div>
+					<CardDescription>
+						Upload a profile picture (Max 2MB, JPG/PNG)
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<div className="space-y-4">
+						<div className="flex items-center gap-6">
+							{/* Avatar Preview */}
+							<div className="relative">
+								<Avatar className="h-24 w-24">
+									<AvatarImage src={previewImage || image || undefined} alt={name} />
+									<AvatarFallback className="text-2xl">
+										{name.charAt(0).toUpperCase() || 'U'}
+									</AvatarFallback>
+								</Avatar>
+								{(image || previewImage) && !previewImage && (
+									<Button
+										size="icon"
+										variant="destructive"
+										className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+										onClick={handleRemoveImage}
+										disabled={uploadingImage}
+									>
+										<X className="h-3 w-3" />
+									</Button>
+								)}
+							</div>
+
+							{/* Upload Button */}
+							<div className="flex flex-col gap-2">
+								<Label htmlFor="profile-picture" className="cursor-pointer">
+									<Button
+										type="button"
+										variant="outline"
+										disabled={uploadingImage}
+										asChild
+									>
+										<span>
+											<Camera className="h-4 w-4 mr-2" />
+											Change Picture
+										</span>
+									</Button>
+								</Label>
+								<Input
+									id="profile-picture"
+									type="file"
+									accept="image/*"
+									className="hidden"
+									onChange={handleImageUpload}
+									disabled={uploadingImage}
+								/>
+								<p className="text-xs text-muted-foreground">
+									JPG, PNG up to 2MB
+								</p>
+							</div>
+						</div>
+
+						{/* Save/Cancel Buttons */}
+						{previewImage && (
+							<div className="flex gap-2">
+								<Button
+									onClick={handleSaveProfilePicture}
+									disabled={uploadingImage}
+								>
+									{uploadingImage ? 'Saving...' : 'Save Changes'}
+								</Button>
+								<Button
+									variant="outline"
+									onClick={handleCancelPreview}
+									disabled={uploadingImage}
+								>
+									Cancel
+								</Button>
+							</div>
+						)}
+					</div>
+				</CardContent>
+			</Card>
 
 			{/* Profile Information */}
 			<Card>
