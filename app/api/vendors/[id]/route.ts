@@ -24,6 +24,11 @@ export async function GET(
 			where: { id },
 			include: {
 				supplier_type: true,
+				vendor_bank_account: {
+					orderBy: {
+						is_primary: 'desc',
+					},
+				},
 				_count: {
 					select: {
 						contract: true,
@@ -39,7 +44,20 @@ export async function GET(
 			return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
 		}
 
-		return NextResponse.json(vendor);
+		// Transform vendor_bank_account to match frontend interface
+		const transformedVendor = {
+			...vendor,
+			supplier_type: vendor.supplier_type?.name || "Unknown",
+			vendor_account: vendor.vendor_bank_account.map((acc) => ({
+				id: acc.id,
+				account_number: acc.account_number,
+				bank: acc.bank_name || "N/A",
+				branch: acc.branch_name || "N/A",
+				is_primary: acc.is_primary,
+			})),
+		};
+
+		return NextResponse.json(transformedVendor);
 	} catch (error) {
 		console.error("Error fetching vendor:", error);
 		return NextResponse.json(

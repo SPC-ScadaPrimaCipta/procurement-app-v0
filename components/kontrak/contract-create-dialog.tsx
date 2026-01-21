@@ -74,6 +74,7 @@ type ContractFormValues = z.infer<typeof contractSchema>;
 
 import { ContractPaymentPlan } from "@/components/kontrak/contract-payment-plan";
 import { VendorSelect } from "@/components/kontrak/vendor-select";
+import { VendorInfoCard } from "@/components/kontrak/vendor-info-card";
 import { toast } from "sonner";
 
 interface ContractCreateDialogProps {
@@ -328,6 +329,12 @@ export function ContractCreateDialog({
 										</FormItem>
 									)}
 								/>
+
+								{/* Vendor Info Card - Auto Display */}
+								<VendorInfoCard
+									vendorId={form.watch("vendor_id")}
+								/>
+
 								<div className="grid grid-cols-2 gap-4">
 									<FormField
 										control={form.control}
