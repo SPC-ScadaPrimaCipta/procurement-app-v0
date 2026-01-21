@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 
 export async function POST(
 	request: Request,
-	{ params }: { params: Promise<{ id: string }> }
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
 		const { id } = await params;
@@ -29,7 +29,6 @@ export async function POST(
 			});
 		}
 
-		// 2. Find next status (sort_order + 1)
 		// 2. Find next status (sort_order + 1)
 		let nextStatus = await prisma.case_status.findFirst({
 			where: {

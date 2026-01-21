@@ -36,8 +36,8 @@ import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-
 import { authClient } from "@/lib/auth-client";
+import { InboxBadge } from "@/components/inbox/inbox-badge";
 
 type MenuItem = {
 	name: string;
@@ -48,6 +48,7 @@ type MenuItem = {
 		action: "read" | "create" | "update" | "delete" | "manage";
 	}[];
 	children?: MenuItem[];
+	badge?: React.ReactNode;
 };
 
 const rawMenu: MenuItem[] = [
@@ -56,6 +57,7 @@ const rawMenu: MenuItem[] = [
 		name: "Inbox",
 		href: "/inbox",
 		icon: Inbox,
+		badge: <InboxBadge />,
 	},
 	{
 		name: "Nota Dinas",
@@ -268,12 +270,12 @@ export function Sidebar() {
 
 	const menu = useMemo(() => {
 		const userPermissions = new Set<string>(
-			(session?.user as any)?.permissions || []
+			(session?.user as any)?.permissions || [],
 		);
 
 		// Helper to check if user has ALL required permissions for an item
 		const hasAccess = (
-			required?: { resource: string; action: string }[]
+			required?: { resource: string; action: string }[],
 		) => {
 			if (!required || required.length === 0) return true;
 
@@ -284,7 +286,7 @@ export function Sidebar() {
 			// Although typically better-auth permissions are explicit.
 			// We'll check for explicit permission "action:resource"
 			return required.every((p) =>
-				userPermissions.has(`${p.action}:${p.resource}`)
+				userPermissions.has(`${p.action}:${p.resource}`),
 			);
 		};
 
@@ -408,7 +410,7 @@ export function Sidebar() {
 					// --------------------
 					const renderMenuItem = (
 						item: MenuItem,
-						depth: number = 0
+						depth: number = 0,
 					) => {
 						const hasChildren =
 							item.children && item.children.length > 0;
@@ -418,11 +420,11 @@ export function Sidebar() {
 						const isChildActive =
 							hasChildren &&
 							item.children!.some((child) =>
-								isActive(child.href)
+								isActive(child.href),
 							); // Only checks direct children, but isActive checks prefix so it might be ok?
 						// Better check recursive children for active state specifically if we want highlighting parent
 						const isAnyDescendantActive = (
-							itm: MenuItem
+							itm: MenuItem,
 						): boolean => {
 							return (
 								isActive(itm.href) ||
@@ -446,8 +448,8 @@ export function Sidebar() {
 												childActive
 													? "text-primary font-medium"
 													: itemActive
-													? "bg-muted text-primary font-medium"
-													: "text-muted-foreground hover:bg-muted"
+														? "bg-muted text-primary font-medium"
+														: "text-muted-foreground hover:bg-muted"
 											}
                                             ${depth > 0 ? "pl-8" : ""} 
                                         `}
@@ -500,7 +502,10 @@ export function Sidebar() {
                                             `}
 										>
 											{item.children!.map((child) =>
-												renderMenuItem(child, depth + 1)
+												renderMenuItem(
+													child,
+													depth + 1,
+												),
 											)}
 										</div>
 									)}
@@ -547,6 +552,9 @@ export function Sidebar() {
 								>
 									{item.name}
 								</span>
+								{!collapsed && item.badge && (
+									<div className="ml-auto">{item.badge}</div>
+								)}
 							</Link>
 						);
 					};

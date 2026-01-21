@@ -84,7 +84,7 @@ export async function GET(req: Request) {
 
 	// Fetch user names for requestedBy
 	const creatorIds = Array.from(
-		new Set(items.map((item) => item.workflow_instance.created_by))
+		new Set(items.map((item) => item.workflow_instance.created_by)),
 	);
 	const users = await prisma.user.findMany({
 		where: {
@@ -100,8 +100,11 @@ export async function GET(req: Request) {
 	});
 
 	const userMap = new Map(
-		users.map((u) => [u.id, u.name || u.email || "Unknown"])
+		users.map((u) => [u.id, u.name || u.email || "Unknown"]),
 	);
+
+	// Fetch additional data based on refType
+	const refDataMap = await fetchRefDetails(items);
 
 	// 4️⃣ Response shaping (frontend friendly)
 	const result = items.map((item) => ({
@@ -125,6 +128,7 @@ export async function GET(req: Request) {
 		stepKey: item.step.step_key,
 		refType: item.workflow_instance.ref_type,
 		refId: item.workflow_instance.ref_id,
+		data: refDataMap.get(item.workflow_instance.ref_id) ?? null,
 	}));
 
 	return NextResponse.json({
@@ -133,4 +137,36 @@ export async function GET(req: Request) {
 		total,
 		items: result,
 	});
+}
+
+/**
+ * Helper to fetch additional details based on refType
+ */
+async function fetchRefDetails(items: any[]) {
+	const dataMap = new Map<string, any>();
+
+	// 1. Gather IDs by type
+	const procurementCaseIds = items
+		.map((item) => item.workflow_instance)
+		.filter((wi: any) => wi.ref_type === "PROCUREMENT_CASE")
+		.map((wi: any) => wi.ref_id);
+
+	// 2. Fetch in parallel (if we had more types)
+	if (procurementCaseIds.length > 0) {
+		const cases = await prisma.procurement_case.findMany({
+			where: {
+				id: {
+					in: procurementCaseIds,
+				},
+			},
+			include: {
+				unit: true,
+				status: true,
+			},
+		});
+
+		cases.forEach((c) => dataMap.set(c.id, c));
+	}
+
+	return dataMap;
 }
