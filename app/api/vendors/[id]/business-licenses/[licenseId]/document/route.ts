@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 // GET: Fetch business license document
 export async function GET(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string; licenseId: string }> }
+	{ params }: { params: Promise<{ id: string; licenseId: string }> },
 ) {
 	try {
 		const session = await auth.api.getSession({
@@ -21,7 +21,10 @@ export async function GET(
 		});
 
 		if (!session) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 },
+			);
 		}
 
 		const { id: vendorId, licenseId } = await params;
@@ -37,7 +40,7 @@ export async function GET(
 		if (!license) {
 			return NextResponse.json(
 				{ error: "Business license not found" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -55,14 +58,16 @@ export async function GET(
 		if (!document) {
 			return NextResponse.json(
 				{ error: "No document found for this business license" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
 		// Serialize BigInt fields
 		const serializedDoc = {
 			...document,
-			file_size: document.file_size ? document.file_size.toString() : null,
+			file_size: document.file_size
+				? document.file_size.toString()
+				: null,
 			sp_download_url: document.sp_web_url
 				? `${document.sp_web_url}?download=1`
 				: null,
@@ -73,7 +78,7 @@ export async function GET(
 		console.error("Error fetching business license document:", error);
 		return NextResponse.json(
 			{ error: "Failed to fetch document" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }
@@ -81,7 +86,7 @@ export async function GET(
 // POST: Upload business license document
 export async function POST(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string; licenseId: string }> }
+	{ params }: { params: Promise<{ id: string; licenseId: string }> },
 ) {
 	try {
 		const session = await auth.api.getSession({
@@ -89,7 +94,10 @@ export async function POST(
 		});
 
 		if (!session) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 },
+			);
 		}
 
 		const { id: vendorId, licenseId } = await params;
@@ -108,7 +116,7 @@ export async function POST(
 		if (!license) {
 			return NextResponse.json(
 				{ error: "Business license not found" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -116,7 +124,10 @@ export async function POST(
 		const file = formData.get("file") as File;
 
 		if (!file) {
-			return NextResponse.json({ error: "No file provided" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No file provided" },
+				{ status: 400 },
+			);
 		}
 
 		// Get Microsoft Access Token
@@ -132,7 +143,7 @@ export async function POST(
 				{
 					error: "No Microsoft account linked or access token missing.",
 				},
-				{ status: 400 }
+				{ status: 400 },
 			);
 		}
 
@@ -144,7 +155,7 @@ export async function POST(
 				{
 					error: "SharePoint Site ID not configured.",
 				},
-				{ status: 500 }
+				{ status: 500 },
 			);
 		}
 
@@ -160,7 +171,7 @@ export async function POST(
 				{
 					error: 'Document type "VENDOR" not found in master data.',
 				},
-				{ status: 500 }
+				{ status: 500 },
 			);
 		}
 
@@ -186,9 +197,16 @@ export async function POST(
 			// Delete from SharePoint first
 			if (existingDoc.sp_item_id) {
 				try {
-					await deleteItemFromSiteDrive(accessToken, existingDoc.sp_item_id);
+					await deleteItemFromSiteDrive({
+						siteId,
+						accessToken,
+						itemId: existingDoc.sp_item_id,
+					});
 				} catch (error) {
-					console.error("Error deleting old file from SharePoint:", error);
+					console.error(
+						"Error deleting old file from SharePoint:",
+						error,
+					);
 				}
 			}
 
@@ -241,13 +259,13 @@ export async function POST(
 				message: "Business license document uploaded successfully",
 				document: serializedDoc,
 			},
-			{ status: 201 }
+			{ status: 201 },
 		);
 	} catch (error) {
 		console.error("Error uploading business license document:", error);
 		return NextResponse.json(
 			{ error: "Failed to upload document" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }
@@ -255,7 +273,7 @@ export async function POST(
 // DELETE: Delete business license document
 export async function DELETE(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string; licenseId: string }> }
+	{ params }: { params: Promise<{ id: string; licenseId: string }> },
 ) {
 	try {
 		const session = await auth.api.getSession({
@@ -263,7 +281,10 @@ export async function DELETE(
 		});
 
 		if (!session) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 },
+			);
 		}
 
 		const { id: vendorId, licenseId } = await params;
@@ -279,7 +300,7 @@ export async function DELETE(
 		if (!license) {
 			return NextResponse.json(
 				{ error: "Business license not found" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -294,7 +315,7 @@ export async function DELETE(
 		if (!document) {
 			return NextResponse.json(
 				{ error: "No document found for this business license" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -306,9 +327,16 @@ export async function DELETE(
 			},
 		});
 
-		if (account?.accessToken && document.sp_item_id) {
+		// Get Site ID
+		const siteId = process.env.SP_SITE_ID;
+
+		if (account?.accessToken && document.sp_item_id && siteId) {
 			try {
-				await deleteItemFromSiteDrive(account.accessToken, document.sp_item_id);
+				await deleteItemFromSiteDrive({
+					siteId,
+					accessToken: account.accessToken,
+					itemId: document.sp_item_id,
+				});
 			} catch (error) {
 				console.error("Error deleting file from SharePoint:", error);
 			}
@@ -326,7 +354,7 @@ export async function DELETE(
 		console.error("Error deleting business license document:", error);
 		return NextResponse.json(
 			{ error: "Failed to delete document" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }

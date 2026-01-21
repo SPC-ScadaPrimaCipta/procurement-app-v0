@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 // PUT: Update Business License
 export async function PUT(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string; licenseId: string }> }
+	{ params }: { params: Promise<{ id: string; licenseId: string }> },
 ) {
 	try {
 		const session = await auth.api.getSession({
@@ -17,19 +17,28 @@ export async function PUT(
 		});
 
 		if (!session) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 },
+			);
 		}
 
 		const { id: vendorId, licenseId } = await params;
 		const body = await request.json();
 
-		const { license_type, license_number, qualification, issued_date, expiry_date } = body;
+		const {
+			license_type,
+			license_number,
+			qualification,
+			issued_date,
+			expiry_date,
+		} = body;
 
 		// Validate required fields
 		if (!license_type || !license_number) {
 			return NextResponse.json(
 				{ error: "License type and license number are required" },
-				{ status: 400 }
+				{ status: 400 },
 			);
 		}
 
@@ -44,24 +53,25 @@ export async function PUT(
 		if (!existingLicense) {
 			return NextResponse.json(
 				{ error: "Business license not found" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
 		// Check for duplicate license number (excluding current license)
 		if (license_number !== existingLicense.license_number) {
-			const duplicateLicense = await prisma.vendor_business_license.findFirst({
-				where: {
-					vendor_id: vendorId,
-					license_number,
-					id: { not: licenseId },
-				},
-			});
+			const duplicateLicense =
+				await prisma.vendor_business_license.findFirst({
+					where: {
+						vendor_id: vendorId,
+						license_number,
+						id: { not: licenseId },
+					},
+				});
 
 			if (duplicateLicense) {
 				return NextResponse.json(
 					{ error: "License number already exists for this vendor" },
-					{ status: 400 }
+					{ status: 400 },
 				);
 			}
 		}
@@ -83,7 +93,7 @@ export async function PUT(
 		console.error("Error updating business license:", error);
 		return NextResponse.json(
 			{ error: "Failed to update business license" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }
@@ -91,7 +101,7 @@ export async function PUT(
 // DELETE: Soft Delete Business License
 export async function DELETE(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string; licenseId: string }> }
+	{ params }: { params: Promise<{ id: string; licenseId: string }> },
 ) {
 	try {
 		const session = await auth.api.getSession({
@@ -99,7 +109,10 @@ export async function DELETE(
 		});
 
 		if (!session) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 },
+			);
 		}
 
 		const { id: vendorId, licenseId } = await params;
@@ -115,7 +128,7 @@ export async function DELETE(
 		if (!existingLicense) {
 			return NextResponse.json(
 				{ error: "Business license not found" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -138,25 +151,35 @@ export async function DELETE(
 
 			if (!account?.accessToken) {
 				console.error(
-					"No Microsoft account linked or access token missing for SharePoint operations"
+					"No Microsoft account linked or access token missing for SharePoint operations",
 				);
 			} else {
 				const accessToken = account.accessToken;
-				// Delete files from SharePoint
-				for (const doc of documents) {
-					if (doc.sp_item_id) {
-						try {
-							await deleteItemFromSiteDrive(accessToken, doc.sp_item_id);
-							console.log(
-								`Deleted business license document from SharePoint: ${doc.file_name}`
-							);
-						} catch (error) {
-							console.error(
-								`Error deleting file from SharePoint: ${doc.file_name}`,
-								error
-							);
+				const siteId = process.env.SP_SITE_ID;
+
+				if (siteId) {
+					// Delete files from SharePoint
+					for (const doc of documents) {
+						if (doc.sp_item_id) {
+							try {
+								await deleteItemFromSiteDrive({
+									siteId,
+									accessToken,
+									itemId: doc.sp_item_id,
+								});
+								console.log(
+									`Deleted business license document from SharePoint: ${doc.file_name}`,
+								);
+							} catch (error) {
+								console.error(
+									`Error deleting file from SharePoint: ${doc.file_name}`,
+									error,
+								);
+							}
 						}
 					}
+				} else {
+					console.error("SharePoint Site ID not configured");
 				}
 			}
 
@@ -174,12 +197,14 @@ export async function DELETE(
 			where: { id: licenseId },
 		});
 
-		return NextResponse.json({ message: "Business license deleted successfully" });
+		return NextResponse.json({
+			message: "Business license deleted successfully",
+		});
 	} catch (error) {
 		console.error("Error deleting business license:", error);
 		return NextResponse.json(
 			{ error: "Failed to delete business license" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }

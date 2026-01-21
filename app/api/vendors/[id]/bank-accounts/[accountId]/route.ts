@@ -7,7 +7,7 @@ import { deleteItemFromSiteDrive } from "@/lib/sharepoint";
 // PUT /api/vendors/[id]/bank-accounts/[accountId] - Update bank account
 export async function PUT(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string; accountId: string }> }
+	{ params }: { params: Promise<{ id: string; accountId: string }> },
 ) {
 	try {
 		const session = await auth.api.getSession({
@@ -15,7 +15,10 @@ export async function PUT(
 		});
 
 		if (!session) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 },
+			);
 		}
 
 		const { id: vendorId, accountId } = await params;
@@ -37,7 +40,7 @@ export async function PUT(
 		if (!existingAccount) {
 			return NextResponse.json(
 				{ error: "Bank account not found" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -47,19 +50,24 @@ export async function PUT(
 		}
 
 		// Check if account number already exists (if changed)
-		if (account_number && account_number !== existingAccount.account_number) {
-			const duplicateAccount = await prisma.vendor_bank_account.findFirst({
-				where: {
-					vendor_id: vendorId,
-					account_number,
-					id: { not: accountId },
+		if (
+			account_number &&
+			account_number !== existingAccount.account_number
+		) {
+			const duplicateAccount = await prisma.vendor_bank_account.findFirst(
+				{
+					where: {
+						vendor_id: vendorId,
+						account_number,
+						id: { not: accountId },
+					},
 				},
-			});
+			);
 
 			if (duplicateAccount) {
 				return NextResponse.json(
 					{ error: "Account number already exists for this vendor" },
-					{ status: 400 }
+					{ status: 400 },
 				);
 			}
 		}
@@ -80,17 +88,28 @@ export async function PUT(
 		const updatedAccount = await prisma.vendor_bank_account.update({
 			where: { id: accountId },
 			data: {
-				account_number: account_number || existingAccount.account_number,
+				account_number:
+					account_number || existingAccount.account_number,
 				account_name:
-					account_name !== undefined ? account_name : existingAccount.account_name,
-				bank_name: bank_name !== undefined ? bank_name : existingAccount.bank_name,
+					account_name !== undefined
+						? account_name
+						: existingAccount.account_name,
+				bank_name:
+					bank_name !== undefined
+						? bank_name
+						: existingAccount.bank_name,
 				branch_name:
-					branch_name !== undefined ? branch_name : existingAccount.branch_name,
+					branch_name !== undefined
+						? branch_name
+						: existingAccount.branch_name,
 				currency_code:
 					currency_code !== undefined
 						? currency_code
 						: existingAccount.currency_code,
-				is_primary: is_primary !== undefined ? is_primary : existingAccount.is_primary,
+				is_primary:
+					is_primary !== undefined
+						? is_primary
+						: existingAccount.is_primary,
 			},
 		});
 
@@ -99,7 +118,7 @@ export async function PUT(
 		console.error("Error updating bank account:", error);
 		return NextResponse.json(
 			{ error: "Failed to update bank account" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }
@@ -107,7 +126,7 @@ export async function PUT(
 // DELETE /api/vendors/[id]/bank-accounts/[accountId] - Delete bank account
 export async function DELETE(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string; accountId: string }> }
+	{ params }: { params: Promise<{ id: string; accountId: string }> },
 ) {
 	try {
 		const session = await auth.api.getSession({
@@ -115,7 +134,10 @@ export async function DELETE(
 		});
 
 		if (!session) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 },
+			);
 		}
 
 		const { id: vendorId, accountId } = await params;
@@ -128,7 +150,7 @@ export async function DELETE(
 		if (!existingAccount) {
 			return NextResponse.json(
 				{ error: "Bank account not found" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -156,25 +178,35 @@ export async function DELETE(
 
 			if (!account?.accessToken) {
 				console.error(
-					"No Microsoft account linked or access token missing for SharePoint operations"
+					"No Microsoft account linked or access token missing for SharePoint operations",
 				);
 			} else {
 				const accessToken = account.accessToken;
-				// Delete files from SharePoint
-				for (const doc of documents) {
-					if (doc.sp_item_id) {
-						try {
-							await deleteItemFromSiteDrive(accessToken, doc.sp_item_id);
-							console.log(
-								`Deleted bank account document from SharePoint: ${doc.file_name}`
-							);
-						} catch (error) {
-							console.error(
-								`Error deleting file from SharePoint: ${doc.file_name}`,
-								error
-							);
+				const siteId = process.env.SP_SITE_ID;
+
+				if (siteId) {
+					// Delete files from SharePoint
+					for (const doc of documents) {
+						if (doc.sp_item_id) {
+							try {
+								await deleteItemFromSiteDrive({
+									siteId,
+									accessToken,
+									itemId: doc.sp_item_id,
+								});
+								console.log(
+									`Deleted bank account document from SharePoint: ${doc.file_name}`,
+								);
+							} catch (error) {
+								console.error(
+									`Error deleting file from SharePoint: ${doc.file_name}`,
+									error,
+								);
+							}
 						}
 					}
+				} else {
+					console.error("SharePoint Site ID not configured");
 				}
 			}
 
@@ -195,12 +227,14 @@ export async function DELETE(
 			},
 		});
 
-		return NextResponse.json({ message: "Bank account deleted successfully" });
+		return NextResponse.json({
+			message: "Bank account deleted successfully",
+		});
 	} catch (error) {
 		console.error("Error deleting bank account:", error);
 		return NextResponse.json(
 			{ error: "Failed to delete bank account" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }

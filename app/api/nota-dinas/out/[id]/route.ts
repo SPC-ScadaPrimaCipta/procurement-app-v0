@@ -6,86 +6,104 @@ import { headers } from "next/headers";
 import { resolveUserName } from "@/lib/user-utils";
 
 export async function GET(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> }
+	request: Request,
+	{ params }: { params: Promise<{ id: string }> },
 ) {
-    const { id } = await params;
-    const canRead = await hasPermission("read", "notadinas");
-    if (!canRead) {
-        return new NextResponse("Forbidden", { status: 403 });
-    }
+	const { id } = await params;
+	const canRead = await hasPermission("read", "notadinas");
+	if (!canRead) {
+		return new NextResponse("Forbidden", { status: 403 });
+	}
 
-    try {
-        const session = await auth.api.getSession({
-            headers: await headers(),
-        });
+	try {
+		const session = await auth.api.getSession({
+			headers: await headers(),
+		});
 
-        const result = await prisma.correspondence_out.findUnique({
-            where: { id },
-            include: {
-                procurement_case: {
-                    include: {
-                        status: true,
-                        unit: true,
-                        document: {
-                            include: {
-                                master_doc_type: true,
-                                document_file: true,
-                            },
-                        },
-                    },
-                },
-            },
-        });
+		const result = await prisma.correspondence_out.findUnique({
+			where: { id },
+			include: {
+				procurement_case: {
+					include: {
+						status: true,
+						unit: true,
+					},
+				},
+			},
+		});
 
-        if (!result) {
-            return new NextResponse("Not Found", { status: 404 });
-        }
+		if (!result) {
+			return new NextResponse("Not Found", { status: 404 });
+		}
 
-        const createdByName = await resolveUserName(result.created_by);
+		// Fetch documents separately
+		const documents = result.case_id
+			? await prisma.document.findMany({
+					where: {
+						ref_type: "PROCUREMENT_CASE",
+						ref_id: result.case_id,
+						is_active: true,
+					},
+					include: {
+						master_doc_type: true,
+					},
+				})
+			: [];
 
-        let currentStepInstanceId = null;
+		// Handle BigInt serialization
+		const safeDocuments = documents.map((doc) => ({
+			...doc,
+			file_size: doc.file_size ? Number(doc.file_size) : null,
+		}));
 
-        if (session?.user?.id && result.case_id) {
-            const workflowInstance = await prisma.workflow_instance.findUnique({
-                where: {
-                    ref_type_ref_id: {
-                        ref_type: "PROCUREMENT_CASE",
-                        ref_id: result.case_id,
-                    },
-                },
-            });
+		const createdByName = await resolveUserName(result.created_by);
 
-            if (workflowInstance) {
-                const stepInstances =
-                    await prisma.workflow_step_instance.findMany({
-                        where: {
-                            workflow_instance_id: workflowInstance.id,
-                            status: "PENDING",
-                        },
-                    });
+		let currentStepInstanceId = null;
 
-                const assignment = stepInstances.find((step) => {
-                    const assigned = step.assigned_to as string[];
-                    return (
-                        Array.isArray(assigned) &&
-                        assigned.includes(session.user.id)
-                    );
-                });
+		if (session?.user?.id && result.case_id) {
+			const workflowInstance = await prisma.workflow_instance.findUnique({
+				where: {
+					ref_type_ref_id: {
+						ref_type: "PROCUREMENT_CASE",
+						ref_id: result.case_id,
+					},
+				},
+			});
 
-                if (assignment) {
-                    currentStepInstanceId = assignment.id;
-                }
-            }
-        }
+			if (workflowInstance) {
+				const stepInstances =
+					await prisma.workflow_step_instance.findMany({
+						where: {
+							workflow_instance_id: workflowInstance.id,
+							status: "PENDING",
+						},
+					});
 
-        return NextResponse.json({
-            ...result,
-            created_by: createdByName,
-            currentStepInstanceId,
-        });
-    } catch (error) {
-        console.error("Error fetching nota dinas detail:", error);
-        return new NextResponse("Internal Server Error", { status: 500 });
-    }
+				const assignment = stepInstances.find((step) => {
+					const assigned = step.assigned_to as string[];
+					return (
+						Array.isArray(assigned) &&
+						assigned.includes(session.user.id)
+					);
+				});
+
+				if (assignment) {
+					currentStepInstanceId = assignment.id;
+				}
+			}
+		}
+
+		return NextResponse.json({
+			...result,
+			procurement_case: {
+				...result.procurement_case,
+				document: safeDocuments,
+			},
+			created_by: createdByName,
+			currentStepInstanceId,
+		});
+	} catch (error) {
+		console.error("Error fetching nota dinas detail:", error);
+		return new NextResponse("Internal Server Error", { status: 500 });
+	}
 }

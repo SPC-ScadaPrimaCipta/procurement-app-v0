@@ -36,7 +36,9 @@ export default function ReimbursementPage() {
 			if (search) params.append("search", search);
 			if (statusFilter) params.append("status_id", statusFilter);
 
-			const response = await fetch(`/api/reimbursement?${params.toString()}`);
+			const response = await fetch(
+				`/api/reimbursement?${params.toString()}`,
+			);
 			if (!response.ok) throw new Error("Failed to fetch");
 
 			const data = await response.json();
@@ -87,7 +89,7 @@ export default function ReimbursementPage() {
 		toast.success(
 			editMode
 				? "Reimbursement berhasil diupdate"
-				: "Reimbursement berhasil ditambahkan"
+				: "Reimbursement berhasil ditambahkan",
 		);
 	};
 
@@ -168,7 +170,10 @@ export default function ReimbursementPage() {
 								className="pl-9"
 							/>
 						</div>
-						<Button onClick={fetchReimbursements} variant="secondary">
+						<Button
+							onClick={fetchReimbursements}
+							variant="secondary"
+						>
 							Cari
 						</Button>
 					</div>
@@ -176,11 +181,12 @@ export default function ReimbursementPage() {
 
 				<div className="flex-1 overflow-auto p-6">
 					<DataTable
-					columns={createReimbursementColumns(handleRowClick)}
-					data={reimbursements}
-				/>
-			</div>
-		</main>
+						columns={createReimbursementColumns()}
+						data={reimbursements}
+						onRowClick={handleRowClick}
+					/>
+				</div>
+			</main>
 
 			{/* Dialogs */}
 			<ReimbursementFormDialog
