@@ -874,3 +874,46 @@ model case_requirement_check {
   @@index([evidence_document_id], map: "idx_case_req_check_evidence_doc")
   @@map("case_requirement_check")
 }
+
+enum notification_recipient_type {
+  USER
+  ROLE
+}
+
+enum notification_severity {
+  INFO
+  WARNING
+  ACTION_REQUIRED
+}
+
+model notification {
+  id             String                     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  // Target (inbox recipient)
+  recipient_type notification_recipient_type
+  recipient_id   String                     @db.Text // userId (BetterAuth) or roleName
+
+  // Content
+  title          String                     @db.VarChar(200)
+  message        String?                    @db.Text
+  severity       notification_severity      @default(INFO)
+
+  // Deep link + reference
+  ref_type       String?                    @db.VarChar(100) // e.g. PROCUREMENT_CASE, CONTRACT
+  ref_id         String?                    @db.Uuid         // nullable (generic). If you need non-uuid, change to Text
+  action_url     String?                    @db.Text
+
+  // Idempotency (prevent duplicates)
+  dedupe_key     String?                    @unique @db.VarChar(255)
+
+  // Metadata
+  created_by     String                     @default("SYSTEM") @db.Text
+  created_at     DateTime                   @default(now()) @db.Timestamptz(6)
+  read_at        DateTime?                  @db.Timestamptz(6)
+  archived_at    DateTime?                  @db.Timestamptz(6)
+
+  @@index([recipient_type, recipient_id, read_at, created_at], map: "idx_notif_recipient_read_created")
+  @@index([ref_type, ref_id], map: "idx_notif_ref")
+  @@index([created_at], map: "idx_notif_created_at")
+  @@map("notification")
+}
