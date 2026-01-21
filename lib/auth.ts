@@ -101,8 +101,8 @@ export const auth = betterAuth({
 			}
 
 			const allPermissions = new Set<string>();
-			userData.roles.forEach((role) => {
-				role.permissions.forEach((p) => {
+			userData.roles.forEach((role: any) => {
+				role.permissions.forEach((p: any) => {
 					allPermissions.add(`${p.action}:${p.resource}`);
 				});
 			});
@@ -110,7 +110,7 @@ export const auth = betterAuth({
 			return {
 				user: {
 					...user,
-					roles: userData.roles.map((r) => r.name),
+					roles: userData.roles.map((r: any) => r.name),
 					permissions: Array.from(allPermissions),
 				},
 				session,

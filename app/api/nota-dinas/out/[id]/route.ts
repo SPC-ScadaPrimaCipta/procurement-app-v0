@@ -51,7 +51,7 @@ export async function GET(
 			: [];
 
 		// Handle BigInt serialization
-		const safeDocuments = documents.map((doc) => ({
+		const safeDocuments = documents.map((doc: any) => ({
 			...doc,
 			file_size: doc.file_size ? Number(doc.file_size) : null,
 		}));
@@ -79,7 +79,7 @@ export async function GET(
 						},
 					});
 
-				const assignment = stepInstances.find((step) => {
+				const assignment = stepInstances.find((step: any) => {
 					const assigned = step.assigned_to as string[];
 					return (
 						Array.isArray(assigned) &&
