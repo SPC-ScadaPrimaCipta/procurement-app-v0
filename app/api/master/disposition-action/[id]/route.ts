@@ -6,7 +6,7 @@ import { hasPermission } from "@/lib/rbac";
 
 export async function PUT(
 	request: Request,
-	{ params }: { params: Promise<{ id: string }> }
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
 		const canManage = await hasPermission("manage", "masterData");
@@ -19,7 +19,10 @@ export async function PUT(
 		});
 
 		if (!session) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 },
+			);
 		}
 
 		const { id } = await params;
@@ -33,7 +36,7 @@ export async function PUT(
 		if (!existing) {
 			return NextResponse.json(
 				{ error: "Instruksi disposisi tidak ditemukan" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -49,7 +52,7 @@ export async function PUT(
 			if (duplicate) {
 				return NextResponse.json(
 					{ error: `Instruksi '${body.name}' sudah ada` },
-					{ status: 409 }
+					{ status: 409 },
 				);
 			}
 		}
@@ -60,7 +63,6 @@ export async function PUT(
 				name: body.name,
 				is_active: body.is_active ?? true,
 				sort_order: body.sort_order ?? 0,
-				updated_at: new Date(),
 			},
 		});
 
@@ -69,14 +71,14 @@ export async function PUT(
 		console.error("Error updating disposition action:", error);
 		return NextResponse.json(
 			{ error: "Failed to update disposition action" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }
 
 export async function DELETE(
 	request: Request,
-	{ params }: { params: Promise<{ id: string }> }
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
 		const canManage = await hasPermission("manage", "masterData");
@@ -89,7 +91,10 @@ export async function DELETE(
 		});
 
 		if (!session) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 },
+			);
 		}
 
 		const { id } = await params;
@@ -102,7 +107,7 @@ export async function DELETE(
 		if (!existing) {
 			return NextResponse.json(
 				{ error: "Instruksi disposisi tidak ditemukan" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -115,7 +120,7 @@ export async function DELETE(
 		console.error("Error deleting disposition action:", error);
 		return NextResponse.json(
 			{ error: "Failed to delete disposition action" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }

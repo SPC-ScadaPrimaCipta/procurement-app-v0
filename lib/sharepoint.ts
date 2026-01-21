@@ -25,7 +25,7 @@ export async function ensureFolderPathOnSiteDrive(params: {
 			: `https://graph.microsoft.com/v1.0/sites/${params.siteId}/drive/root/children`;
 
 		console.log(
-			`[SharePoint] Ensuring folder: ${part} in ${parent || "root"}`
+			`[SharePoint] Ensuring folder: ${part} in ${parent || "root"}`,
 		);
 
 		const res = await fetch(url, {
@@ -72,7 +72,9 @@ export async function uploadFileToSiteDrive(params: {
 	const encodedPath = fullPath.split("/").map(encodeURIComponent).join("/");
 
 	const token_payload = JSON.parse(
-		Buffer.from(params.accessToken.split(".")[1], "base64").toString("utf8")
+		Buffer.from(params.accessToken.split(".")[1], "base64").toString(
+			"utf8",
+		),
 	);
 	console.log("scp", token_payload.scp);
 
@@ -103,6 +105,9 @@ export async function uploadFileToSiteDrive(params: {
 		name: data.name as string,
 		size: (data.size as number) ?? buffer.length,
 		id: data.id as string, // itemId
+		itemId: data.id as string,
+		siteId: data.parentReference?.siteId as string,
+		driveId: data.parentReference?.driveId as string,
 	};
 }
 
