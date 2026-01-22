@@ -12,10 +12,19 @@ import {
 } from "@/components/ui/card";
 import { Activity, CheckCircle2, Clock, XCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { WorkflowMonitoringSkeleton } from "@/components/skeletons";
 
 export default function MonitoringPage() {
 	const [data, setData] = useState<MonitorItem[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setIsInitialLoading(false);
+		}, 300);
+		return () => clearTimeout(timer);
+	}, []);
 
 	const fetchData = async () => {
 		try {
@@ -35,16 +44,12 @@ export default function MonitoringPage() {
 		fetchData();
 	}, []);
 
-	if (loading) {
-		return (
-			<div className="flex h-screen items-center justify-center">
-				<Loader2 className="h-8 w-8 animate-spin" />
-			</div>
-		);
+	if (isInitialLoading || loading) {
+		return <WorkflowMonitoringSkeleton />;
 	}
 
 	return (
-		<div className="space-y-8">
+		<div className="space-y-8 animate-in fade-in duration-300">
 			<div>
 				<h1 className="text-2xl font-semibold">Workflow Monitoring</h1>
 				<p className="text-muted-foreground">

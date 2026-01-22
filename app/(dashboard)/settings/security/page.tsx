@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Key, Smartphone, ShieldCheck } from "lucide-react";
 
 import { Separator } from "@/components/ui/separator";
+import { SecuritySettingsSkeleton } from "@/components/skeletons";
 
 export default function SecurityPage() {
 	const [currentPassword, setCurrentPassword] = useState("");
@@ -26,6 +27,14 @@ export default function SecurityPage() {
 	const [loading, setLoading] = useState(false);
 	const [tokenStatus, setTokenStatus] = useState<string | null>(null);
 	const [loadingTokenCheck, setLoadingTokenCheck] = useState(false);
+	const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setIsInitialLoading(false);
+		}, 300);
+		return () => clearTimeout(timer);
+	}, []);
 
 	const checkToken = async () => {
 		setLoadingTokenCheck(true);
@@ -87,8 +96,12 @@ export default function SecurityPage() {
 		}
 	};
 
+	if (isInitialLoading) {
+		return <SecuritySettingsSkeleton />;
+	}
+
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 animate-in fade-in duration-300">
 			<div>
 				<h3 className="text-lg font-medium flex items-center gap-2">
 					<ShieldCheck className="h-5 w-5" /> Security

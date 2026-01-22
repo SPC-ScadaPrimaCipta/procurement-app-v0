@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { id as idLocale } from "date-fns/locale";
+import { NotificationListSkeleton } from "@/components/skeletons/notification-list-skeleton";
 
 interface Notification {
 	id: string;
@@ -100,28 +101,28 @@ export function NotificationList() {
 	};
 
 	return (
-		<div className="space-y-4">
-			<Tabs
-				value={activeTab}
-				onValueChange={(v) => setActiveTab(v as any)}
-				className="w-full"
-			>
-				<TabsList>
-					<TabsTrigger value="unread">Unread</TabsTrigger>
-					<TabsTrigger value="all">All Notifications</TabsTrigger>
-				</TabsList>
+		<>
+			{loading ? (
+				<NotificationListSkeleton />
+			) : (
+				<div className="space-y-4">
+					<Tabs
+						value={activeTab}
+						onValueChange={(v) => setActiveTab(v as any)}
+						className="w-full"
+					>
+						<TabsList>
+							<TabsTrigger value="unread">Unread</TabsTrigger>
+							<TabsTrigger value="all">All Notifications</TabsTrigger>
+						</TabsList>
 
-				<div className="mt-4">
-					{loading ? (
-						<div className="flex justify-center p-8">
-							<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-						</div>
-					) : notifications.length === 0 ? (
-						<div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
-							<Bell className="h-10 w-10 mx-auto mb-3 opacity-20" />
-							<p>No notifications found</p>
-						</div>
-					) : (
+						<div className="mt-4">
+							{notifications.length === 0 ? (
+								<div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
+									<Bell className="h-10 w-10 mx-auto mb-3 opacity-20" />
+									<p>No notifications found</p>
+								</div>
+							) : (
 						<div className="flex flex-col gap-2">
 							{notifications.map((notification) => (
 								<div
@@ -212,5 +213,7 @@ export function NotificationList() {
 				</div>
 			</Tabs>
 		</div>
+			)}
+		</>
 	);
 }

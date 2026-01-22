@@ -38,6 +38,7 @@ import { format } from "date-fns";
 import { UserEditDialog } from "@/components/admin/user-edit-dialog";
 import { UserCreateDialog } from "@/components/admin/user-create-dialog";
 import { useRequirePermission } from "@/hooks/use-require-permission";
+import { AdminUsersSkeleton } from "@/components/skeletons/admin-users-skeleton";
 
 // Basic types
 interface Role {
@@ -112,11 +113,7 @@ export default function UsersPage() {
 	};
 
 	if (authLoading) {
-		return (
-			<div className="flex h-[50vh] w-full items-center justify-center">
-				<Loader2 className="size-8 animate-spin text-muted-foreground" />
-			</div>
-		);
+		return <AdminUsersSkeleton />;
 	}
 
 	if (!isAuthorized) {

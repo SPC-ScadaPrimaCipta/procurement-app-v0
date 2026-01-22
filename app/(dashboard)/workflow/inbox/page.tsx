@@ -12,11 +12,20 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { WorkflowInboxSkeleton } from "@/components/skeletons";
 
 export default function InboxPage() {
 	const [activeTab, setActiveTab] = useState("pending");
 	const [data, setData] = useState<InboxItem[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setIsInitialLoading(false);
+		}, 300);
+		return () => clearTimeout(timer);
+	}, []);
 
 	useEffect(() => {
 		let ignored = false;
@@ -44,8 +53,12 @@ export default function InboxPage() {
 		};
 	}, [activeTab]);
 
+	if (isInitialLoading) {
+		return <WorkflowInboxSkeleton />;
+	}
+
 	return (
-		<div className="space-y-8">
+		<div className="space-y-8 animate-in fade-in duration-300">
 			<div>
 				<h1 className="text-2xl font-semibold">Inbox</h1>
 				<p className="text-muted-foreground">

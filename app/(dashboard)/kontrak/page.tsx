@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { DataTable } from "@/components/datatable/data-table";
 import { columns, Contract } from "./columns";
+import { TablePageSkeleton } from "@/components/skeletons/table-page-skeleton";
 
 export default function KontrakPage() {
 	const [data, setData] = useState<Contract[]>([]);
@@ -50,7 +51,9 @@ export default function KontrakPage() {
 			)
 		).length,
 	};
-
+	if (isLoading) {
+		return <TablePageSkeleton showButton={false} />;
+	}
 	return (
 		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
 			{/* Header */}

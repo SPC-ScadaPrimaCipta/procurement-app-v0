@@ -1,0 +1,18 @@
+export { InboxSkeleton } from "./inbox-skeleton";
+export { TaskListSkeleton } from "./task-list-skeleton";
+export { NotificationListSkeleton } from "./notification-list-skeleton";
+export { DashboardSkeleton } from "../dashboard/dashboard-skeleton";
+export { TablePageSkeleton } from "./table-page-skeleton";
+export { NonKontrakSkeleton } from "./non-kontrak-skeleton";
+export { VendorSkeleton } from "./vendor-skeleton";
+export { DocumentSkeleton } from "./document-skeleton";
+export { DisposisiSkeleton } from "./disposisi-skeleton";
+export { MasterDataTableSkeleton } from "./master-data-table-skeleton";
+export { AdminUsersSkeleton } from "./admin-users-skeleton";export { AdminRolesSkeleton } from './admin-roles-skeleton';
+export { AdminPermissionsSkeleton } from './admin-permissions-skeleton';
+export { WorkflowInboxSkeleton } from './workflow-inbox-skeleton';
+export { WorkflowRequestsSkeleton } from './workflow-requests-skeleton';
+export { WorkflowManageSkeleton } from './workflow-manage-skeleton';
+export { WorkflowMonitoringSkeleton } from './workflow-monitoring-skeleton';
+export { WorkflowAuditSkeleton } from './workflow-audit-skeleton';
+export { SecuritySettingsSkeleton } from './security-settings-skeleton';

@@ -13,10 +13,19 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { WorkflowRequestsSkeleton } from "@/components/skeletons";
 
 export default function RequestsPage() {
 	const [requests, setRequests] = useState<RequestItem[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setIsInitialLoading(false);
+		}, 300);
+		return () => clearTimeout(timer);
+	}, []);
 
 	useEffect(() => {
 		async function fetchRequests() {
@@ -38,8 +47,12 @@ export default function RequestsPage() {
 		fetchRequests();
 	}, []);
 
+	if (isInitialLoading) {
+		return <WorkflowRequestsSkeleton />;
+	}
+
 	return (
-		<div className="space-y-8">
+		<div className="space-y-8 animate-in fade-in duration-300">
 			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 				<div>
 					<h1 className="text-2xl font-semibold">My Requests</h1>
