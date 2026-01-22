@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/datatable/data-table";
 import { columns, DocumentItem } from "./columns";
+import { DocumentSkeleton } from "@/components/skeletons/document-skeleton";
 
 export default function DokumenPage() {
     const [data, setData] = useState<DocumentItem[]>([]);
@@ -35,6 +36,10 @@ export default function DokumenPage() {
 
         fetchData();
     }, []);
+
+    if (isLoading) {
+        return <DocumentSkeleton />;
+    }
 
     return (
         <div className="md:p-6 space-y-6 animate-in fade-in duration-500">

@@ -21,6 +21,7 @@ import { DataTable } from "@/components/datatable/data-table";
 import { columns, DocumentItem } from "./columns";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { DocumentSkeleton } from "@/components/skeletons/document-skeleton";
 
 export default function DokumenPage() {
     const [isLoading, setIsLoading] = useState(true);
@@ -57,6 +58,10 @@ export default function DokumenPage() {
     }, []);
 
     const column = columns(fetchData);
+
+    if (isLoading) {
+        return <DocumentSkeleton />;
+    }
 
     const handleDeleteAll = async () => {
         if (data.length === 0) {

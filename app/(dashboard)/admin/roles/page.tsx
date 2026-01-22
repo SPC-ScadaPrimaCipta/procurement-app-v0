@@ -12,6 +12,7 @@ import {
 import { Plus, Shield, Trash2, Edit, Loader2 } from "lucide-react";
 
 import { RoleForm } from "@/components/admin/role-form";
+import { AdminRolesSkeleton } from "@/components/skeletons";
 import { toast } from "sonner";
 import { useRequirePermission } from "@/hooks/use-require-permission";
 
@@ -45,8 +46,16 @@ export default function RolesPage() {
 
 	const [roles, setRoles] = useState<Role[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [isInitialLoading, setIsInitialLoading] = useState(true);
 	const [isFormOpen, setIsFormOpen] = useState(false);
 	const [editingRole, setEditingRole] = useState<Role | null>(null);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setIsInitialLoading(false);
+		}, 300);
+		return () => clearTimeout(timer);
+	}, []);
 
 	useEffect(() => {
 		if (isAuthorized) {
@@ -76,6 +85,10 @@ export default function RolesPage() {
 
 	if (!isAuthorized) {
 		return null;
+	}
+
+	if (isInitialLoading) {
+		return <AdminRolesSkeleton />;
 	}
 
 	const handleCreate = () => {
@@ -109,7 +122,7 @@ export default function RolesPage() {
 	};
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 animate-in fade-in duration-300">
 			<header className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-semibold">Roles</h1>

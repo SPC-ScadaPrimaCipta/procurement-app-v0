@@ -5,14 +5,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskList } from "./task-list";
 import { NotificationList } from "./notification-list";
 import { ClipboardList, Bell } from "lucide-react";
+import { InboxSkeleton } from "@/components/skeletons/inbox-skeleton";
 
 export default function InboxPage() {
 	const [activeSection, setActiveSection] = useState("tasks");
 	const [taskCount, setTaskCount] = useState(0);
 	const [notificationCount, setNotificationCount] = useState(0);
+	const [isLoading, setIsLoading] = useState(true);
 
 	useEffect(() => {
 		async function fetchCounts() {
+			setIsLoading(true);
 			try {
 				const [taskRes, notifRes] = await Promise.all([
 					fetch("/api/workflow-inbox/count"),
@@ -30,11 +33,17 @@ export default function InboxPage() {
 				}
 			} catch (error) {
 				console.error("Failed to fetch inbox counts", error);
+			} finally {
+				setIsLoading(false);
 			}
 		}
 
 		fetchCounts();
 	}, []);
+
+	if (isLoading) {
+		return <InboxSkeleton />;
+	}
 
 	return (
 		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">

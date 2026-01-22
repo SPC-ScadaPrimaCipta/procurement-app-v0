@@ -1,14 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { DispositionActionTable } from "@/components/disposition/disposition-action-table";
 import { DispositionRecipientTable } from "@/components/disposition/disposition-recipient-table";
 import { Route, Users } from "lucide-react";
+import { DisposisiSkeleton } from "@/components/skeletons/disposisi-skeleton";
 
 export default function DisposisiPage() {
 	const [activeTab, setActiveTab] = useState("actions");
+	const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+	useEffect(() => {
+		// Simulate initial page load
+		const timer = setTimeout(() => {
+			setIsInitialLoading(false);
+		}, 300);
+		return () => clearTimeout(timer);
+	}, []);
+
+	if (isInitialLoading) {
+		return <DisposisiSkeleton />;
+	}
 
 	return (
 		<div className="space-y-6">

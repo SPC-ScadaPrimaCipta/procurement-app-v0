@@ -12,6 +12,7 @@ import {
 import { DataTable } from "@/components/datatable/data-table";
 import { columns, InboxItem } from "./columns";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TaskListSkeleton } from "@/components/skeletons/task-list-skeleton";
 
 export function TaskList() {
 	const [activeTab, setActiveTab] = useState("pending");
@@ -70,43 +71,43 @@ export function TaskList() {
 	}, [activeTab]);
 
 	return (
-		<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-			<TabsList>
-				<TabsTrigger value="pending">Pending</TabsTrigger>
-				<TabsTrigger value="history">History</TabsTrigger>
-			</TabsList>
+		<>
+			{loading ? (
+				<TaskListSkeleton />
+			) : (
+				<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+					<TabsList>
+						<TabsTrigger value="pending">Pending</TabsTrigger>
+						<TabsTrigger value="history">History</TabsTrigger>
+					</TabsList>
 
-			<div className="mt-4">
-				<Card>
-					<CardHeader>
-						<CardTitle>
-							{activeTab === "pending"
-								? "Pending Requests"
-								: "Request History"}
-						</CardTitle>
-						<CardDescription>
-							{activeTab === "pending"
-								? "Requests waiting for your approval."
-								: "View past requests and their outcomes."}
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="p-0">
-						{loading ? (
-							<div className="flex justify-center p-8">
-								<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-							</div>
-						) : (
-							<div className="p-4">
-								<DataTable
-									columns={columns}
-									data={data}
-									filterKey="title"
-								/>
-							</div>
-						)}
-					</CardContent>
-				</Card>
-			</div>
-		</Tabs>
+					<div className="mt-4">
+						<Card>
+							<CardHeader>
+								<CardTitle>
+									{activeTab === "pending"
+										? "Pending Requests"
+										: "Request History"}
+								</CardTitle>
+								<CardDescription>
+									{activeTab === "pending"
+										? "Requests waiting for your approval."
+										: "View past requests and their outcomes."}
+								</CardDescription>
+							</CardHeader>
+							<CardContent className="p-0">
+								<div className="p-4">
+									<DataTable
+										columns={columns}
+										data={data}
+										filterKey="title"
+									/>
+								</div>
+							</CardContent>
+						</Card>
+					</div>
+				</Tabs>
+			)}
+		</>
 	);
 }

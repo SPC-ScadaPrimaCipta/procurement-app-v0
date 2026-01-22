@@ -8,11 +8,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/datatable";
 import { createColumns } from "./columns";
 import { Workflow } from "./types";
+import { WorkflowManageSkeleton } from "@/components/skeletons";
 
 export default function WorkflowsPage() {
 	const [workflows, setWorkflows] = useState<Workflow[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [isInitialLoading, setIsInitialLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setIsInitialLoading(false);
+		}, 300);
+		return () => clearTimeout(timer);
+	}, []);
 
 	const fetchWorkflows = useCallback(async () => {
 		try {
@@ -38,15 +47,8 @@ export default function WorkflowsPage() {
 		[fetchWorkflows]
 	);
 
-	if (loading) {
-		return (
-			<div className="flex items-center justify-center h-full min-h-[400px]">
-				<Loader2
-					className="animate-spin text-muted-foreground"
-					size={32}
-				/>
-			</div>
-		);
+	if (isInitialLoading || loading) {
+		return <WorkflowManageSkeleton />;
 	}
 
 	if (error) {
@@ -58,7 +60,7 @@ export default function WorkflowsPage() {
 	}
 
 	return (
-		<div className="md:p-6 space-y-6">
+		<div className="md:p-6 space-y-6 animate-in fade-in duration-300">
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-bold tracking-tight">

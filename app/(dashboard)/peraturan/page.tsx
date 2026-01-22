@@ -15,6 +15,7 @@ import { PeraturanFormDialog } from "@/components/peraturan/peraturan-form-dialo
 import { PeraturanDetailDialog } from "@/components/peraturan/peraturan-detail-dialog";
 import { PeraturanDeleteDialog } from "@/components/peraturan/peraturan-delete-dialog";
 import { Card } from "@/components/ui/card";
+import { VendorSkeleton } from "@/components/skeletons/vendor-skeleton";
 
 export default function PeraturanPage() {
 	const [peraturans, setPeraturans] = useState<Peraturan[]>([]);
@@ -81,6 +82,10 @@ export default function PeraturanPage() {
 	};
 
 	const columns = createPeraturanColumns({ onViewDetail: handleViewDetail });
+
+	if (isLoading) {
+		return <VendorSkeleton />;
+	}
 
 	return (
 		<div className="space-y-6">

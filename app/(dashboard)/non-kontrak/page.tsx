@@ -13,10 +13,12 @@ import { Plus, Search, PanelLeftClose, PanelLeft } from "lucide-react";
 import { ReimbursementFormDialog } from "@/components/reimbursement/reimbursement-form-dialog";
 import { ReimbursementDetailDialog } from "@/components/reimbursement/reimbursement-detail-dialog";
 import { ReimbursementDeleteDialog } from "@/components/reimbursement/reimbursement-delete-dialog";
+import { NonKontrakSkeleton } from "@/components/skeletons/non-kontrak-skeleton";
 
 export default function NonKontrakPage() {
 	const [reimbursements, setReimbursements] = useState<Reimbursement[]>([]);
 	const [loading, setLoading] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
 	const [search, setSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState("");
 	const [showSidebar, setShowSidebar] = useState(true);
@@ -47,6 +49,7 @@ export default function NonKontrakPage() {
 			console.error(error);
 		} finally {
 			setLoading(false);
+			setIsLoading(false);
 		}
 	};
 
@@ -99,6 +102,10 @@ export default function NonKontrakPage() {
 		fetchReimbursements();
 		toast.success("Data non kontrak berhasil dihapus");
 	};
+
+	if (isLoading) {
+		return <NonKontrakSkeleton />;
+	}
 
 	return (
 		<div className="flex h-screen overflow-hidden">

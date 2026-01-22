@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/datatable/data-table";
 import { columns, ProcurementCase } from "./columns";
 import { StatsCard } from "@/components/dashboard/stats-card";
-
+import { TablePageSkeleton } from "@/components/skeletons/table-page-skeleton";
 import { FileText, Clock, CheckCircle2, TrendingUp } from "lucide-react";
 
 export default function PengadaanPage() {
@@ -44,6 +44,10 @@ export default function PengadaanPage() {
 			)
 		).length,
 	};
+
+	if (isLoading) {
+		return <TablePageSkeleton showButton={false} />;
+	}
 
 	return (
 		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">

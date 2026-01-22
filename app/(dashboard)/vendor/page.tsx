@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { VendorSkeleton } from "@/components/skeletons/vendor-skeleton";
 
 export default function VendorPage() {
 	const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -65,6 +66,10 @@ export default function VendorPage() {
 		onDelete: handleDelete,
 		onViewDetail: handleViewDetail,
 	});
+
+	if (isLoading) {
+		return <VendorSkeleton />;
+	}
 
 	return (
 		<div className="space-y-6">

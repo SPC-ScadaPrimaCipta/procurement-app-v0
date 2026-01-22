@@ -11,6 +11,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Plus, Trash2, Edit, Loader2 } from "lucide-react";
+import { AdminPermissionsSkeleton } from "@/components/skeletons";
 import {
 	Dialog,
 	DialogContent,
@@ -44,8 +45,7 @@ export default function PermissionsPage() {
 	);
 
 	const [permissions, setPermissions] = useState<Permission[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [open, setOpen] = useState(false);
+	const [loading, setLoading] = useState(true);	const [isInitialLoading, setIsInitialLoading] = useState(true);	const [open, setOpen] = useState(false);
 	const [editingPermission, setEditingPermission] =
 		useState<Permission | null>(null);
 
@@ -54,6 +54,13 @@ export default function PermissionsPage() {
 	const [resource, setResource] = useState("");
 	const [description, setDescription] = useState("");
 	const [submitting, setSubmitting] = useState(false);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setIsInitialLoading(false);
+		}, 300);
+		return () => clearTimeout(timer);
+	}, []);
 
 	useEffect(() => {
 		if (isAuthorized) {
@@ -84,6 +91,10 @@ export default function PermissionsPage() {
 
 	if (!isAuthorized) {
 		return null;
+	}
+
+	if (isInitialLoading) {
+		return <AdminPermissionsSkeleton />;
 	}
 
 	const handleCreate = () => {
@@ -166,7 +177,7 @@ export default function PermissionsPage() {
 	};
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 animate-in fade-in duration-300">
 			<header className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-semibold">Permissions</h1>

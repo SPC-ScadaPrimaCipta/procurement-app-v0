@@ -10,6 +10,7 @@ import { DataTable } from "@/components/datatable/data-table";
 import { columns, NotaDinas } from "./columns";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { useRequirePermission } from "@/hooks/use-require-permission";
+import { TablePageSkeleton } from "@/components/skeletons/table-page-skeleton";
 
 export default function NotaDinasPage() {
 	const [data, setData] = useState<NotaDinas[]>([]);
@@ -73,8 +74,12 @@ export default function NotaDinasPage() {
 		).length,
 	};
 
+	if (isLoading) {
+		return <TablePageSkeleton showButton={true} />;
+	}
+
 	return (
-		<div className="md:p-6 space-y-6">
+		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<div>

@@ -12,10 +12,19 @@ import {
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { WorkflowAuditSkeleton } from "@/components/skeletons";
 
 export default function AuditPage() {
 	const [data, setData] = useState<AuditLogItem[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setIsInitialLoading(false);
+		}, 300);
+		return () => clearTimeout(timer);
+	}, []);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -34,16 +43,12 @@ export default function AuditPage() {
 		fetchData();
 	}, []);
 
-	if (loading) {
-		return (
-			<div className="flex h-screen items-center justify-center">
-				<Loader2 className="h-8 w-8 animate-spin" />
-			</div>
-		);
+	if (isInitialLoading || loading) {
+		return <WorkflowAuditSkeleton />;
 	}
 
 	return (
-		<div className="space-y-8">
+		<div className="space-y-8 animate-in fade-in duration-300">
 			<div>
 				<h1 className="text-2xl font-semibold">Audit Logs</h1>
 				<p className="text-muted-foreground">

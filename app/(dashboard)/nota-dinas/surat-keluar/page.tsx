@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/datatable/data-table";
 import { columns, SuratKeluar } from "./columns";
 import { StatsCard } from "@/components/dashboard/stats-card";
+import { TablePageSkeleton } from "@/components/skeletons/table-page-skeleton";
 
 export default function SuratKeluarPage() {
 	const [data, setData] = useState<SuratKeluar[]>([]);
@@ -61,6 +62,10 @@ export default function SuratKeluarPage() {
 			)
 		).length,
 	};
+
+	if (isLoading) {
+		return <TablePageSkeleton showButton={false} />;
+	}
 
 	return (
 		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
