@@ -192,8 +192,12 @@ Procurement System
 	<style>
 		body { font-family: 'Segoe UI', sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; }
 		.container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-		.header { background: linear-gradient(135deg, #0078d4, #005a9e); color: white; padding: 30px 20px; text-align: center; }
-		.header h2 { color: #0078d4; font-size: 24px; margin-bottom: 5px; }
+		.header { background: linear-gradient(135deg, #f9f9f9, #f9f9f9); color: #0078d4; padding: 30px 20px; text-align: center; }
+		.logo-section { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 15px; background: rgba(255, 255, 255, 0.15); padding: 15px 20px; border-radius: 8px; backdrop-filter: blur(10px); }
+		.logo-section img { height: 50px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+		.logo-section h1 { margin: 0; font-size: 22px; font-weight: 600; color: #0078d4; text-shadow: none; }
+		.header h2 { color: #0078d4; font-size: 18px; margin-bottom: 5px; margin-top: 15px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+		.header p { text-shadow: 1px 1px 2px rgba(12, 12, 12, 0.93); font-size: 14px; }
 		.content { padding: 30px; }
 		.details { background: #f9f9f9; padding: 20px; margin: 20px 0; border-left: 4px solid #0078d4; border-radius: 4px; }
 		.details h3 { color: #0078d4; font-size: 16px; margin-bottom: 15px; }
@@ -209,7 +213,11 @@ Procurement System
 <body>
 	<div class="container">
 		<div class="header">
-			<h2>🔔 Procurement Request Forwarded</h2>
+			<div class="logo-section">
+				<img src="${process.env.BETTER_AUTH_URL}/kemenhub-biro-umum.svg" alt="Logo Kemenhub">
+				<h1>Procurement Management System</h1>
+			</div>
+			<h2>Procurement Request Forwarded</h2>
 			<p>Action Required</p>
 		</div>
 		<div class="content">
