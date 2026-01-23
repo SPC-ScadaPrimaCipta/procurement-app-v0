@@ -1,6 +1,7 @@
 "use client";
 
 import { useSidebar } from "./sidebar-context";
+import Image from "next/image";
 import {
 	LayoutDashboard,
 	Settings,
@@ -263,6 +264,8 @@ export function Sidebar() {
 	const sidebarRef = useRef<HTMLDivElement | null>(null);
 	const pathname = usePathname();
 	const { data: session } = authClient.useSession();
+	// State to control hidden class
+	const [isHidden, setIsHidden] = useState(collapsed);
 
 	function isActive(href: string) {
 		return pathname === href || pathname.startsWith(href + "/");
@@ -348,6 +351,39 @@ export function Sidebar() {
 		setOpenMenu((prev) => ({ ...prev, ...newOpenState }));
 	}, [pathname, menu]);
 
+	// Handle hidden class for expand/collapse
+	useEffect(() => {
+		const sidebar = sidebarRef.current;
+		if (!sidebar) return;
+
+		// Handler for transition end
+		const handleTransitionEnd = (e: TransitionEvent) => {
+			// Only care about width or transform (for sidebar slide)
+			if (
+				(e.propertyName === "width" ||
+					e.propertyName === "transform") &&
+				collapsed
+			) {
+				setIsHidden(true);
+			}
+		};
+
+		sidebar.addEventListener("transitionend", handleTransitionEnd as any);
+		return () => {
+			sidebar.removeEventListener(
+				"transitionend",
+				handleTransitionEnd as any,
+			);
+		};
+	}, [collapsed]);
+
+	// When expanding, remove hidden immediately
+	useEffect(() => {
+		if (!collapsed) {
+			setIsHidden(false);
+		}
+	}, [collapsed]);
+
 	// Close on mobile
 	useEffect(() => {
 		function handleClickOutside(e: MouseEvent) {
@@ -381,18 +417,29 @@ export function Sidebar() {
 				h-dvh md:h-screen
 				min-h-0
 				overflow-hidden
-    `}
+			`}
 		>
 			{/* HEADER */}
 			<nav className="px-2">
-				<div className="flex items-center min-h-16 gap-3 px-6 py-2 rounded-md text-sm">
-					<ShoppingCart size={24} className="shrink-0" />
+				<div
+					className={`flex items-center min-h-16 gap-3 py-2 rounded-md text-sm transition-all duration-300 ${
+						collapsed ? "justify-center px-2" : "px-6"
+					}`}
+				>
+					<Image
+						src="/kemenhub-biro-umum.svg"
+						alt="Logo"
+						width={40}
+						height={40}
+						className="shrink-0 w-10 h-10 object-contain"
+					/>
 
 					<span
 						className={`
               font-bold text-lg whitespace-nowrap overflow-hidden
               transition-all duration-300
               ${collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-[200px]"}
+							${isHidden ? "hidden" : ""}
             `}
 					>
 						Procurement

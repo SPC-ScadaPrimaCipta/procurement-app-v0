@@ -59,6 +59,7 @@ export interface ProcurementCaseDetail {
 	created_at: string;
 	created_by_name: string;
 	status: {
+		id: string;
 		name: string;
 	};
 	unit: {
