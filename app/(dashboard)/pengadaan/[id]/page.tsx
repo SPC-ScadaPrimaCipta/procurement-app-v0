@@ -106,16 +106,26 @@ export default function PengadaanDetailPage() {
 	const handleForward = async (action: "approve" | "sendback") => {
 		if (action === "approve") {
 			try {
+				// Forward the case
 				const res = await fetch(
 					`/api/procurement-cases/${id}/forward`,
 					{
 						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							remarks: "",  // Optional: bisa diisi jika ada comment
+						}),
 					},
 				);
 				if (!res.ok) {
-					console.error("Failed to forward case");
+					const errorText = await res.text();
+					console.error("Failed to forward case:", errorText);
 					return false;
 				}
+				
+				const result = await res.json();
+				console.log("✅ Forward successful:", result);
+				
 				return true;
 			} catch (error) {
 				console.error("Error forwarding case:", error);
@@ -320,16 +330,7 @@ export default function PengadaanDetailPage() {
 							<CardContent>
 								<WorkflowActions
 									stepInstanceId={data.currentStepInstanceId}
-									// externalComment={
-									// 	data.case_disposition_summary
-									// 		?.disposition_note || ""
-									// }
-									// useExternalComment={true}
-									disabled={
-										!data.case_disposition_summary ||
-										(!!checklist &&
-											!checklist.summary.isComplete)
-									}
+									disabled={false}
 									onSuccess={() => {
 										window.location.reload();
 									}}
