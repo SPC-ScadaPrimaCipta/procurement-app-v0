@@ -1,18 +1,49 @@
 "use client";
 
 import { format } from "date-fns";
-import { FileText, Download } from "lucide-react";
+import { FileText, Download, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProcurementCaseDetail } from "./types";
+import { useState } from "react";
+import { toast } from "sonner";
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 
 interface TabDocumentsProps {
 	data: ProcurementCaseDetail;
 }
 
 export function TabDocuments({ data }: TabDocumentsProps) {
-	const { documents } = data;
+	const [documents, setDocuments] = useState(data.documents);
+	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+	const [loading, setLoading] = useState(false);
+
+	function onDeleteClick(id: string) {
+		setSelectedDocId(id);
+		setConfirmOpen(true);
+	}
+
+	async function handleDeleteDocument(documentId: string) {
+		if (!selectedDocId) return;
+
+		setLoading(true);
+
+		const res = await fetch(`/api/uploads/delete-document/${selectedDocId}`, {
+			method: "DELETE",
+		});
+
+		setLoading(false);
+		setConfirmOpen(false);
+
+		if (res.ok) {
+			setDocuments(prev => prev.filter(d => d.id !== documentId));
+			toast.success("Document deleted successfully");
+		} else {
+			console.error("Failed to delete document");
+		}
+	}
 
 	if (!documents || documents.length === 0) {
 		return (
@@ -26,6 +57,7 @@ export function TabDocuments({ data }: TabDocumentsProps) {
 	}
 
 	return (
+	<>
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 			{documents.map((doc) => (
 				<Card
@@ -63,25 +95,41 @@ export function TabDocuments({ data }: TabDocumentsProps) {
 								</p>
 							</div>
 						</div>
-						{doc.file_url && (
+						<div className="grid grid-cols-2 gap-2">
+							{doc.file_url && (
+								<Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" asChild>
+									<a href={doc.file_url} target="_blank" rel="noopener noreferrer">
+										<Download className="h-4 w-4" />
+									</a>
+								</Button>
+							)}
+
 							<Button
 								variant="ghost"
 								size="icon"
-								className="shrink-0 h-8 w-8"
-								asChild
+								className="shrink-0 h-8 w-8 text-red-500 hover:text-red-600 cursor-pointer"
+								onClick={() => onDeleteClick(doc.id)}
 							>
-								<a
-									href={doc.file_url}
-									target="_blank"
-									rel="noopener noreferrer"
-								>
-									<Download className="h-4 w-4" />
-								</a>
+								<Trash className="h-4 w-4" />
 							</Button>
-						)}
+						</div>
 					</CardContent>
 				</Card>
 			))}
 		</div>
+
+		<ConfirmationDialog
+			open={confirmOpen}
+			onOpenChange={setConfirmOpen}
+			title="Delete Document"
+			description="Are you sure you want to delete this document? This action cannot be undone."
+			confirmText="Delete"
+			cancelText="Cancel"
+			variant="destructive"
+			loading={loading}
+			onConfirm={handleDeleteDocument.bind(null, selectedDocId!)}
+		/>
+	</>
 	);
+	
 }
