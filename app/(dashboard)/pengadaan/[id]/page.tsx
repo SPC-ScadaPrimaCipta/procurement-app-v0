@@ -15,6 +15,7 @@ import {
 	Paperclip,
 	CheckCircle2,
 	FileText,
+	Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +40,7 @@ import { TabSuratMasuk } from "./tab-surat-masuk";
 import { TabKontrak } from "./tab-kontrak";
 import { TabSuratKeluar } from "./tab-surat-keluar";
 import { TabDocuments } from "./tab-documents";
+import { StatusUpdateDialog } from "@/components/dashboard/procurement/status-update-dialog";
 
 export default function PengadaanDetailPage() {
 	const params = useParams();
@@ -50,6 +52,7 @@ export default function PengadaanDetailPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [nextStepTitle, setNextStepTitle] = useState<string | null>(null);
 	const [checklist, setChecklist] = useState<ChecklistData | null>(null);
+	const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 
 	const fetchData = async () => {
 		try {
@@ -218,12 +221,26 @@ export default function PengadaanDetailPage() {
 									<h2 className="text-2xl font-bold leading-tight">
 										{title}
 									</h2>
-									<Badge
-										variant={statusVariant}
-										className="text-sm px-4 py-1.5 shrink-0"
-									>
-										{status.name}
-									</Badge>
+									<div className="flex items-center gap-2">
+										<Badge
+											variant={statusVariant}
+											className="text-sm px-4 py-1.5 shrink-0"
+										>
+											{status.name}
+										</Badge>
+										{data?.currentStepInstanceId && (
+											<Button
+												variant="ghost"
+												size="icon"
+												className="h-8 w-8 text-muted-foreground hover:text-foreground"
+												onClick={() =>
+													setIsStatusDialogOpen(true)
+												}
+											>
+												<Pencil className="w-3.5 h-3.5" />
+											</Button>
+										)}
+									</div>
 								</div>
 								<div className="flex flex-wrap gap-4 text-sm text-muted-foreground items-center">
 									{/* <div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-md">
@@ -375,6 +392,14 @@ export default function PengadaanDetailPage() {
 					</Card>
 				</div>
 			</div>
+
+			<StatusUpdateDialog
+				isOpen={isStatusDialogOpen}
+				onClose={() => setIsStatusDialogOpen(false)}
+				caseId={id}
+				currentStatusId={status.id}
+				onSuccess={fetchData}
+			/>
 		</div>
 	);
 }
