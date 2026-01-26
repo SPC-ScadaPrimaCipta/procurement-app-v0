@@ -93,7 +93,7 @@ const rawMenu: MenuItem[] = [
 		href: "/non-kontrak",
 		icon: FileSpreadsheet,
 	},
-	{
+	{	
 		name: "Vendor",
 		href: "/vendor",
 		icon: Building2,
@@ -107,6 +107,11 @@ const rawMenu: MenuItem[] = [
 		name: "Dokumen",
 		href: "/documents",
 		icon: FileText,
+	},
+	{
+		name: "Report",
+		href: "/report",
+		icon: BarChart3,
 	},
 	{
 		name: "Recycle Bin",
