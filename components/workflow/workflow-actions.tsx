@@ -27,6 +27,7 @@ interface WorkflowActionsProps {
 	approveLabel?: string;
 	sendBackLabel?: string;
 	onBeforeAction?: (action: "approve" | "sendback") => Promise<boolean>;
+	hideSendBack?: boolean;
 }
 
 export function WorkflowActions({
@@ -38,10 +39,12 @@ export function WorkflowActions({
 	useExternalComment = false,
 	disabled = false,
 	onBeforeAction,
+	hideSendBack = false,
 }: WorkflowActionsProps & {
 	externalComment?: string;
 	useExternalComment?: boolean;
 	disabled?: boolean;
+	hideSendBack?: boolean;
 }) {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
@@ -89,7 +92,7 @@ export function WorkflowActions({
 			toast.success(
 				`Successfully ${
 					action === "approve" ? "approved" : "sent back"
-				} the request`
+				} the request`,
 			);
 			setRejectOpen(false);
 			setApproveOpen(false);
@@ -148,15 +151,17 @@ export function WorkflowActions({
 				ApproveButton
 			)}
 
-			<Button
-				variant="outline"
-				className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-950/30 whitespace-nowrap"
-				onClick={() => setRejectOpen(true)}
-				disabled={loading || disabled}
-			>
-				<XCircle className="mr-2 h-4 w-4" />
-				{sendBackLabel}
-			</Button>
+			{!hideSendBack && (
+				<Button
+					variant="outline"
+					className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-950/30 whitespace-nowrap"
+					onClick={() => setRejectOpen(true)}
+					disabled={loading || disabled}
+				>
+					<XCircle className="mr-2 h-4 w-4" />
+					{sendBackLabel}
+				</Button>
+			)}
 
 			{/* Approve Dialog */}
 			<Dialog open={approveOpen} onOpenChange={setApproveOpen}>

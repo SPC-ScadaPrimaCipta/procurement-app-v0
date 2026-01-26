@@ -41,6 +41,8 @@ import { TabKontrak } from "./tab-kontrak";
 import { TabSuratKeluar } from "./tab-surat-keluar";
 import { TabDocuments } from "./tab-documents";
 import { StatusUpdateDialog } from "@/components/dashboard/procurement/status-update-dialog";
+import { PicPickerDialog } from "@/components/pic-picker-dialog";
+import { useRequirePermission } from "@/hooks/use-require-permission";
 
 export default function PengadaanDetailPage() {
 	const params = useParams();
@@ -53,6 +55,15 @@ export default function PengadaanDetailPage() {
 	const [nextStepTitle, setNextStepTitle] = useState<string | null>(null);
 	const [checklist, setChecklist] = useState<ChecklistData | null>(null);
 	const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+	const [isPicAssignmentOpen, setIsPicAssignmentOpen] = useState(false);
+
+	const { isAuthorized: permittedToEditStatus } = useRequirePermission(
+		"edit_status",
+		"procurement_case",
+		{ redirect: false },
+	);
+
+	const canEditStatus = permittedToEditStatus || data?.currentStepInstanceId;
 
 	const fetchData = async () => {
 		try {
@@ -116,7 +127,7 @@ export default function PengadaanDetailPage() {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({
-							remarks: "",  // Optional: bisa diisi jika ada comment
+							remarks: "", // Optional: bisa diisi jika ada comment
 						}),
 					},
 				);
@@ -125,10 +136,10 @@ export default function PengadaanDetailPage() {
 					console.error("Failed to forward case:", errorText);
 					return false;
 				}
-				
+
 				const result = await res.json();
 				console.log("✅ Forward successful:", result);
-				
+
 				return true;
 			} catch (error) {
 				console.error("Error forwarding case:", error);
@@ -136,6 +147,34 @@ export default function PengadaanDetailPage() {
 			}
 		}
 		return true;
+	};
+
+	const handleAssignPic = async (user: { id: string; name: string }) => {
+		try {
+			const res = await fetch(`/api/procurement-cases/${id}`, {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ pic: user.id }),
+			});
+
+			if (!res.ok) {
+				throw new Error("Failed to assign PIC");
+			}
+
+			// Update local state
+			setData((prev) =>
+				prev
+					? {
+							...prev,
+							pic: user.id,
+							pic_name: user.name,
+						}
+					: null,
+			);
+			setIsPicAssignmentOpen(false);
+		} catch (error) {
+			console.error("Error assigning PIC:", error);
+		}
 	};
 
 	if (isLoading) {
@@ -228,7 +267,7 @@ export default function PengadaanDetailPage() {
 										>
 											{status.name}
 										</Badge>
-										{data?.currentStepInstanceId && (
+										{canEditStatus && (
 											<Button
 												variant="ghost"
 												size="icon"
@@ -243,10 +282,6 @@ export default function PengadaanDetailPage() {
 									</div>
 								</div>
 								<div className="flex flex-wrap gap-4 text-sm text-muted-foreground items-center">
-									{/* <div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-md">
-										<Building2 className="w-4 h-4" />
-										<span>{unit?.unit_name || "-"}</span>
-									</div> */}
 									<div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-md">
 										<Calendar className="w-4 h-4" />
 										<span>
@@ -259,6 +294,23 @@ export default function PengadaanDetailPage() {
 									<div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-md">
 										<User className="w-4 h-4" />
 										<span>{created_by_name}</span>
+									</div>
+									<div
+										className={`flex items-center gap-1.5 px-2 py-1 rounded-md cursor-pointer transition-colors ${
+											data?.pic_name
+												? "bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+												: "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 hover:text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+										}`}
+										onClick={() =>
+											setIsPicAssignmentOpen(true)
+										}
+									>
+										<User className="w-4 h-4" />
+										<span className="font-medium">
+											{data?.pic_name
+												? `PIC: ${data.pic_name}`
+												: "Assign PIC"}
+										</span>
 									</div>
 								</div>
 							</div>
@@ -360,6 +412,7 @@ export default function PengadaanDetailPage() {
 												: "Forward"
 									}
 									sendBackLabel="Kembali ke Satker"
+									hideSendBack={true}
 								/>
 							</CardContent>
 						</Card>
@@ -399,6 +452,12 @@ export default function PengadaanDetailPage() {
 				caseId={id}
 				currentStatusId={status.id}
 				onSuccess={fetchData}
+			/>
+
+			<PicPickerDialog
+				isOpen={isPicAssignmentOpen}
+				onClose={() => setIsPicAssignmentOpen(false)}
+				onAssign={handleAssignPic}
 			/>
 		</div>
 	);

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { resolveApprovers } from "@/lib/workflow/resolver";
+import { handleWorkflowCompleted as sendNotification } from "@/lib/notifications/workflow";
 
 export async function POST(req: Request) {
 	// 1️⃣ Auth
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
 		return new NextResponse("stepInstanceId required", { status: 400 });
 	}
 
-	return prisma.$transaction(async (tx) => {
+	const result = await prisma.$transaction(async (tx) => {
 		// 2️⃣ Load step instance with relations
 		const stepInstance = await tx.workflow_step_instance.findUnique({
 			where: { id: stepInstanceId },
@@ -32,19 +33,29 @@ export async function POST(req: Request) {
 		});
 
 		if (!stepInstance) {
-			return new NextResponse("Step instance not found", { status: 404 });
+			return {
+				status: "ERROR" as const,
+				message: "Step instance not found",
+				code: 404,
+			};
 		}
 
 		if (stepInstance.status !== "PENDING") {
-			return new NextResponse("Step is not pending", { status: 409 });
+			return {
+				status: "ERROR" as const,
+				message: "Step is not pending",
+				code: 409,
+			};
 		}
 
 		// 3️⃣ Authorization: must be assigned
 		const assigned = stepInstance.assigned_to as string[];
 		if (!assigned.includes(userId)) {
-			return new NextResponse("Not assigned to this step", {
-				status: 403,
-			});
+			return {
+				status: "ERROR" as const,
+				message: "Not assigned to this step",
+				code: 403,
+			};
 		}
 
 		// 4️⃣ Approve step instance
@@ -80,7 +91,7 @@ export async function POST(req: Request) {
 
 		// 7️⃣ Find next step
 		const currentIndex = steps.findIndex(
-			(s) => s.id === stepInstance.step_id
+			(s) => s.id === stepInstance.step_id,
 		);
 
 		const currentStep = steps[currentIndex];
@@ -96,9 +107,12 @@ export async function POST(req: Request) {
 				},
 			});
 
-			return NextResponse.json({
-				status: "COMPLETED",
-			});
+			return {
+				status: "COMPLETED" as const,
+				workflowInstanceId: stepInstance.workflow_instance_id,
+				refType: stepInstance.workflow_instance.ref_type,
+				refId: stepInstance.workflow_instance.ref_id,
+			};
 		}
 
 		// 9️⃣ Resolve approvers for next step
@@ -132,12 +146,22 @@ export async function POST(req: Request) {
 			},
 		});
 
-		return NextResponse.json({
-			status: "IN_PROGRESS",
+		return {
+			status: "IN_PROGRESS" as const,
 			nextStep: {
 				stepKey: nextStep.step_key,
 				assignedTo: assignedUsers,
 			},
-		});
+		};
 	});
+
+	if (result.status === "ERROR") {
+		return new NextResponse(result.message, { status: result.code });
+	}
+
+	if (result.status === "COMPLETED") {
+		await sendNotification(result, session.user.id);
+	}
+
+	return NextResponse.json(result);
 }

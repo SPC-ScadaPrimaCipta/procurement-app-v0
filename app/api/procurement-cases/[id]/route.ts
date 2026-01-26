@@ -58,6 +58,8 @@ export async function GET(
 			? await resolveUserName(data.correspondence_in.created_by)
 			: null;
 
+		const picName = data.pic ? await resolveUserName(data.pic) : null;
+
 		// Map correspondence_out creators
 		const correspondenceOutWithNames = await Promise.all(
 			data.correspondence_out.map(async (item) => ({
@@ -115,6 +117,7 @@ export async function GET(
 		return NextResponse.json({
 			...data,
 			created_by_name: createdByName,
+			pic_name: picName,
 			correspondence_in: data.correspondence_in
 				? {
 						...data.correspondence_in,
@@ -198,6 +201,37 @@ export async function DELETE(
 	} catch (error) {
 		console.error("Error deleting procurement case:", error);
 		// Return friendly error
+		return new NextResponse("Internal Server Error", { status: 500 });
+	}
+}
+
+export async function PATCH(
+	request: Request,
+	{ params }: { params: Promise<{ id: string }> },
+) {
+	const { id } = await params;
+	const session = await auth.api.getSession({
+		headers: await headers(),
+	});
+
+	if (!session?.user) {
+		return new NextResponse("Unauthorized", { status: 401 });
+	}
+
+	try {
+		const body = await request.json();
+		const { pic } = body;
+
+		const updatedCase = await prisma.procurement_case.update({
+			where: { id },
+			data: {
+				pic,
+			},
+		});
+
+		return NextResponse.json(updatedCase);
+	} catch (error) {
+		console.error("Error updating procurement case:", error);
 		return new NextResponse("Internal Server Error", { status: 500 });
 	}
 }
