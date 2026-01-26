@@ -42,6 +42,7 @@ import { TabSuratKeluar } from "./tab-surat-keluar";
 import { TabDocuments } from "./tab-documents";
 import { StatusUpdateDialog } from "@/components/dashboard/procurement/status-update-dialog";
 import { PicPickerDialog } from "@/components/pic-picker-dialog";
+import { useRequirePermission } from "@/hooks/use-require-permission";
 
 export default function PengadaanDetailPage() {
 	const params = useParams();
@@ -55,6 +56,14 @@ export default function PengadaanDetailPage() {
 	const [checklist, setChecklist] = useState<ChecklistData | null>(null);
 	const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 	const [isPicAssignmentOpen, setIsPicAssignmentOpen] = useState(false);
+
+	const { isAuthorized: permittedToEditStatus } = useRequirePermission(
+		"edit_status",
+		"procurement_case",
+		{ redirect: false },
+	);
+
+	const canEditStatus = permittedToEditStatus || data?.currentStepInstanceId;
 
 	const fetchData = async () => {
 		try {
@@ -258,7 +267,7 @@ export default function PengadaanDetailPage() {
 										>
 											{status.name}
 										</Badge>
-										{data?.currentStepInstanceId && (
+										{canEditStatus && (
 											<Button
 												variant="ghost"
 												size="icon"
@@ -273,10 +282,6 @@ export default function PengadaanDetailPage() {
 									</div>
 								</div>
 								<div className="flex flex-wrap gap-4 text-sm text-muted-foreground items-center">
-									{/* <div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-md">
-										<Building2 className="w-4 h-4" />
-										<span>{unit?.unit_name || "-"}</span>
-									</div> */}
 									<div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-md">
 										<Calendar className="w-4 h-4" />
 										<span>
@@ -407,6 +412,7 @@ export default function PengadaanDetailPage() {
 												: "Forward"
 									}
 									sendBackLabel="Kembali ke Satker"
+									hideSendBack={true}
 								/>
 							</CardContent>
 						</Card>

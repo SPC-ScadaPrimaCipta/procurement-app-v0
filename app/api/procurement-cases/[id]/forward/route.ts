@@ -60,16 +60,16 @@ export async function POST(
 			});
 		}
 
-		// 3. Update the procurement case status
-		const updatedCase = await prisma.procurement_case.update({
-			where: {
-				id: id,
-			},
-			data: {
-				status_id: nextStatus.id,
-				updated_at: new Date(),
-			},
-		});
+		// // 3. Update the procurement case status
+		// const updatedCase = await prisma.procurement_case.update({
+		// 	where: {
+		// 		id: id,
+		// 	},
+		// 	data: {
+		// 		status_id: nextStatus.id,
+		// 		updated_at: new Date(),
+		// 	},
+		// });
 
 		// 4. Get workflow instance and step info for email (with error handling)
 		try {
@@ -101,17 +101,26 @@ export async function POST(
 			});
 
 			// 5. Send email notification (non-blocking)
-			if (workflowInstance && workflowInstance.workflow_step_instance.length > 0) {
-				const currentStepInstance = workflowInstance.workflow_step_instance[0];
+			if (
+				workflowInstance &&
+				workflowInstance.workflow_step_instance.length > 0
+			) {
+				const currentStepInstance =
+					workflowInstance.workflow_step_instance[0];
 				const currentStepOrder = currentStepInstance.step.step_order;
-				
-				console.log("📧 Triggering email for case:", id, "step order:", currentStepOrder);
-				
+
+				console.log(
+					"📧 Triggering email for case:",
+					id,
+					"step order:",
+					currentStepOrder,
+				);
+
 				// Build headers object from request headers (to pass session/auth)
 				const forwardHeaders: Record<string, string> = {
 					"Content-Type": "application/json",
 				};
-				
+
 				// Copy authentication headers (cookies, authorization, etc.)
 				const authHeaders = ["cookie", "authorization", "x-csrf-token"];
 				authHeaders.forEach((headerName) => {
@@ -120,33 +129,46 @@ export async function POST(
 						forwardHeaders[headerName] = value;
 					}
 				});
-				
+
 				// Call email API in background with authentication headers
-				fetch(`${process.env.BETTER_AUTH_URL}/api/procurement-cases/${id}/send-forward-email`, {
-					method: "POST",
-					headers: forwardHeaders,
-					body: JSON.stringify({
-						workflowInstanceId: workflowInstance.id,
-						currentStepNumber: currentStepOrder - 1, // Previous step to get next step
-						remarks: remarks,
-					}),
-				}).catch((error) => {
-					console.error("❌ Failed to send email notification:", error);
+				fetch(
+					`${process.env.BETTER_AUTH_URL}/api/procurement-cases/${id}/send-forward-email`,
+					{
+						method: "POST",
+						headers: forwardHeaders,
+						body: JSON.stringify({
+							workflowInstanceId: workflowInstance.id,
+							currentStepNumber: currentStepOrder - 1, // Previous step to get next step
+							remarks: remarks,
+						}),
+					},
+				).catch((error) => {
+					console.error(
+						"❌ Failed to send email notification:",
+						error,
+					);
 				});
 			} else {
-				console.log("⚠️ No workflow instance or pending step found, skipping email");
+				console.log(
+					"⚠️ No workflow instance or pending step found, skipping email",
+				);
 			}
 		} catch (emailError) {
 			// Don't fail the forward if email fails
-			console.error("⚠️ Email notification error (non-critical):", emailError);
+			console.error(
+				"⚠️ Email notification error (non-critical):",
+				emailError,
+			);
 		}
 
-		return NextResponse.json(updatedCase);
+		return NextResponse.json({
+			message: "Forwarded successfully",
+		});
 	} catch (error) {
 		console.error("❌ Error forwarding procurement case:", error);
 		return new NextResponse(
 			`Internal Server Error: ${error instanceof Error ? error.message : "Unknown error"}`,
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }
