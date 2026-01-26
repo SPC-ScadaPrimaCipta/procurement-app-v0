@@ -231,7 +231,6 @@ function DonutChart({ data, colors }: { data: ChartData[]; colors: string[] }) {
 		<ResponsiveContainer width="100%" height={320}>
 			<PieChart>
 				<Pie
-					activeIndex={activeIndex}
 					activeShape={(props: any) => renderActiveShape(props, colors, isDark)}
 					data={data}
 					cx="50%"
@@ -264,8 +263,8 @@ function DonutChart({ data, colors }: { data: ChartData[]; colors: string[] }) {
 						padding: "12px 16px",
 						boxShadow: isDark ? "0 10px 15px -3px rgba(0, 0, 0, 0.3)" : "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
 					}}
-					formatter={(value: number) => [
-						<span key="value" className="font-semibold">{value}</span>,
+					formatter={(value: number | undefined) => [
+						<span key="value" className="font-semibold">{value ?? 0}</span>,
 						"Jumlah"
 					]}
 					labelStyle={{ 
@@ -318,7 +317,7 @@ function HorizontalBarChart({ data }: { data: ChartData[] }) {
 				layout="vertical" 
 				margin={{ top: 10, right: 40, left: 120, bottom: 10 }}
 				onMouseMove={(state) => {
-					if (state.isTooltipActive) {
+					if (state.isTooltipActive && typeof state.activeTooltipIndex === 'number') {
 						setActiveIndex(state.activeTooltipIndex);
 					} else {
 						setActiveIndex(undefined);
@@ -367,8 +366,8 @@ function HorizontalBarChart({ data }: { data: ChartData[] }) {
 							? "0 20px 25px -5px rgba(0, 0, 0, 0.4)" 
 							: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
 					}}
-					formatter={(value: number) => [
-						<span key="value" className="font-bold text-lg">{value}</span>,
+					formatter={(value: number | undefined) => [
+						<span key="value" className="font-bold text-lg">{value ?? 0}</span>,
 						<span key="label" className="text-xs opacity-75">kontrak</span>
 					]}
 					labelStyle={{ 
