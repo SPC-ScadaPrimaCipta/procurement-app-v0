@@ -9,12 +9,22 @@ export async function POST(
 ) {
 	try {
 		const { id } = await params;
+		const requestHeaders = await headers();
 		const session = await auth.api.getSession({
-			headers: await headers(),
+			headers: requestHeaders,
 		});
 
 		if (!session?.user) {
 			return new NextResponse("Unauthorized", { status: 401 });
+		}
+
+		// Parse request body for optional remarks
+		let remarks = null;
+		try {
+			const body = await request.json();
+			remarks = body.remarks;
+		} catch (e) {
+			// No body or invalid JSON, that's okay
 		}
 
 		// 1. Get current case and its status
@@ -61,9 +71,82 @@ export async function POST(
 			},
 		});
 
+		// 4. Get workflow instance and step info for email (with error handling)
+		try {
+			const workflowInstance = await prisma.workflow_instance.findUnique({
+				where: {
+					ref_type_ref_id: {
+						ref_type: "PROCUREMENT_CASE",
+						ref_id: id,
+					},
+				},
+				include: {
+					workflow_step_instance: {
+						where: {
+							status: "PENDING",
+						},
+						include: {
+							step: {
+								select: {
+									step_order: true,
+								},
+							},
+						},
+						orderBy: {
+							created_at: "asc",
+						},
+						take: 1,
+					},
+				},
+			});
+
+			// 5. Send email notification (non-blocking)
+			if (workflowInstance && workflowInstance.workflow_step_instance.length > 0) {
+				const currentStepInstance = workflowInstance.workflow_step_instance[0];
+				const currentStepOrder = currentStepInstance.step.step_order;
+				
+				console.log("📧 Triggering email for case:", id, "step order:", currentStepOrder);
+				
+				// Build headers object from request headers (to pass session/auth)
+				const forwardHeaders: Record<string, string> = {
+					"Content-Type": "application/json",
+				};
+				
+				// Copy authentication headers (cookies, authorization, etc.)
+				const authHeaders = ["cookie", "authorization", "x-csrf-token"];
+				authHeaders.forEach((headerName) => {
+					const value = requestHeaders.get(headerName);
+					if (value) {
+						forwardHeaders[headerName] = value;
+					}
+				});
+				
+				// Call email API in background with authentication headers
+				fetch(`${process.env.BETTER_AUTH_URL}/api/procurement-cases/${id}/send-forward-email`, {
+					method: "POST",
+					headers: forwardHeaders,
+					body: JSON.stringify({
+						workflowInstanceId: workflowInstance.id,
+						currentStepNumber: currentStepOrder - 1, // Previous step to get next step
+						remarks: remarks,
+					}),
+				}).catch((error) => {
+					console.error("❌ Failed to send email notification:", error);
+				});
+			} else {
+				console.log("⚠️ No workflow instance or pending step found, skipping email");
+			}
+		} catch (emailError) {
+			// Don't fail the forward if email fails
+			console.error("⚠️ Email notification error (non-critical):", emailError);
+		}
+
 		return NextResponse.json(updatedCase);
 	} catch (error) {
-		console.error("Error forwarding procurement case:", error);
-		return new NextResponse("Internal Server Error", { status: 500 });
+		console.error("❌ Error forwarding procurement case:", error);
+		return new NextResponse(
+			`Internal Server Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+			{ status: 500 }
+		);
 	}
 }
