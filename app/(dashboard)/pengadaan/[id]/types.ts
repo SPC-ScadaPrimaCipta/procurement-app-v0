@@ -58,6 +58,8 @@ export interface ProcurementCaseDetail {
 	title: string;
 	created_at: string;
 	created_by_name: string;
+	pic?: string | null;
+	pic_name?: string | null;
 	status: {
 		id: string;
 		name: string;
