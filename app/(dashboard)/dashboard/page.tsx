@@ -16,29 +16,9 @@ import { ContractStatusGroupingCard } from "@/components/dashboard/contract-stat
 import { InboxCard } from "@/components/dashboard/inbox-card";
 import { RecentProcurementCard } from "@/components/dashboard/recent-procurement-card";
 import { ShortcutsCard } from "@/components/dashboard/shortcuts-card";
-import { DashboardMetricCard } from "@/components/dashboard/dashboard-metric-card";
+import { StatsCard } from "@/components/dashboard/stats-card";
 import { FileText, Inbox, Receipt, Send } from "lucide-react";
-
-const ACTIVITY = [
-	{
-		id: "ACT-1024",
-		team: "Design Systems",
-		status: "Released",
-		summary: "v3 foundations published",
-	},
-	{
-		id: "ACT-1061",
-		team: "Marketing Ops",
-		status: "Blocked",
-		summary: "Attribution export for Q1",
-	},
-	{
-		id: "ACT-1088",
-		team: "Billing",
-		status: "On track",
-		summary: "Automated renewals rollout",
-	},
-];
+import { toast } from "sonner";
 
 export default function DashboardPage() {
 	const [loading, setLoading] = useState({
@@ -310,33 +290,37 @@ export default function DashboardPage() {
 							<SelectItem value="90d">Last 90 days</SelectItem>
 						</SelectContent>
 					</Select> */}
-					<Button variant="outline" className="w-full sm:w-auto">
+					<Button
+						variant="outline"
+						className="w-full sm:w-auto"
+						onClick={() => toast.info("Fitur ini belum tersedia")}
+					>
 						Download report
 					</Button>
-					<Button className="w-full sm:w-auto">Share snapshot</Button>
+					{/* <Button className="w-full sm:w-auto">Share snapshot</Button> */}
 				</div>
 			</header>
 
 			<section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-				<DashboardMetricCard
+				<StatsCard
 					title="Semua Kontrak"
 					value={totalContracts}
 					icon={FileText}
 					iconClassName="text-indigo-500"
 				/>
-				<DashboardMetricCard
+				<StatsCard
 					title="Semua Non Kontrak"
 					value={totalReimbursement}
 					icon={Receipt}
 					iconClassName="text-emerald-500"
 				/>
-				<DashboardMetricCard
+				<StatsCard
 					title="Semua Nota Dinas Masuk"
 					value={totalCorrespondenceIn}
 					icon={Inbox}
 					iconClassName="text-blue-500"
 				/>
-				<DashboardMetricCard
+				<StatsCard
 					title="Semua Nota Dinas Keluar"
 					value={totalCorrespondenceOut}
 					icon={Send}
