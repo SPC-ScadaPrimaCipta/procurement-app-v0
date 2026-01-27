@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface CreateBastDialogProps {
 	open: boolean;
@@ -37,6 +38,8 @@ export function CreateBastDialog({
 	const [docTypes, setDocTypes] = useState<{ id: string; name: string }[]>(
 		[],
 	);
+
+	const router = useRouter();
 
 	useEffect(() => {
 		if (open) {
@@ -68,6 +71,55 @@ export function CreateBastDialog({
 		}
 	};
 
+	const uploadFile = async (
+		refId: string,
+		file: File,
+		docTypeName: string,
+		folderContext: string,
+	): Promise<string | null> => {
+		// Find doc_type_id
+		const docType = docTypes.find(
+			(dt) => dt.name.toLowerCase() === docTypeName.toLowerCase(),
+		);
+
+		// If doc type not found, we might want to warn or proceed without it?
+		// The reference defaults to empty string if not found.
+		const docTypeId = docType?.id || "";
+
+		const data = new FormData();
+		data.append("files", file);
+		data.append("ref_type", "BAST");
+		data.append("ref_id", refId);
+		if (docTypeId) {
+			data.append("doc_type_id", docTypeId);
+		}
+
+		// Folder path: BAST/<contractId>
+		// We use the passed folderContext (which is contractId here)
+		const folderPath = `BAST/${folderContext}`;
+		data.append("folder_path", folderPath);
+
+		console.log(
+			`Uploading ${docTypeName} to ${folderPath} with docType ${docTypeId}`,
+		);
+
+		const response = await fetch("/api/uploads", {
+			method: "POST",
+			body: data,
+		});
+
+		if (!response.ok) {
+			const errText = await response.text();
+			throw new Error(`Gagal upload ${docTypeName}: ${errText}`);
+		}
+
+		const result = await response.json();
+		if (Array.isArray(result) && result.length > 0) {
+			return result[0].dbId || null;
+		}
+		return null;
+	};
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!bastNumber || !bastDate || !progress) {
@@ -80,30 +132,16 @@ export function CreateBastDialog({
 		setIsLoading(true);
 
 		try {
-			// 1. Upload file if needed (optional but recommended for BAST)
-			let attachmentId = null;
+			// 1. Upload File first (if present)
+			let attachmentId: string | null = null;
 			if (file) {
-				const formData = new FormData();
-				formData.append("file", file);
-				formData.append("refType", "BAST");
-				formData.append("refId", contractId);
-
-				const bastDocType = docTypes.find(
-					(dt) => dt.name.toUpperCase() === "BAST",
+				// We use contractId as refId because BAST ID doesn't exist yet
+				attachmentId = await uploadFile(
+					contractId,
+					file,
+					"BAST",
+					contractId,
 				);
-				if (bastDocType) {
-					formData.append("doc_type_id", bastDocType.id);
-				}
-				formData.append("folder_path", `BAST/${contractId}`);
-
-				const uploadRes = await fetch("/api/uploads", {
-					method: "POST",
-					body: formData,
-				});
-
-				if (!uploadRes.ok) throw new Error("Gagal mengupload lampiran");
-				const uploadData = await uploadRes.json();
-				attachmentId = uploadData.id;
 			}
 
 			// 2. Create BAST record
@@ -129,8 +167,13 @@ export function CreateBastDialog({
 			toast.success("BAST berhasil dibuat");
 			onSuccess();
 			onOpenChange(false);
+
+			router.refresh();
 		} catch (error: any) {
-			toast.error(error.message);
+			console.error("Error submitting BAST:", error);
+			toast.error(
+				error.message || "Terjadi kesalahan saat menyimpan data.",
+			);
 		} finally {
 			setIsLoading(false);
 		}
