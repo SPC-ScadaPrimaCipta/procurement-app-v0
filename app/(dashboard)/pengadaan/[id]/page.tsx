@@ -43,6 +43,7 @@ import { TabDocuments } from "./tab-documents";
 import { StatusUpdateDialog } from "@/components/dashboard/procurement/status-update-dialog";
 import { PicPickerDialog } from "@/components/pic-picker-dialog";
 import { useRequirePermission } from "@/hooks/use-require-permission";
+import { toast } from "sonner";
 
 export default function PengadaanDetailPage() {
 	const params = useParams();
@@ -172,8 +173,11 @@ export default function PengadaanDetailPage() {
 					: null,
 			);
 			setIsPicAssignmentOpen(false);
+
+			toast.success("PIC assigned successfully");
 		} catch (error) {
 			console.error("Error assigning PIC:", error);
+			toast.error("Failed to assign PIC");
 		}
 	};
 

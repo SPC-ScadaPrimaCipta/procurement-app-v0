@@ -8,36 +8,16 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { Tooltip } from "@/components/ui/tooltip";
-import {
-	BarChart,
-	CartesianGrid,
-	XAxis,
-	YAxis,
-	Tooltip as RechartsTooltip,
-	Bar,
-	ResponsiveContainer,
-	PieChart,
-	Pie,
-	Legend,
-	Label,
-	Cell,
-	Sector,
-} from "recharts";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DataTable } from "@/components/datatable/data-table";
-import { columns } from "../pengadaan/columns";
-import { ArrowRight, Container, Mail } from "lucide-react";
-import { format } from "date-fns";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
+import { VendorGroupingCard } from "@/components/dashboard/vendor-grouping-card";
+import { ContractStatusGroupingCard } from "@/components/dashboard/contract-status-grouping-card";
+import { InboxCard } from "@/components/dashboard/inbox-card";
+import { RecentProcurementCard } from "@/components/dashboard/recent-procurement-card";
+import { ShortcutsCard } from "@/components/dashboard/shortcuts-card";
+import { DashboardMetricCard } from "@/components/dashboard/dashboard-metric-card";
+import { FileText, Inbox, Receipt, Send } from "lucide-react";
 
 const ACTIVITY = [
 	{
@@ -59,18 +39,6 @@ const ACTIVITY = [
 		summary: "Automated renewals rollout",
 	},
 ];
-
-const COLORS = [
-  "#4F46E5", // indigo
-  "#10B981", // emerald
-  "#EAB308", // amber
-  "#F97316", // orange
-  "#EF4444", // red
-  "#3B82F6", // blue
-  "#9333EA", // purple
-  "#14B8A6", // teal
-];
-
 
 export default function DashboardPage() {
 	const [loading, setLoading] = useState({
@@ -94,15 +62,13 @@ export default function DashboardPage() {
 	>([]);
 	const [vendorGroup, setVendorGroup] = useState<number>(0);
 	const [contractStatuses, setContractStatuses] = useState<any[]>([]);
-	const [vendorTrend, setVendorTrend] = useState<{ label: string; value: number }[]>([]);
+	const [vendorTrend, setVendorTrend] = useState<
+		{ label: string; value: number }[]
+	>([]);
 	const [procurementCases, setProcurementCases] = useState<any[]>([]);
 	const [inboxItems, setInboxItems] = useState<any[]>([]);
 	const [inboxLoading, setInboxLoading] = useState<boolean>(true);
 	const router = useRouter();
-	const [activeIndex, setActiveIndex] = useState<number | null>(null);
-
-	const onPieEnter = (_: any, index: number) => setActiveIndex(index);
-	const onPieLeave = () => setActiveIndex(null);
 
 	useEffect(() => {
 		const fetchContracts = async () => {
@@ -188,7 +154,7 @@ export default function DashboardPage() {
 				setVendors(data);
 
 				const uniqueTypes = new Set(
-					data.map((v: any) => v.supplier_type?.name?.trim())
+					data.map((v: any) => v.supplier_type?.name?.trim()),
 				);
 
 				setVendorGroup(uniqueTypes.size);
@@ -206,42 +172,42 @@ export default function DashboardPage() {
 		const fetchContractStatuses = async () => {
 			try {
 				const res = await fetch("/api/contracts");
-			if (!res.ok) throw new Error("Failed to fetch");
+				if (!res.ok) throw new Error("Failed to fetch");
 
-			const result = await res.json();
-			const data = result.data ?? [];
+				const result = await res.json();
+				const data = result.data ?? [];
 
-			const statusMap = new Map<
-				string,
-				{ count: number; sortOrder: number | null }
-			>();
+				const statusMap = new Map<
+					string,
+					{ count: number; sortOrder: number | null }
+				>();
 
-			data.forEach((item: any) => {
-				const statusName = item.contract_status?.name || "Unknown";
-				const sortOrder = item.contract_status?.sort_order ?? null;
+				data.forEach((item: any) => {
+					const statusName = item.contract_status?.name || "Unknown";
+					const sortOrder = item.contract_status?.sort_order ?? null;
 
-				if (!statusMap.has(statusName)) {
-					statusMap.set(statusName, { count: 1, sortOrder });
-				} else {
-					statusMap.get(statusName)!.count++;
-				}
-			});
+					if (!statusMap.has(statusName)) {
+						statusMap.set(statusName, { count: 1, sortOrder });
+					} else {
+						statusMap.get(statusName)!.count++;
+					}
+				});
 
-			// Convert map to array
-			let formatted = [...statusMap.entries()].map(([name, val]) => ({
-				name,
-				count: val.count,
-				sortOrder: val.sortOrder,
-			}));
+				// Convert map to array
+				let formatted = [...statusMap.entries()].map(([name, val]) => ({
+					name,
+					count: val.count,
+					sortOrder: val.sortOrder,
+				}));
 
-			// Optional: sort based on DB sort_order
-			formatted.sort((a, b) => {
-				if (a.sortOrder == null) return 1;
-				if (b.sortOrder == null) return -1;
-				return a.sortOrder - b.sortOrder;
-			});
+				// Optional: sort based on DB sort_order
+				formatted.sort((a, b) => {
+					if (a.sortOrder == null) return 1;
+					if (b.sortOrder == null) return -1;
+					return a.sortOrder - b.sortOrder;
+				});
 
-			setContractStatuses(formatted);
+				setContractStatuses(formatted);
 				console.log("Computed contract statuses:", formatted);
 			} catch (e) {
 				console.error("Error fetching contract statuses:", e);
@@ -295,7 +261,7 @@ export default function DashboardPage() {
 		}
 
 		setVendorTrend(
-			[...map.entries()].map(([label, value]) => ({ label, value }))
+			[...map.entries()].map(([label, value]) => ({ label, value })),
 		);
 	}, [vendors]);
 
@@ -352,285 +318,47 @@ export default function DashboardPage() {
 			</header>
 
 			<section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-				<Card>
-					<CardHeader>
-						<CardDescription>Semua Kontrak</CardDescription>
-						<CardTitle className="text-3xl">
-							{totalContracts}
-						</CardTitle>
-					</CardHeader>
-				</Card>
-
-				<Card>
-					<CardHeader>
-						<CardDescription>Semua Non Kontrak</CardDescription>
-						<CardTitle className="text-3xl">
-							{totalReimbursement}
-						</CardTitle>
-					</CardHeader>
-				</Card>
-
-				<Card>
-					<CardHeader>
-						<CardDescription>
-							Semua Nota Dinas Masuk
-						</CardDescription>
-						<CardTitle className="text-3xl">
-							{totalCorrespondenceIn}
-						</CardTitle>
-					</CardHeader>
-				</Card>
-
-				<Card>
-					<CardHeader>
-						<CardDescription>
-							Semua Nota Dinas Keluar
-						</CardDescription>
-						<CardTitle className="text-3xl">
-							{totalCorrespondenceOut}
-						</CardTitle>
-					</CardHeader>
-				</Card>
+				<DashboardMetricCard
+					title="Semua Kontrak"
+					value={totalContracts}
+					icon={FileText}
+					iconClassName="text-indigo-500"
+				/>
+				<DashboardMetricCard
+					title="Semua Non Kontrak"
+					value={totalReimbursement}
+					icon={Receipt}
+					iconClassName="text-emerald-500"
+				/>
+				<DashboardMetricCard
+					title="Semua Nota Dinas Masuk"
+					value={totalCorrespondenceIn}
+					icon={Inbox}
+					iconClassName="text-blue-500"
+				/>
+				<DashboardMetricCard
+					title="Semua Nota Dinas Keluar"
+					value={totalCorrespondenceOut}
+					icon={Send}
+					iconClassName="text-orange-500"
+				/>
 			</section>
 
 			<div className="grid gap-6 lg:grid-cols-4">
-				<Card className="lg:col-span-2">
-					<CardHeader>
-						<CardTitle>Pengelompokan Penyedia</CardTitle>
-						<CardDescription>
-							Dikelompokan berdasarkan jenis penyedia
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{isLoading ? (
-							<p className="text-sm text-muted-foreground">Loading...</p>
-						) : (
-							<div className="w-full h-96">
-								<ResponsiveContainer width="100%" height="100%">
-									<BarChart data={[...vendorTrend].sort((a, b) => a.value - b.value)} responsive margin={{top: 5, bottom: 5, left: 0, right: 0}}>
-										<CartesianGrid stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
-										<XAxis
-											dataKey="label"
-											stroke="rgba(255,255,255,0.6)"
-											tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 12 }}
-										/>
-										<YAxis
-											stroke="rgba(255,255,255,0.6)"
-											tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 12 }}
-										/>
-										<RechartsTooltip
-											contentStyle={{
-												background: "#1e1e1e",
-												border: "1px solid rgba(255,255,255,0.2)",
-												color: "white",
-											}}
-										/>
-										<Bar dataKey="value" fill="#4F46E5" radius={[10, 10, 0, 0]} /> {/* indigo/primary */}
-									</BarChart>
-								</ResponsiveContainer >
-							</div>
-						)}
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle>Pengelompokan Status Kontrak</CardTitle>
-						<CardDescription>
-							Pengelompokan status kontrak terkini
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="p-0">
-						{isLoading ? (
-							<p className="text-sm text-muted-foreground p-4">Loading...</p>
-						) : (
-							<div className="w-full h-96">
-								<ResponsiveContainer width="100%" height="100%">
-									<PieChart
-										data={contractStatuses}
-											margin={{ top: 5, bottom: 5, left: 0, right: 0 }}
-										>
-										<RechartsTooltip
-											contentStyle={{
-												background: "#1e1e1e",
-												border: "1px solid rgba(255,255,255,0.2)",
-												color: "white",
-											}}
-											itemStyle={{ color: "white" }}
-											labelStyle={{ color: "white" }}
-										/>
-
-										<Legend
-											formatter={(value) => <span className="text-primary">{value}</span>}
-										/>
-
-										<Pie
-											data={contractStatuses}
-											dataKey="count"
-											nameKey="name"
-											cx="50%"
-											cy="50%"
-											outerRadius={80}
-											onMouseEnter={onPieEnter}
-											onMouseLeave={() => setActiveIndex(null)}
-										>
-											{contractStatuses.map((entry, index) => (
-												<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-											))}
-										</Pie>
-									</PieChart>
-								</ResponsiveContainer>
-							</div>
-						)}
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle>Kotak Masuk</CardTitle>
-						<CardDescription>Kotak masuk terbaru.</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-2">
-						{inboxItems.length === 0 ? (
-							<p className="text-sm text-muted-foreground">
-								No inbox items.
-							</p>
-						) : (
-							<>
-								{inboxItems.map((item) => (
-									<Card
-										key={item.id}
-										className="mb-3 cursor-pointer hover:bg-muted"
-										onClick={() => {
-											if (
-												item?.refType ===
-													"PROCUREMENT_CASE" &&
-												item?.refId
-											)
-												router.push(
-													`/pengadaan/${item.refId}`
-												);
-										}}
-										role="button"
-										tabIndex={0}
-									>
-										<CardContent className="flex items-center gap-4 rounded-lg">
-											<div className="shrink-0 rounded-md bg-muted/10">
-												<Mail className="w-5 h-5 text-muted-foreground" />
-											</div>
-											<div className="min-w-0 flex-1">
-												<p className="text-base font-medium truncate">
-													{item.title}
-												</p>
-												<p className="text-sm text-muted-foreground truncate mt-1">
-													{item.stepName} •{" "}
-													{item.requestedBy}
-												</p>
-											</div>
-											<div className="flex flex-col items-end ml-2 pr-4">
-												<span
-													className={`text-sm font-medium ${
-														item.status ===
-														"PENDING"
-															? "text-amber-500"
-															: "text-emerald-500"
-													}`}
-												>
-													{item.status}
-												</span>
-												<span className="text-sm text-muted-foreground mt-1">
-													{item.createdAt
-														? format(
-																new Date(
-																	item.createdAt
-																),
-																"dd MMM yyyy HH:mm"
-														  )
-														: ""}
-												</span>
-											</div>
-										</CardContent>
-									</Card>
-								))}
-								<div className="px-5 pb-4 flex justify-end">
-									<Button
-										size="sm"
-										variant="outline"
-										onClick={() => router.push("/inbox")}
-										aria-label="Lihat detail pengadaan pertama"
-										className="mt-1 cursor-pointer"
-									>
-										Lihat detail
-										<ArrowRight className="w-4 h-4 ml-2" />
-									</Button>
-								</div>
-							</>
-						)}
-					</CardContent>
-				</Card>
+				<VendorGroupingCard
+					vendorTrend={vendorTrend}
+					isLoading={isLoading}
+				/>
+				<ContractStatusGroupingCard
+					contractStatuses={contractStatuses}
+					isLoading={isLoading}
+				/>
+				<InboxCard inboxItems={inboxItems} />
 			</div>
 
 			<section className="grid gap-6 lg:grid-cols-3">
-				<Card className="lg:col-span-2">
-					<CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-						<div>
-							<CardTitle>Pengadaan</CardTitle>
-							<CardDescription>Pengadaan terkini</CardDescription>
-						</div>
-					</CardHeader>
-					<CardContent className="p-0">
-						<div className="px-4">
-							<DataTable
-								columns={columns}
-								data={procurementCases}
-								filterKey="title"
-							/>
-							<Button
-								variant="outline"
-								className="rounded-md text-sm"
-								onClick={() => router.push("/pengadaan")}
-							>
-								Lihat semua pengadaan
-							</Button>
-						</div>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle>Pintasan</CardTitle>
-						<CardDescription>
-							Akses cepat ke tindakan umum
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-3">
-						<Button
-							className="w-full justify-start"
-							variant="outline"
-							onClick={() => router.push("/admin/users")}
-						>
-							Daftarkan Pengguna Baru
-						</Button>
-						<Button
-							className="w-full justify-start"
-							variant="outline"
-							onClick={() => router.push("/admin/roles")}
-						>
-							Tetapkan Peran Pada Pengguna
-						</Button>
-						<Button
-							className="w-full justify-start"
-							variant="outline"
-							onClick={() => router.push("/admin/permissions")}
-						>
-							Buat Perizinan Baru
-						</Button>
-						<Button
-							className="w-full justify-start"
-							variant="outline"
-							onClick={() => router.push("/workflow/manage")}
-						>
-							Membuat Alur Kerja Baru
-						</Button>
-					</CardContent>
-				</Card>
+				<RecentProcurementCard procurementCases={procurementCases} />
+				<ShortcutsCard />
 			</section>
 		</div>
 	);
