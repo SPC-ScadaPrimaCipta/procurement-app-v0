@@ -82,9 +82,9 @@ export default function NotaDinasPage() {
 	return (
 		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
 			{/* Header */}
-			<div className="flex items-center justify-between">
+			<div className="flex lg:items-center flex-col lg:flex-row lg:justify-between">
 				<div>
-					<h1 className="text-2xl font-bold tracking-tight">
+					<h1 className="text-2xl font-bold tracking-tight ">
 						Surat Masuk
 					</h1>
 					<p className="text-muted-foreground">
@@ -92,7 +92,7 @@ export default function NotaDinasPage() {
 					</p>
 				</div>
 				{canManage && (
-					<Button asChild>
+					<Button asChild className="mt-2 lg:mt-0">
 						<Link href="/nota-dinas/surat-masuk/new">
 							<Plus className="mr-2 h-4 w-4" />
 							Tambah Surat Masuk
