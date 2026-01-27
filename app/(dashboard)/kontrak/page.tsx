@@ -37,18 +37,18 @@ export default function KontrakPage() {
 		total: data.length,
 		pending: data.filter((item) =>
 			["DRAFT", "PENDING", "PROGRESS", "BERJALAN"].some((s) =>
-				item.contract_status?.name?.toUpperCase().includes(s)
-			)
+				item.contract_status?.name?.toUpperCase().includes(s),
+			),
 		).length,
 		active: data.filter((item) =>
 			["AKTIF", "ACTIVE", "IN PROGRESS", "BERJALAN"].some((s) =>
-				item.contract_status?.name?.toUpperCase().includes(s)
-			)
+				item.contract_status?.name?.toUpperCase().includes(s),
+			),
 		).length,
 		completed: data.filter((item) =>
 			["SELESAI", "COMPLETED", "DONE"].some((s) =>
-				item.contract_status?.name?.toUpperCase().includes(s)
-			)
+				item.contract_status?.name?.toUpperCase().includes(s),
+			),
 		).length,
 	};
 	if (isLoading) {
@@ -81,21 +81,18 @@ export default function KontrakPage() {
 					title="Total Kontrak"
 					value={stats.total}
 					icon={FileText}
-					iconContainerClassName="bg-primary/10"
 					iconClassName="text-primary"
 				/>
 				<StatsCard
 					title="Kontrak Pending"
 					value={stats.pending}
 					icon={Clock}
-					iconContainerClassName="bg-orange-500/10"
 					iconClassName="text-orange-500"
 				/>
 				<StatsCard
 					title="Selesai"
 					value={stats.completed}
 					icon={CheckCircle2}
-					iconContainerClassName="bg-green-500/10"
 					iconClassName="text-green-500"
 				/>
 			</div>
