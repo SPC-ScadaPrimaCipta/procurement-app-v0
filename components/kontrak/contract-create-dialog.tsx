@@ -57,12 +57,6 @@ const contractSchema = z.object({
 	procurement_method_id: z.string().min(1, "Required"),
 	contract_status_id: z.string().min(1, "Required"),
 	expense_type: z.enum(["BELANJA_BARANG", "BELANJA_MODAL"]),
-	procurement_type: z.enum([
-		"KONSULTASI",
-		"KONSTRUKSI",
-		"PENGADAAN_BARANG",
-		"LAINNYA",
-	]),
 	procurement_type_id: z.string().min(1, "Required"),
 	// Nested fields for UI only initially
 	payment_plan: z.array(z.any()).optional(),
@@ -107,10 +101,10 @@ export function ContractCreateDialog({
 				try {
 					const [resMethods, resStatuses] = await Promise.all([
 						fetch("/api/master/procurement-method").then((r) =>
-							r.ok ? r.json() : []
+							r.ok ? r.json() : [],
 						),
 						fetch("/api/master/contract-status").then((r) =>
-							r.ok ? r.json() : []
+							r.ok ? r.json() : [],
 						),
 					]);
 
@@ -198,7 +192,7 @@ export function ContractCreateDialog({
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify(values.payment_plan),
-					}
+					},
 				);
 				if (!planRes.ok) {
 					console.error("Failed to save payment plan");
@@ -216,6 +210,19 @@ export function ContractCreateDialog({
 		}
 	};
 
+	const onInvalid = (errors: any) => {
+		console.error("Form validation errors:", errors);
+		const errorMessages = Object.entries(errors)
+			.map(([key, error]: [string, any]) => `${key}: ${error.message}`)
+			.join("\n");
+		toast.error(
+			"Gagal menyimpan kontrak. Mohon periksa kembali inputan anda.",
+			{
+				description: errorMessages,
+			},
+		);
+	};
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-[50vw] max-h-[90vh] overflow-y-auto">
@@ -229,7 +236,7 @@ export function ContractCreateDialog({
 
 				<Form {...form}>
 					<form
-						onSubmit={form.handleSubmit(onSubmit)}
+						onSubmit={form.handleSubmit(onSubmit, onInvalid)}
 						className="space-y-6"
 					>
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -268,13 +275,13 @@ export function ContractCreateDialog({
 															className={cn(
 																"w-full pl-3 text-left font-normal",
 																!field.value &&
-																	"text-muted-foreground"
+																	"text-muted-foreground",
 															)}
 														>
 															{field.value ? (
 																format(
 																	field.value,
-																	"PPP"
+																	"PPP",
 																)
 															) : (
 																<span>
@@ -299,7 +306,7 @@ export function ContractCreateDialog({
 															date > new Date() ||
 															date <
 																new Date(
-																	"1900-01-01"
+																	"1900-01-01",
 																)
 														}
 														initialFocus
@@ -341,9 +348,13 @@ export function ContractCreateDialog({
 										name="expense_type"
 										render={({ field }) => (
 											<FormItem>
-												<FormLabel>Jenis Belanja</FormLabel>
+												<FormLabel>
+													Jenis Belanja
+												</FormLabel>
 												<Select
-													onValueChange={field.onChange}
+													onValueChange={
+														field.onChange
+													}
 													defaultValue={field.value}
 												>
 													<FormControl>
@@ -393,7 +404,7 @@ export function ContractCreateDialog({
 																>
 																	{t.name}
 																</SelectItem>
-															)
+															),
 														)}
 													</SelectContent>
 												</Select>
@@ -432,7 +443,7 @@ export function ContractCreateDialog({
 																>
 																	{m.name}
 																</SelectItem>
-															)
+															),
 														)}
 													</SelectContent>
 												</Select>
@@ -469,7 +480,7 @@ export function ContractCreateDialog({
 																>
 																	{s.name}
 																</SelectItem>
-															)
+															),
 														)}
 													</SelectContent>
 												</Select>
@@ -521,7 +532,7 @@ export function ContractCreateDialog({
 														onChange={(e) =>
 															field.onChange(
 																e.target
-																	.valueAsNumber
+																	.valueAsNumber,
 															)
 														}
 													/>
@@ -551,13 +562,13 @@ export function ContractCreateDialog({
 																className={cn(
 																	"w-full pl-3 text-left font-normal",
 																	!field.value &&
-																		"text-muted-foreground"
+																		"text-muted-foreground",
 																)}
 															>
 																{field.value ? (
 																	format(
 																		field.value,
-																		"PPP"
+																		"PPP",
 																	)
 																) : (
 																	<span>
@@ -607,13 +618,13 @@ export function ContractCreateDialog({
 																className={cn(
 																	"w-full pl-3 text-left font-normal",
 																	!field.value &&
-																		"text-muted-foreground"
+																		"text-muted-foreground",
 																)}
 															>
 																{field.value ? (
 																	format(
 																		field.value,
-																		"PPP"
+																		"PPP",
 																	)
 																) : (
 																	<span>

@@ -38,7 +38,7 @@ export async function GET(req: Request) {
 						},
 					},
 				],
-		  }
+			}
 		: {};
 
 	try {
@@ -69,7 +69,7 @@ export async function GET(req: Request) {
 			data.map(async (item) => ({
 				...item,
 				created_by_name: await resolveUserName(item.created_by),
-			}))
+			})),
 		);
 
 		return NextResponse.json({
@@ -116,6 +116,7 @@ export async function POST(req: Request) {
 			contract_status_id,
 			expense_type,
 			procurement_case_id,
+			procurement_type_id,
 		} = body;
 
 		const contract = await prisma.contract.create({
@@ -130,6 +131,7 @@ export async function POST(req: Request) {
 				procurement_method_id,
 				contract_status_id,
 				expense_type,
+				procurement_type_id,
 				case_id: procurement_case_id,
 				created_by: session.user.id,
 			},
