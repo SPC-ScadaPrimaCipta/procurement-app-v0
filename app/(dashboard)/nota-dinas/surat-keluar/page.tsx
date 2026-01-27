@@ -34,7 +34,7 @@ export default function SuratKeluarPage() {
 						status:
 							item.procurement_case?.status?.name || "Unknown",
 						created_at: item.created_at,
-					})
+					}),
 				);
 
 				setData(mappedData);
@@ -53,13 +53,13 @@ export default function SuratKeluarPage() {
 		total: data.length,
 		active: data.filter((item) =>
 			["IN_PROGRESS", "SUBMITTED", "WAITING", "DRAFT"].some((s) =>
-				item.status.toUpperCase().includes(s)
-			)
+				item.status.toUpperCase().includes(s),
+			),
 		).length,
 		completed: data.filter((item) =>
 			["APPROVED", "SELESAI", "COMPLETED", "DONE"].some((s) =>
-				item.status.toUpperCase().includes(s)
-			)
+				item.status.toUpperCase().includes(s),
+			),
 		).length,
 	};
 
@@ -94,21 +94,18 @@ export default function SuratKeluarPage() {
 					title="Total Surat"
 					value={stats.total}
 					icon={FileText}
-					iconContainerClassName="bg-primary/10"
 					iconClassName="text-primary"
 				/>
 				<StatsCard
 					title="Diproses"
 					value={stats.active}
 					icon={Clock}
-					iconContainerClassName="bg-orange-500/10"
 					iconClassName="text-orange-500"
 				/>
 				<StatsCard
 					title="Selesai"
 					value={stats.completed}
 					icon={CheckCircle2}
-					iconContainerClassName="bg-green-500/10"
 					iconClassName="text-green-500"
 				/>
 			</div>

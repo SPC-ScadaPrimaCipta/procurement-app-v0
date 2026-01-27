@@ -238,7 +238,7 @@ export default function NotaDinasDetailPage() {
 										<span>
 											{format(
 												new Date(data.letter_date),
-												"dd MMMM yyyy"
+												"dd MMMM yyyy",
 											)}
 										</span>
 									</div>
@@ -252,7 +252,7 @@ export default function NotaDinasDetailPage() {
 										<span>
 											{format(
 												new Date(data.received_date),
-												"dd MMMM yyyy"
+												"dd MMMM yyyy",
 											)}
 										</span>
 									</div>
@@ -286,18 +286,18 @@ export default function NotaDinasDetailPage() {
 								</CardContent>
 							</Card>
 						) : (
-							<div className="grid gap-3">
+							<div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 gap-6">
 								{data.documents.map((doc, idx) => (
 									<Card
 										key={doc.id}
 										className="hover:shadow-sm transition-shadow"
 									>
-										<CardContent className="p-4 flex items-center justify-between">
-											<div className="flex items-center gap-3 overflow-hidden">
+										<CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+											<div className="flex items-center gap-3 overflow-hidden w-full">
 												<div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
 													<FileText className="h-5 w-5" />
 												</div>
-												<div className="min-w-0">
+												<div className="min-w-0 flex-1">
 													<p className="font-medium truncate">
 														{doc.file_name ||
 															doc.title ||
@@ -311,9 +311,9 @@ export default function NotaDinasDetailPage() {
 														•{" "}
 														{format(
 															new Date(
-																doc.created_at
+																doc.created_at,
 															),
-															"dd MMM yyyy HH:mm"
+															"dd MMM yyyy HH:mm",
 														)}
 													</p>
 												</div>
@@ -322,7 +322,7 @@ export default function NotaDinasDetailPage() {
 												<Button
 													variant="outline"
 													size="sm"
-													className="shrink-0 ml-2"
+													className="shrink-0 w-full sm:w-auto"
 													asChild
 												>
 													<a
@@ -395,7 +395,7 @@ export default function NotaDinasDetailPage() {
 								<p className="text-xs text-muted-foreground mt-1 ml-6">
 									{format(
 										new Date(data.created_at),
-										"dd MMM yyyy HH:mm"
+										"dd MMM yyyy HH:mm",
 									)}
 								</p>
 							</div>
