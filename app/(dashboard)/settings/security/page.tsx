@@ -26,6 +26,7 @@ export default function SecurityPage() {
 	const [generatedToken, setGeneratedToken] = useState(""); // For Graph Token debug
 	const [loading, setLoading] = useState(false);
 	const [tokenStatus, setTokenStatus] = useState<string | null>(null);
+	const [tokenExpiresAt, setTokenExpiresAt] = useState<string | null>(null);
 	const [loadingTokenCheck, setLoadingTokenCheck] = useState(false);
 	const [isInitialLoading, setIsInitialLoading] = useState(true);
 
@@ -38,13 +39,23 @@ export default function SecurityPage() {
 
 	const checkToken = async () => {
 		setLoadingTokenCheck(true);
+		setTokenExpiresAt(null);
 		try {
 			const res = await fetch("/api/auth/check-microsoft-token");
+			const data = await res.json();
+
 			if (res.ok) {
 				setTokenStatus("Active");
 				toast.success("Microsoft Session is Active");
+				if (data.expiresAt) {
+					setTokenExpiresAt(
+						new Date(data.expiresAt).toLocaleString("id-ID", {
+							dateStyle: "medium",
+							timeStyle: "medium",
+						}),
+					);
+				}
 			} else {
-				const data = await res.json();
 				setTokenStatus("Expired / Invalid");
 				toast.error(data.message || "Session Expired");
 			}
@@ -183,31 +194,39 @@ export default function SecurityPage() {
 								ready for file uploads.
 							</p>
 						</div>
-						<div className="flex items-center gap-4">
-							{tokenStatus && (
-								<div
-									className={`px-3 py-1 rounded-full text-xs font-medium ${
-										tokenStatus === "Active"
-											? "bg-green-100 text-green-700"
-											: "bg-red-100 text-red-700"
-									}`}
+						<div className="flex flex-col items-end gap-2">
+							<div className="flex items-center gap-4">
+								{tokenStatus && (
+									<div
+										className={`px-3 py-1 rounded-full text-xs font-medium ${
+											tokenStatus === "Active"
+												? "bg-green-100 text-green-700"
+												: "bg-red-100 text-red-700"
+										}`}
+									>
+										{tokenStatus}
+									</div>
+								)}
+								<Button
+									variant="outline"
+									onClick={checkToken}
+									disabled={loadingTokenCheck}
 								>
-									{tokenStatus}
-								</div>
+									{loadingTokenCheck
+										? "Checking..."
+										: "Check Status"}
+								</Button>
+							</div>
+							{tokenExpiresAt && (
+								<p className="text-xs text-muted-foreground">
+									Expires at: {tokenExpiresAt}
+								</p>
 							)}
-							<Button
-								variant="outline"
-								onClick={checkToken}
-								disabled={loadingTokenCheck}
-							>
-								{loadingTokenCheck
-									? "Checking..."
-									: "Check Status"}
-							</Button>
 						</div>
 					</div>
 
-					{/* <Separator />
+					{/* Temporarily disabled debugging feature
+					<Separator />
 
 					<div className="flex flex-col gap-2 w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -268,7 +287,8 @@ export default function SecurityPage() {
 								</Button>
 							</div>
 						)}
-					</div> */}
+					</div>
+					*/}
 				</CardContent>
 			</Card>
 
