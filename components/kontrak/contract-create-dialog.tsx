@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { format, differenceInDays } from "date-fns";
-import { CalendarIcon, Loader2, Plus } from "lucide-react";
+import {
+	CalendarIcon,
+	Loader2,
+	Plus,
+	Trash,
+	FileText,
+	Upload,
+} from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -69,6 +76,7 @@ type ContractFormValues = z.infer<typeof contractSchema>;
 import { ContractPaymentPlan } from "@/components/kontrak/contract-payment-plan";
 import { VendorSelect } from "@/components/kontrak/vendor-select";
 import { VendorInfoCard } from "@/components/kontrak/vendor-info-card";
+import { ContractUploadDialog } from "@/components/kontrak/contract-upload-dialog";
 import { toast } from "sonner";
 
 interface ContractCreateDialogProps {
@@ -95,28 +103,56 @@ export function ContractCreateDialog({
 		{ id: string; name: string }[]
 	>([]);
 
+	const [pendingDocuments, setPendingDocuments] = useState<
+		{ file: File; docTypeId: string; docTypeName: string }[]
+	>([]);
+	const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+	const [masterDocTypes, setMasterDocTypes] = useState<
+		{ id: string; name: string }[]
+	>([]);
+
+	const form = useForm<ContractFormValues>({
+		resolver: zodResolver(contractSchema),
+		defaultValues: {
+			contract_number: "",
+			work_description: "",
+			contract_value: 0,
+			expense_type: "BELANJA_BARANG",
+			payment_plan: [],
+		},
+	});
+
 	useEffect(() => {
 		if (open) {
 			const fetchMasterData = async () => {
 				try {
-					const [resMethods, resStatuses] = await Promise.all([
-						fetch("/api/master/procurement-method").then((r) =>
-							r.ok ? r.json() : [],
-						),
-						fetch("/api/master/contract-status").then((r) =>
-							r.ok ? r.json() : [],
-						),
-					]);
+					const [resMethods, resStatuses, resDocTypes] =
+						await Promise.all([
+							fetch("/api/master/procurement-method").then((r) =>
+								r.ok ? r.json() : [],
+							),
+							fetch("/api/master/contract-status").then((r) =>
+								r.ok ? r.json() : [],
+							),
+							fetch("/api/master/doc-type").then((r) =>
+								r.ok ? r.json() : [],
+							),
+						]);
 
 					setProcurementMethods(resMethods || []);
 					setContractStatuses(resStatuses || []);
+					setMasterDocTypes(resDocTypes || []);
 				} catch (error) {
 					console.error("Failed to fetch master data", error);
 				}
 			};
 			fetchMasterData();
+		} else {
+			// Reset form and state when closed
+			form.reset();
+			setPendingDocuments([]);
 		}
-	}, [open]);
+	}, [open, form]);
 
 	useEffect(() => {
 		if (open) {
@@ -134,17 +170,6 @@ export function ContractCreateDialog({
 			fetchProcurementTypes();
 		}
 	}, [open]);
-
-	const form = useForm<ContractFormValues>({
-		resolver: zodResolver(contractSchema),
-		defaultValues: {
-			contract_number: "",
-			work_description: "",
-			contract_value: 0,
-			expense_type: "BELANJA_BARANG",
-			payment_plan: [],
-		},
-	});
 
 	// Auto-calculate duration
 	const startDate = form.watch("start_date");
@@ -171,6 +196,49 @@ export function ContractCreateDialog({
 				bast: undefined,
 				documents: undefined,
 			};
+
+			// 2. Upload Pending Documents
+			const uploadedDocsMetadata = [];
+			if (pendingDocuments.length > 0) {
+				for (const doc of pendingDocuments) {
+					const formData = new FormData();
+					formData.append("file", doc.file);
+					// We don't have contract ID yet, so we omit ref_id to skip DB creation
+					// The DB record will be created by the create-contract API
+					// We just want the file uploaded to SharePoint and get the URL
+					formData.append("folder_path", "Contracts/Uploads"); // Generic path or could be parameterized
+					formData.append("ref_type", "PROCUREMENT_CASE");
+					formData.append("ref_id", caseId);
+					formData.append("doc_type_id", doc.docTypeId);
+
+					const uploadRes = await fetch("/api/uploads", {
+						method: "POST",
+						body: formData,
+					});
+
+					if (!uploadRes.ok) {
+						throw new Error(`Failed to upload ${doc.file.name}`);
+					}
+
+					const uploadResult = await uploadRes.json();
+					const uploadedFile = uploadResult[0]; // Assuming single file upload per request
+
+					if (uploadedFile) {
+						uploadedDocsMetadata.push({
+							title: doc.file.name,
+							file_name: uploadedFile.name,
+							file_url: uploadedFile.url,
+							doc_type_id: doc.docTypeId,
+							file_size: uploadedFile.size,
+							// mime_type: doc.file.type // Added if needed
+						});
+					}
+				}
+			}
+
+			// Add uploaded docs to payload
+			// @ts-ignore
+			contractPayload.documents = uploadedDocsMetadata;
 
 			const contractRes = await fetch("/api/contracts", {
 				method: "POST",
@@ -208,6 +276,22 @@ export function ContractCreateDialog({
 		} finally {
 			setLoading(false);
 		}
+	};
+
+	const handleAddDocument = (
+		file: File,
+		docTypeId: string,
+		docTypeName: string,
+	) => {
+		setPendingDocuments((prev) => [
+			...prev,
+			{ file, docTypeId, docTypeName },
+		]);
+		setUploadDialogOpen(false);
+	};
+
+	const handleRemoveDocument = (index: number) => {
+		setPendingDocuments((prev) => prev.filter((_, i) => i !== index));
 	};
 
 	const onInvalid = (errors: any) => {
@@ -358,8 +442,8 @@ export function ContractCreateDialog({
 													defaultValue={field.value}
 												>
 													<FormControl>
-														<SelectTrigger>
-															<SelectValue placeholder="Pilih Jenis Belanja" />
+														<SelectTrigger className="w-full [&>span]:line-clamp-1 [&>span]:truncate">
+															<SelectValue placeholder="Pilih..." />
 														</SelectTrigger>
 													</FormControl>
 													<SelectContent>
@@ -391,8 +475,8 @@ export function ContractCreateDialog({
 													defaultValue={field.value}
 												>
 													<FormControl>
-														<SelectTrigger>
-															<SelectValue placeholder="Pilih Jenis Pengadaan" />
+														<SelectTrigger className="w-full [&>span]:line-clamp-1 [&>span]:truncate">
+															<SelectValue placeholder="Pilih..." />
 														</SelectTrigger>
 													</FormControl>
 													<SelectContent>
@@ -430,7 +514,7 @@ export function ContractCreateDialog({
 													defaultValue={field.value}
 												>
 													<FormControl>
-														<SelectTrigger>
+														<SelectTrigger className="w-full [&>span]:line-clamp-1 [&>span]:truncate">
 															<SelectValue placeholder="Pilih Metode" />
 														</SelectTrigger>
 													</FormControl>
@@ -467,7 +551,7 @@ export function ContractCreateDialog({
 													defaultValue={field.value}
 												>
 													<FormControl>
-														<SelectTrigger>
+														<SelectTrigger className="w-full [&>span]:line-clamp-1 [&>span]:truncate">
 															<SelectValue placeholder="Pilih Status" />
 														</SelectTrigger>
 													</FormControl>
@@ -687,28 +771,92 @@ export function ContractCreateDialog({
 
 							{/* Documents */}
 							<Card className="border-dashed shadow-none">
-								<CardHeader className="px-4">
+								<CardHeader className="px-4 border-b bg-muted/20">
 									<div className="flex items-center justify-between">
 										<CardTitle className="text-sm font-medium">
-											Dokumen Lampiran
+											Dokumen Lampiran (
+											{pendingDocuments.length})
 										</CardTitle>
 										<Button
 											size="sm"
 											variant="outline"
 											type="button"
+											onClick={() =>
+												setUploadDialogOpen(true)
+											}
 										>
 											<Plus className="w-3 h-3 mr-1" />{" "}
 											Upload
 										</Button>
 									</div>
 								</CardHeader>
-								<CardContent>
-									<p className="text-xs text-muted-foreground text-center py-4">
-										Belum ada dokumen dilampirkan.
-									</p>
+								<CardContent className="p-0">
+									{pendingDocuments.length === 0 ? (
+										<p className="text-xs text-muted-foreground text-center py-8">
+											Belum ada dokumen dilampirkan.
+										</p>
+									) : (
+										<div className="divide-y">
+											{pendingDocuments.map(
+												(doc, index) => (
+													<div
+														key={index}
+														className="flex items-center justify-between p-3"
+													>
+														<div className="flex items-center gap-3 overflow-hidden">
+															<div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary shrink-0">
+																<FileText className="w-4 h-4" />
+															</div>
+															<div className="min-w-0">
+																<p className="text-sm font-medium truncate">
+																	{
+																		doc.file
+																			.name
+																	}
+																</p>
+																<p className="text-xs text-muted-foreground">
+																	{
+																		doc.docTypeName
+																	}{" "}
+																	•{" "}
+																	{(
+																		doc.file
+																			.size /
+																		1024
+																	).toFixed(
+																		0,
+																	)}{" "}
+																	KB
+																</p>
+															</div>
+														</div>
+														<Button
+															variant="ghost"
+															size="icon"
+															className="text-red-500 hover:text-red-600 hover:bg-red-50"
+															onClick={() =>
+																handleRemoveDocument(
+																	index,
+																)
+															}
+														>
+															<Trash className="w-4 h-4" />
+														</Button>
+													</div>
+												),
+											)}
+										</div>
+									)}
 								</CardContent>
 							</Card>
 						</div>
+
+						<ContractUploadDialog
+							open={uploadDialogOpen}
+							onOpenChange={setUploadDialogOpen}
+							docTypes={masterDocTypes}
+							onUpload={handleAddDocument}
+						/>
 
 						<DialogFooter>
 							<Button

@@ -24,9 +24,13 @@ export function WorkflowProgress({ steps }: WorkflowProgressProps) {
 		);
 	}
 
+	const activeStepIndex = steps.findIndex(
+		(step) => step.status === "PENDING",
+	);
+
 	return (
 		<div className="pl-2">
-			{steps.map((step) => (
+			{steps.map((step, index) => (
 				<WorkflowStep
 					key={step.stepNumber}
 					stepNumber={step.stepNumber}
@@ -37,6 +41,7 @@ export function WorkflowProgress({ steps }: WorkflowProgressProps) {
 						step.approvedAt ? new Date(step.approvedAt) : undefined
 					}
 					isLast={step.isLast}
+					isCurrent={index === activeStepIndex}
 				/>
 			))}
 		</div>

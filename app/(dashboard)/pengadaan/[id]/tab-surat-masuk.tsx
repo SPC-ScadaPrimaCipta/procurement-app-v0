@@ -49,7 +49,7 @@ export function TabSuratMasuk({ data, onDataChange }: TabSuratMasukProps) {
 							<p className="font-medium text-base">
 								{format(
 									new Date(correspondence_in.letter_date),
-									"dd MMMM yyyy"
+									"dd MMMM yyyy",
 								)}
 							</p>
 						</div>
@@ -61,12 +61,12 @@ export function TabSuratMasuk({ data, onDataChange }: TabSuratMasukProps) {
 								{correspondence_in.from_name}
 							</p>
 						</div>
-						<div className="space-y-1 md:col-span-2">
+						<div className="space-y-1 md:col-span-2 min-w-0">
 							<p className="text-sm font-medium text-muted-foreground">
 								Perihal
 							</p>
 							<div className="p-3 bg-muted/20 rounded-md">
-								<p className="font-medium leading-relaxed">
+								<p className="font-medium leading-relaxed break-words">
 									{correspondence_in.subject}
 								</p>
 							</div>
@@ -82,7 +82,7 @@ export function TabSuratMasuk({ data, onDataChange }: TabSuratMasukProps) {
 						</div>
 
 						{/* Documents Section */}
-						<div className="md:col-span-2 space-y-3 pt-4 border-t">
+						{/* <div className="md:col-span-2 space-y-3 pt-4 border-t min-w-0">
 							<h3 className="text-sm font-medium text-muted-foreground mb-2">
 								Lampiran Dokumen
 							</h3>
@@ -93,17 +93,17 @@ export function TabSuratMasuk({ data, onDataChange }: TabSuratMasukProps) {
 											key={doc.id}
 											className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border hover:border-primary/50 transition-colors"
 										>
-											<div className="flex items-center gap-3 overflow-hidden">
+											<div className="flex-1 flex items-center gap-3 min-w-0">
 												<div className="h-9 w-9 rounded bg-background border flex items-center justify-center shrink-0">
 													<FileText className="h-4 w-4 text-primary" />
 												</div>
 												<div className="min-w-0">
-													<p className="text-sm font-medium truncate">
+													<p className="text-sm font-medium break-all whitespace-normal">
 														{doc.file_name ||
 															doc.title ||
 															"Dokumen"}
 													</p>
-													<div className="flex items-center gap-2 text-xs text-muted-foreground">
+													<div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
 														<span className="bg-background px-1.5 py-0.5 rounded border">
 															{
 																doc
@@ -116,10 +116,10 @@ export function TabSuratMasuk({ data, onDataChange }: TabSuratMasukProps) {
 															{doc.created_at
 																? format(
 																		new Date(
-																			doc.created_at
+																			doc.created_at,
 																		),
-																		"dd MMM yyyy"
-																  )
+																		"dd MMM yyyy",
+																	)
 																: "-"}
 														</span>
 													</div>
@@ -129,6 +129,7 @@ export function TabSuratMasuk({ data, onDataChange }: TabSuratMasukProps) {
 												<Button
 													variant="ghost"
 													size="sm"
+													className="shrink-0 ml-2"
 													asChild
 												>
 													<a
@@ -148,7 +149,7 @@ export function TabSuratMasuk({ data, onDataChange }: TabSuratMasukProps) {
 									Tidak ada dokumen lampiran.
 								</p>
 							)}
-						</div>
+						</div> */}
 					</CardContent>
 				</Card>
 			) : (
@@ -207,10 +208,10 @@ export function TabSuratMasuk({ data, onDataChange }: TabSuratMasukProps) {
 										{case_disposition_summary.disposition_date
 											? format(
 													new Date(
-														case_disposition_summary.disposition_date
+														case_disposition_summary.disposition_date,
 													),
-													"dd MMM yyyy"
-											  )
+													"dd MMM yyyy",
+												)
 											: "-"}
 									</p>
 								</div>
@@ -233,7 +234,7 @@ export function TabSuratMasuk({ data, onDataChange }: TabSuratMasukProps) {
 													>
 														{action}
 													</span>
-												)
+												),
 											)}
 										</div>
 									</div>
@@ -256,7 +257,7 @@ export function TabSuratMasuk({ data, onDataChange }: TabSuratMasukProps) {
 													>
 														{item.recipient.name}
 													</span>
-												)
+												),
 											)}
 										</div>
 									</div>

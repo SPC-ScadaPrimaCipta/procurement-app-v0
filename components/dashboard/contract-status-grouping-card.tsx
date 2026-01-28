@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { useState } from "react";
 import { PieChart as PieChartIcon } from "lucide-react";
+import { useTheme } from "next-themes";
 
 const COLORS = [
 	"#4F46E5", // indigo
@@ -42,9 +43,11 @@ export function ContractStatusGroupingCard({
 
 	const onPieEnter = (_: any, index: number) => setActiveIndex(index);
 
+	const { theme } = useTheme();
+
 	return (
-		<Card>
-			<CardHeader className="flex flex-row items-center justify-between">
+		<Card className="lg:col-span-1 2xl:col-span-1">
+			<CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
 				<div>
 					<CardTitle>Pengelompokan Status Kontrak</CardTitle>
 					<CardDescription>
@@ -60,56 +63,37 @@ export function ContractStatusGroupingCard({
 					<p className="text-sm text-muted-foreground p-4">
 						Loading...
 					</p>
-				) : (
-					<div className="w-full h-96">
-						<ResponsiveContainer width="100%" height="100%">
-							<PieChart
-								data={contractStatuses}
-								margin={{
-									top: 5,
-									bottom: 5,
-									left: 0,
-									right: 0,
-								}}
-							>
-								<RechartsTooltip
-									contentStyle={{
-										background: "#1e1e1e",
-										border: "1px solid rgba(255,255,255,0.2)",
-										color: "white",
-									}}
-									itemStyle={{ color: "white" }}
-									labelStyle={{ color: "white" }}
-								/>
-
-								<Legend
-									formatter={(value) => (
-										<span className="text-primary">
-											{value}
-										</span>
-									)}
-								/>
-
-								<Pie
-									data={contractStatuses}
-									dataKey="count"
-									nameKey="name"
-									cx="50%"
-									cy="50%"
-									outerRadius={80}
-									onMouseEnter={onPieEnter}
-									onMouseLeave={() => setActiveIndex(null)}
-								>
+					) : (
+						<div className="w-full">
+							<div className="grid grid-cols-1 gap-4 items-center">
+								<div className="flex items-center justify-center">
+									<div className="w-full h-44 sm:h-56 md:h-72">
+										{(!contractStatuses || contractStatuses.length === 0 || contractStatuses.reduce((s, c) => s + (c.count || 0), 0) === 0) ? (
+											<p className="text-sm text-muted-foreground p-4">No data to display.</p>
+										) : (
+											<ResponsiveContainer width="100%" height="100%">
+												<PieChart data={contractStatuses} margin={{ top: 5, bottom: 5, left: 0, right: 0 }}>
+													<RechartsTooltip contentStyle={{ background: "#1e1e1e", border: "1px solid rgba(255,255,255,0.2)", color: "white" }} itemStyle={{ color: "white" }} labelStyle={{ color: "white" }} />
+													<Pie data={contractStatuses} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={80} onMouseEnter={onPieEnter} onMouseLeave={() => setActiveIndex(null)}>
+														{contractStatuses.map((entry, index) => (
+															<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+														))}
+													</Pie>
+												</PieChart>
+											</ResponsiveContainer>
+											)}
+									</div>
+								</div>
+								<div className="flex flex-wrap items-center md:items-start gap-3 justify-center md:justify-center">
 									{contractStatuses.map((entry, index) => (
-										<Cell
-											key={`cell-${index}`}
-											fill={COLORS[index % COLORS.length]}
-										/>
+										<div key={entry.name} className="flex items-center gap-2">
+											<span className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS[index % COLORS.length] }} />
+											<span className={`${theme === "dark" ? "text-white" : "text-black"} text-sm`}>{entry.name}</span>
+										</div>
 									))}
-								</Pie>
-							</PieChart>
-						</ResponsiveContainer>
-					</div>
+								</div>
+							</div>
+						</div>
 				)}
 			</CardContent>
 		</Card>

@@ -9,6 +9,7 @@ import {
 	Bar,
 	ResponsiveContainer,
 } from "recharts";
+import React from "react";
 import {
 	Card,
 	CardContent,
@@ -17,6 +18,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Building2 } from "lucide-react";
+import { useTheme } from "next-themes";
 
 interface VendorGroupingCardProps {
 	vendorTrend: { label: string; value: number }[];
@@ -27,9 +29,25 @@ export function VendorGroupingCard({
 	vendorTrend,
 	isLoading,
 }: VendorGroupingCardProps) {
+	const { theme } = useTheme();
+    
+	const CustomizedAxisTick = ({ x, y, payload }: any) => {
+		const fill = theme === "dark" ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.8)";
+		return (
+			<text
+				x={x}
+				y={y + 12}
+				textAnchor="middle"
+				style={{ fill }}
+				className="hidden sm:block text-xs"
+			>
+				{String(payload.value)}
+			</text>
+		);
+	};
 	return (
-		<Card className="lg:col-span-2">
-			<CardHeader className="flex flex-row items-center justify-between">
+		<Card className="lg:col-span-2 2xl:col-span-2">
+			<CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
 				<div>
 					<CardTitle>Pengelompokan Penyedia</CardTitle>
 					<CardDescription>
@@ -44,7 +62,7 @@ export function VendorGroupingCard({
 				{isLoading ? (
 					<p className="text-sm text-muted-foreground">Loading...</p>
 				) : (
-					<div className="w-full h-96">
+					<div className="w-full h-56 sm:h-72 md:h-96">
 						<ResponsiveContainer width="100%" height="100%">
 							<BarChart
 								data={[...vendorTrend].sort(
@@ -59,29 +77,31 @@ export function VendorGroupingCard({
 								}}
 							>
 								<CartesianGrid
-									stroke="rgba(255,255,255,0.2)"
+									// stroke="rgba(255,255,255,0.2)"
+									stroke={`${theme === "dark" ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"}`}
 									strokeDasharray="3 3"
 								/>
 								<XAxis
 									dataKey="label"
-									stroke="rgba(255,255,255,0.6)"
-									tick={{
-										fill: "rgba(255,255,255,0.8)",
-										fontSize: 12,
-									}}
+									interval={0}
+									tickFormatter={(value) =>
+										value.length > 10 ? `${value.substring(0, 10)}...` : value
+									}
+									stroke={`${theme === "dark" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)"}`}
+									tick={<CustomizedAxisTick />}
 								/>
 								<YAxis
-									stroke="rgba(255,255,255,0.6)"
+									stroke={`${theme === "dark" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)"}`}
 									tick={{
-										fill: "rgba(255,255,255,0.8)",
+										fill: `${theme === "dark" ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.8)"}`,
 										fontSize: 12,
 									}}
 								/>
 								<RechartsTooltip
 									contentStyle={{
-										background: "#1e1e1e",
-										border: "1px solid rgba(255,255,255,0.2)",
-										color: "white",
+										background: `${theme === "dark" ? "#1e1e1e" : "#ffffff"}`,
+										border: `${theme === "dark" ? "1px solid rgba(255,255,255,0.2)" : "1px solid rgba(0,0,0,0.2)"}`,
+										color: `${theme === "dark" ? "white" : "black"}`,
 									}}
 								/>
 								<Bar

@@ -4,7 +4,15 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, FileText, Send, Sparkles, Loader2, AlertCircle } from "lucide-react";
+import {
+	ArrowLeft,
+	Upload,
+	FileText,
+	Send,
+	Sparkles,
+	Loader2,
+	AlertCircle,
+} from "lucide-react";
 import { validateMicrosoftSession } from "@/lib/utils";
 import { matchMultiple } from "@/lib/fuzzy-match";
 import { convertPdfToImage } from "@/lib/pdf-to-image";
@@ -12,6 +20,7 @@ import {
 	DispositionSection,
 	DispositionData,
 } from "@/components/disposition/disposition-section";
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,11 +35,13 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { sanitizeFileName } from "@/lib/sharepoint";
 
 export default function NewSuratMasukPage() {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
 	const [ocrLoading, setOcrLoading] = useState(false);
+	const [showConfirm, setShowConfirm] = useState(false);
 
 	// Form State
 	const [formData, setFormData] = useState({
@@ -62,7 +73,7 @@ export default function NewSuratMasukPage() {
 	});
 
 	const [docTypes, setDocTypes] = useState<{ id: string; name: string }[]>(
-		[]
+		[],
 	);
 	const [masterActions, setMasterActions] = useState<any[]>([]);
 	const [masterRecipients, setMasterRecipients] = useState<any[]>([]);
@@ -104,7 +115,7 @@ export default function NewSuratMasukPage() {
 	}, [router]);
 
 	const handleInputChange = (
-		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
 	) => {
 		const { name, value } = e.target;
 		setFormData((prev) => ({ ...prev, [name]: value }));
@@ -165,7 +176,9 @@ export default function NewSuratMasukPage() {
 			setFormData((prev) => ({
 				...prev,
 				letter_number: ocrData.nomor_surat || prev.letter_number,
-				letter_date: convertDateFormat(ocrData.tanggal_surat) || prev.letter_date,
+				letter_date:
+					convertDateFormat(ocrData.tanggal_surat) ||
+					prev.letter_date,
 				from_name: ocrData.dari_asal || prev.from_name,
 				cc: ocrData.cc_tembusan || prev.cc,
 				subject: ocrData.perihal || prev.subject,
@@ -173,7 +186,9 @@ export default function NewSuratMasukPage() {
 
 			// Auto-fill disposition data
 			const updatedDisposition: Partial<DispositionData> = {
-				disposition_note: ocrData.disposition_note || dispositionData.disposition_note,
+				disposition_note:
+					ocrData.disposition_note ||
+					dispositionData.disposition_note,
 			};
 
 			if (ocrData.agenda_scope) {
@@ -183,18 +198,25 @@ export default function NewSuratMasukPage() {
 				updatedDisposition.agenda_number = ocrData.agenda_number;
 			}
 			if (ocrData.disposition_date) {
-				updatedDisposition.disposition_date = convertDateFormat(ocrData.disposition_date);
+				updatedDisposition.disposition_date = convertDateFormat(
+					ocrData.disposition_date,
+				);
 			}
 
 			// Fuzzy match disposition actions
-			if (ocrData.disposition_actions && Array.isArray(ocrData.disposition_actions)) {
+			if (
+				ocrData.disposition_actions &&
+				Array.isArray(ocrData.disposition_actions)
+			) {
 				const matchedActions = matchMultiple(
 					ocrData.disposition_actions,
 					masterActions,
 					(action) => action.name,
-					0.6 // 60% similarity threshold
+					0.6, // 60% similarity threshold
 				);
-				updatedDisposition.disposition_actions = matchedActions.map((a) => a.name);
+				updatedDisposition.disposition_actions = matchedActions.map(
+					(a) => a.name,
+				);
 			}
 
 			// Fuzzy match forward_to recipients
@@ -203,15 +225,18 @@ export default function NewSuratMasukPage() {
 					ocrData.forward_to,
 					masterRecipients,
 					(recipient) => recipient.name,
-					0.6 // 60% similarity threshold
+					0.6, // 60% similarity threshold
 				);
-				updatedDisposition.forward_to_ids = matchedRecipients.map((r) => r.id);
+				updatedDisposition.forward_to_ids = matchedRecipients.map(
+					(r) => r.id,
+				);
 			}
 
 			setDispositionData((prev) => ({ ...prev, ...updatedDisposition }));
 
-			toast.success("✨ Data berhasil terisi otomatis!", {
-				description: "Mohon periksa kembali keakuratan data sebelum menyimpan.",
+			toast.success("Data berhasil terisi otomatis!", {
+				description:
+					"Mohon periksa kembali keakuratan data sebelum menyimpan.",
 				duration: 6000,
 			});
 		} catch (error: any) {
@@ -226,11 +251,12 @@ export default function NewSuratMasukPage() {
 		caseId: string,
 		file: File,
 		docTypeName: string,
-		caseCode: string
+		caseCode: string,
+		title?: string,
 	) => {
 		// Find doc_type_id
 		const docType = docTypes.find(
-			(dt) => dt.name.toLowerCase() === docTypeName.toLowerCase()
+			(dt) => dt.name.toLowerCase() === docTypeName.toLowerCase(),
 		);
 		const docTypeId = docType?.id || "";
 
@@ -242,6 +268,8 @@ export default function NewSuratMasukPage() {
 			data.append("doc_type_id", docTypeId);
 		}
 
+		const folderName = `${caseCode}${title ? ` - ${sanitizeFileName(title)}` : ""}`;
+
 		// Folder path: Procurement/<case_code>/<Type>
 		let subFolder = "Surat Masuk";
 		if (docTypeName.toLowerCase().includes("tor")) {
@@ -249,11 +277,11 @@ export default function NewSuratMasukPage() {
 		} else if (docTypeName.toLowerCase().includes("rab")) {
 			subFolder = "RAB";
 		}
-		const folderPath = `Procurement/${caseCode}/${subFolder}`;
+		const folderPath = `Procurement/${folderName}/${subFolder}`;
 		data.append("folder_path", folderPath);
 
 		console.log(
-			`Uploading ${docTypeName} to ${folderPath} with docType ${docTypeId}`
+			`Uploading ${docTypeName} to ${folderPath} with docType ${docTypeId}`,
 		);
 
 		const response = await fetch("/api/uploads", {
@@ -280,7 +308,7 @@ export default function NewSuratMasukPage() {
 			!formData.subject
 		) {
 			toast.error(
-				"Mohon lengkapi semua field metadata yang wajib diisi."
+				"Mohon lengkapi semua field metadata yang wajib diisi.",
 			);
 			setIsLoading(false);
 			return;
@@ -294,7 +322,7 @@ export default function NewSuratMasukPage() {
 
 		if (!files.notaDinas || !files.tor || !files.rab) {
 			toast.error(
-				"Mohon lampirkan semua dokumen (Nota Dinas, TOR, dan RAB)."
+				"Mohon lampirkan semua dokumen (Nota Dinas, TOR, dan RAB).",
 			);
 			setIsLoading(false);
 			return;
@@ -334,13 +362,30 @@ export default function NewSuratMasukPage() {
 						case_id,
 						files.notaDinas,
 						"SCAN SURAT MASUK",
-						case_code
-					)
+						case_code,
+						formData.subject,
+					),
 				);
 			if (files.tor)
-				uploads.push(uploadFile(case_id, files.tor, "TOR", case_code));
+				uploads.push(
+					uploadFile(
+						case_id,
+						files.tor,
+						"TOR",
+						case_code,
+						formData.subject,
+					),
+				);
 			if (files.rab)
-				uploads.push(uploadFile(case_id, files.rab, "RAB", case_code));
+				uploads.push(
+					uploadFile(
+						case_id,
+						files.rab,
+						"RAB",
+						case_code,
+						formData.subject,
+					),
+				);
 
 			await Promise.all(uploads);
 
@@ -353,7 +398,7 @@ export default function NewSuratMasukPage() {
 		} catch (error: any) {
 			console.error("Error submitting:", error);
 			toast.error(
-				error.message || "Terjadi kesalahan saat menyimpan data."
+				error.message || "Terjadi kesalahan saat menyimpan data.",
 			);
 
 			// Rollback if case was created but uploads failed
@@ -420,7 +465,9 @@ export default function NewSuratMasukPage() {
 										className="cursor-pointer"
 									/>
 									<p className="text-xs text-muted-foreground">
-										Format: PDF, JPG, PNG. Max 10MB. (Untuk PDF, hanya halaman pertama yang diproses OCR)
+										Format: PDF, JPG, PNG. Max 10MB. (Untuk
+										PDF, hanya halaman pertama yang diproses
+										OCR)
 									</p>
 								</div>
 
@@ -450,7 +497,9 @@ export default function NewSuratMasukPage() {
 									<div className="flex items-center gap-2 text-xs text-muted-foreground bg-blue-50 p-3 rounded border border-blue-200">
 										<Sparkles className="h-4 w-4 text-blue-600" />
 										<span>
-											<strong>OCR Ready:</strong> Klik tombol di atas untuk otomatis mengisi form dari dokumen scan
+											<strong>OCR Ready:</strong> Klik
+											tombol di atas untuk otomatis
+											mengisi form dari dokumen scan
 										</span>
 									</div>
 								)}
@@ -458,12 +507,13 @@ export default function NewSuratMasukPage() {
 						</div>
 					</CardContent>
 				</Card>
-				
+
 				{/* Alert Warning OCR */}
 				<Alert className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
 					<AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
 					<AlertDescription className="text-sm text-amber-800 dark:text-amber-200">
-						<strong>Perhatian:</strong> Jika menggunakan OCR, mohon periksa kembali keakuratan semua data sebelum menyimpan.
+						<strong>Perhatian:</strong> Jika menggunakan OCR, mohon
+						periksa kembali keakuratan semua data sebelum menyimpan.
 					</AlertDescription>
 				</Alert>
 
@@ -641,7 +691,7 @@ export default function NewSuratMasukPage() {
 					</Button> */}
 					<Button
 						type="button"
-						onClick={() => handleSubmit(false)}
+						onClick={() => setShowConfirm(true)}
 						disabled={isLoading}
 						className="min-w-[150px]"
 					>
@@ -650,6 +700,20 @@ export default function NewSuratMasukPage() {
 					</Button>
 				</div>
 			</form>
+
+			<ConfirmationDialog
+				open={showConfirm}
+				onOpenChange={setShowConfirm}
+				title="Konfirmasi Submit"
+				description="Apakah Anda yakin ingin mengirim surat masuk ini ke KPA? Pastikan semua data dan lampiran sudah benar."
+				confirmText="Ya, Submit"
+				cancelText="Batal"
+				onConfirm={() => {
+					setShowConfirm(false);
+					handleSubmit(false);
+				}}
+				loading={isLoading}
+			/>
 		</div>
 	);
 }
