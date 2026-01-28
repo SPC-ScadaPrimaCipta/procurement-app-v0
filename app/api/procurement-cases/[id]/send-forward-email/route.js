@@ -184,88 +184,287 @@ Best regards,
 Procurement System
 		`.trim();
 
+		// Logo URL hosted on Cloudinary (reliable loading across all email clients)
+		const logoURL = 'https://res.cloudinary.com/dyowppfu2/image/upload/v1769587580/Frame_77-Photoroom_qfryy2.png';
+		
 		const html = `
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
 	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<style>
-		body { font-family: 'Segoe UI', sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; }
-		.container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-		.header { background: linear-gradient(135deg, #f9f9f9, #f9f9f9); color: #0078d4; padding: 30px 20px; text-align: center; }
-		.logo-section { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 15px; background: rgba(255, 255, 255, 0.15); padding: 15px 20px; border-radius: 8px; backdrop-filter: blur(10px); }
-		.logo-section img { height: 50px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
-		.logo-section h1 { margin: 0; font-size: 22px; font-weight: 600; color: #0078d4; text-shadow: none; }
-		.header h2 { color: #0078d4; font-size: 18px; margin-bottom: 5px; margin-top: 15px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
-		.header p { text-shadow: 1px 1px 2px rgba(12, 12, 12, 0.93); font-size: 14px; }
-		.content { padding: 30px; }
-		.details { background: #f9f9f9; padding: 20px; margin: 20px 0; border-left: 4px solid #0078d4; border-radius: 4px; }
-		.details h3 { color: #0078d4; font-size: 16px; margin-bottom: 15px; }
-		.detail-row { display: flex; padding: 8px 0; border-bottom: 1px solid #e0e0e0; }
-		.detail-row:last-child { border-bottom: none; }
-		.detail-label { font-weight: 600; width: 120px; color: #555; }
-		.detail-value { color: #333; }
-		.remarks { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; }
-		.button { display: inline-block; padding: 12px 30px; background: #0078d4; color: white !important; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-		.footer { background: #f9f9f9; text-align: center; padding: 20px; color: #666; font-size: 12px; border-top: 1px solid #e0e0e0; }
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		body { 
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+			line-height: 1.6; 
+			color: #333; 
+			background-color: #f5f7fa; 
+			padding: 20px;
+		}
+		.email-wrapper { 
+			max-width: 650px; 
+			margin: 0 auto; 
+			background: #ffffff; 
+			border-radius: 10px; 
+			overflow: hidden; 
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); 
+		}
+		.header { 
+			background-color: #1e3a8a; 
+			padding: 40px 30px; 
+			text-align: center; 
+		}
+		.logo-container { 
+			background: rgba(255, 255, 255, 0.95); 
+			padding: 20px; 
+			border-radius: 10px; 
+			margin-bottom: 20px; 
+			display: inline-block;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		}
+		.logo-container img { 
+			height: 60px; 
+			width: auto; 
+			display: block;
+		}
+		.header-title { 
+			color: #ffffff; 
+			font-size: 24px; 
+			font-weight: 700; 
+			margin: 15px 0 8px 0; 
+			text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+		}
+		.header-subtitle { 
+			color: #e0e7ff; 
+			font-size: 14px; 
+			font-weight: 500;
+			letter-spacing: 0.5px;
+		}
+		.badge { 
+			display: inline-block; 
+			background: #ef4444; 
+			color: white; 
+			padding: 6px 16px; 
+			border-radius: 20px; 
+			font-size: 12px; 
+			font-weight: 600; 
+			margin-top: 10px;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
+		.content { 
+			padding: 40px 30px; 
+		}
+		.greeting { 
+			font-size: 16px; 
+			color: #1e293b; 
+			margin-bottom: 20px; 
+		}
+		.greeting strong { 
+			color: #1e3a8a; 
+		}
+		.intro-text { 
+			color: #475569; 
+			margin-bottom: 30px; 
+			font-size: 15px; 
+		}
+		.details-card { 
+			background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%); 
+			padding: 25px; 
+			margin: 25px 0; 
+			border-left: 5px solid #3b82f6; 
+			border-radius: 8px; 
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+		}
+		.details-title { 
+			color: #1e3a8a; 
+			font-size: 18px; 
+			font-weight: 700; 
+			margin-bottom: 20px; 
+			display: flex; 
+			align-items: center; 
+			gap: 8px;
+		}
+		.detail-item { 
+			display: grid; 
+			grid-template-columns: 140px 1fr; 
+			padding: 12px 0; 
+			border-bottom: 1px solid #e2e8f0; 
+			gap: 15px;
+		}
+		.detail-item:last-child { 
+			border-bottom: none; 
+		}
+		.detail-label { 
+			font-weight: 600; 
+			color: #475569; 
+			font-size: 14px;
+		}
+		.detail-value { 
+			color: #1e293b; 
+			font-size: 14px;
+		}
+		.detail-value strong { 
+			color: #1e3a8a; 
+			font-size: 16px;
+		}
+		.remarks-box { 
+			background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); 
+			border-left: 5px solid #f59e0b; 
+			padding: 20px; 
+			margin: 25px 0; 
+			border-radius: 8px;
+			box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+		}
+		.remarks-title { 
+			font-weight: 700; 
+			color: #92400e; 
+			margin-bottom: 10px; 
+			font-size: 15px;
+			display: flex; 
+			align-items: center; 
+			gap: 6px;
+		}
+		.remarks-text { 
+			color: #78350f; 
+			font-style: italic; 
+			line-height: 1.7;
+		}
+		.action-section { 
+			text-align: center; 
+			padding: 30px 0; 
+		}
+		.action-text { 
+			color: #475569; 
+			margin-bottom: 20px; 
+			font-size: 15px;
+		}
+		.btn-primary { 
+			display: inline-block; 
+			background-color: #3b82f6; 
+			color: #ffffff; 
+			text-decoration: none; 
+			padding: 14px 40px; 
+			border-radius: 8px; 
+			font-weight: 600; 
+			font-size: 15px;
+			mso-padding-alt: 14px 40px;
+		}
+		.footer { 
+			background: #f8fafc; 
+			text-align: center; 
+			padding: 30px; 
+			color: #64748b; 
+			font-size: 13px; 
+			border-top: 2px solid #e2e8f0; 
+		}
+		.footer-title { 
+			font-weight: 700; 
+			color: #1e3a8a; 
+			margin-bottom: 8px; 
+			font-size: 14px;
+		}
+		.footer-note { 
+			color: #94a3b8; 
+			margin-top: 5px;
+		}
+		.divider { 
+			height: 1px; 
+			background: linear-gradient(to right, transparent, #cbd5e1, transparent); 
+			margin: 20px 0; 
+		}
+		@media only screen and (max-width: 600px) {
+			.email-wrapper { 
+				border-radius: 0; 
+			}
+			.content { 
+				padding: 30px 20px; 
+			}
+			.detail-item { 
+				grid-template-columns: 1fr; 
+				gap: 5px; 
+			}
+		}
 	</style>
 </head>
 <body>
-	<div class="container">
-		<div class="header">
-			<div class="logo-section">
-				<img src="${process.env.BETTER_AUTH_URL}/kemenhub-biro-umum.svg" alt="Logo Kemenhub">
-				<h1>Procurement Management System</h1>
+	<div class="email-wrapper">
+		<div class="header" style="background-color: #1e3a8a; padding: 40px 30px; text-align: center;">
+			<div class="logo-container" style="background: rgba(255, 255, 255, 0.95); padding: 20px; border-radius: 10px; margin-bottom: 20px; display: inline-block; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+				<img src="${logoURL}" alt="Logo Kementerian Perhubungan - Biro Umum" style="height: 60px; width: auto; display: block;" />
 			</div>
-			<h2>Procurement Request Forwarded</h2>
-			<p>Action Required</p>
+			<h1 class="header-title" style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">Sistem Manajemen Pengadaan</h1>
+			<p class="header-subtitle" style="margin: 8px 0 0 0; color: #dbeafe; font-size: 14px;">Kementerian Perhubungan - Biro Umum</p>
+			<div class="badge" style="display: inline-block; background: #fef3c7; color: #78350f; padding: 8px 20px; border-radius: 20px; margin-top: 15px; font-weight: 600; font-size: 13px; border: 2px solid #fbbf24;">⚡ Tindakan Diperlukan</div>
 		</div>
+		
 		<div class="content">
-			<p>Dear <strong>${nextStepTitle}</strong>,</p>
-			<p>A procurement request has been forwarded to you for approval.</p>
+			<p class="greeting">Yth. <strong>${nextStepTitle}</strong>,</p>
 			
-			<div class="details">
-				<h3>📋 Request Information</h3>
-				<div class="detail-row">
-					<div class="detail-label">Request No:</div>
+			<p class="intro-text">
+				Sebuah permohonan pengadaan telah diteruskan kepada Anda untuk ditinjau dan disetujui. 
+				Mohon untuk segera menindaklanjuti permohonan ini.
+			</p>
+			
+			<div class="details-card">
+				<div class="details-title">
+					<span>📋</span>
+					<span>Informasi Permohonan</span>
+				</div>
+				
+				<div class="detail-item">
+					<div class="detail-label">Nomor Kasus:</div>
 					<div class="detail-value"><strong>${procurementCase.case_code}</strong></div>
 				</div>
-				<div class="detail-row">
-					<div class="detail-label">Title:</div>
+				
+				<div class="detail-item">
+					<div class="detail-label">Judul:</div>
 					<div class="detail-value">${procurementCase.title}</div>
 				</div>
-				<div class="detail-row">
-					<div class="detail-label">Requester:</div>
+				
+				<div class="detail-item">
+					<div class="detail-label">Pemohon:</div>
 					<div class="detail-value">${requesterName}</div>
 				</div>
-				<div class="detail-row">
-					<div class="detail-label">Submitted:</div>
+				
+				<div class="detail-item">
+					<div class="detail-label">Tanggal Diajukan:</div>
 					<div class="detail-value">${new Date(procurementCase.created_at).toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</div>
 				</div>
-				<div class="detail-row">
-					<div class="detail-label">Status:</div>
+				
+				<div class="detail-item">
+					<div class="detail-label">Status Saat Ini:</div>
 					<div class="detail-value">${procurementCase.status?.name || "N/A"}</div>
 				</div>
 			</div>
 			
 			${remarks ? `
-			<div class="remarks">
-				<strong>💬 Remarks:</strong><br>
-				${remarks}
+			<div class="remarks-box">
+				<div class="remarks-title">
+					<span>💬</span>
+					<span>Catatan dari Pengirim:</span>
+				</div>
+				<div class="remarks-text">${remarks}</div>
 			</div>
 			` : ""}
 			
-			<p>Please review this request and take appropriate action.</p>
+			<div class="divider"></div>
 			
-			<center>
-				<a href="${process.env.BETTER_AUTH_URL}/pengadaan/${id}" class="button">
-					View Request Details →
+			<div class="action-section">
+				<p class="action-text">
+					Silakan klik tombol di bawah ini untuk melihat detail lengkap dan mengambil tindakan yang diperlukan.
+				</p>
+				<a href="${process.env.BETTER_AUTH_URL}/pengadaan/${id}" class="btn-primary" style="background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block;">
+					📄 Lihat Detail Permohonan
 				</a>
-			</center>
+			</div>
 		</div>
+		
 		<div class="footer">
-			<p><strong>Procurement Management System</strong></p>
-			<p>This is an automated notification. Please do not reply to this email.</p>
+			<p class="footer-title">Sistem Manajemen Pengadaan</p>
+			<p>Kementerian Perhubungan - Biro Umum</p>
+			<p class="footer-note">Email ini dikirim secara otomatis. Mohon tidak membalas email ini.</p>
 		</div>
 	</div>
 </body>
