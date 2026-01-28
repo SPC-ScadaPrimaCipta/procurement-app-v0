@@ -328,7 +328,7 @@ export default function DashboardPage() {
 				/>
 			</section>
 
-			<div className="grid gap-6 lg:grid-cols-4">
+			<div className="grid gap-6 lg:grid-cols-2 2xl:grid-cols-4">
 				<VendorGroupingCard
 					vendorTrend={vendorTrend}
 					isLoading={isLoading}
@@ -340,7 +340,7 @@ export default function DashboardPage() {
 				<InboxCard inboxItems={inboxItems} />
 			</div>
 
-			<section className="grid gap-6 lg:grid-cols-3">
+			<section className="grid gap-6 sm:grid-cols-1 2xl:grid-cols-3">
 				<RecentProcurementCard procurementCases={procurementCases} />
 				<ShortcutsCard />
 			</section>

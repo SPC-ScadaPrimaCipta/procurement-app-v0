@@ -9,6 +9,7 @@ import {
 	Bar,
 	ResponsiveContainer,
 } from "recharts";
+import React from "react";
 import {
 	Card,
 	CardContent,
@@ -29,9 +30,24 @@ export function VendorGroupingCard({
 	isLoading,
 }: VendorGroupingCardProps) {
 	const { theme } = useTheme();
+    
+	const CustomizedAxisTick = ({ x, y, payload }: any) => {
+		const fill = theme === "dark" ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.8)";
+		return (
+			<text
+				x={x}
+				y={y + 12}
+				textAnchor="middle"
+				style={{ fill }}
+				className="hidden sm:block text-xs"
+			>
+				{String(payload.value)}
+			</text>
+		);
+	};
 	return (
-		<Card className="lg:col-span-2">
-			<CardHeader className="flex flex-row items-center justify-between">
+		<Card className="lg:col-span-2 2xl:col-span-2">
+			<CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
 				<div>
 					<CardTitle>Pengelompokan Penyedia</CardTitle>
 					<CardDescription>
@@ -46,7 +62,7 @@ export function VendorGroupingCard({
 				{isLoading ? (
 					<p className="text-sm text-muted-foreground">Loading...</p>
 				) : (
-					<div className="w-full h-96">
+					<div className="w-full h-56 sm:h-72 md:h-96">
 						<ResponsiveContainer width="100%" height="100%">
 							<BarChart
 								data={[...vendorTrend].sort(
@@ -69,15 +85,10 @@ export function VendorGroupingCard({
 									dataKey="label"
 									interval={0}
 									tickFormatter={(value) =>
-										value.length > 10
-											? `${value.substring(0, 10)}...`
-											: value
+										value.length > 10 ? `${value.substring(0, 10)}...` : value
 									}
 									stroke={`${theme === "dark" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)"}`}
-									tick={{
-										fill: `${theme === "dark" ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.8)"}`,
-										fontSize: 12,
-									}}
+									tick={<CustomizedAxisTick />}
 								/>
 								<YAxis
 									stroke={`${theme === "dark" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)"}`}
