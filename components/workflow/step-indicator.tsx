@@ -11,6 +11,7 @@ export interface WorkflowStepProps {
 	status: "PENDING" | "APPROVED" | "REJECTED" | "SKIPPED";
 	approvedAt?: string | Date; // Optional, only if approved/rejected
 	isLast?: boolean;
+	isCurrent?: boolean;
 }
 
 export function WorkflowStep({
@@ -20,6 +21,7 @@ export function WorkflowStep({
 	status,
 	approvedAt,
 	isLast = false,
+	isCurrent = false,
 }: WorkflowStepProps) {
 	// Determine icon and color based on status
 	let Icon = Circle;
@@ -50,22 +52,27 @@ export function WorkflowStep({
 				<div
 					className={cn(
 						"absolute left-3.5 top-8 bottom-[-16px] w-0.5",
-						status === "APPROVED" ? "bg-green-600" : "bg-muted"
+						status === "APPROVED" ? "bg-green-600" : "bg-muted",
 					)}
 				/>
 			)}
 
 			{/* Icon Column */}
 			<div className="flex flex-col items-center">
-				<div
-					className={cn(
-						"z-10 bg-background rounded-full p-1 border",
-						status === "APPROVED"
-							? "border-green-200"
-							: "border-muted"
+				<div className="relative z-10">
+					{status === "PENDING" && isCurrent && (
+						<div className="absolute -inset-1.5 rounded-full border-2 border-muted/30 border-t-amber-500 animate-spin" />
 					)}
-				>
-					<Icon className={cn("w-5 h-5", iconColor)} />
+					<div
+						className={cn(
+							"bg-background rounded-full p-1 border",
+							status === "APPROVED"
+								? "border-green-200"
+								: "border-muted",
+						)}
+					>
+						<Icon className={cn("w-5 h-5", iconColor)} />
+					</div>
 				</div>
 			</div>
 
@@ -90,8 +97,8 @@ export function WorkflowStep({
 								status === "APPROVED"
 									? "bg-green-100 text-green-700"
 									: status === "REJECTED"
-									? "bg-red-100 text-red-700"
-									: "bg-amber-100 text-amber-700"
+										? "bg-red-100 text-red-700"
+										: "bg-amber-100 text-amber-700",
 							)}
 						>
 							{statusText}
@@ -100,7 +107,7 @@ export function WorkflowStep({
 							<p className="text-xs text-muted-foreground mt-1">
 								{format(
 									new Date(approvedAt),
-									"dd MMM yyyy HH:mm"
+									"dd MMM yyyy HH:mm",
 								)}
 							</p>
 						)}

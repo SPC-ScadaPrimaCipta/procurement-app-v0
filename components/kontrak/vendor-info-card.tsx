@@ -93,9 +93,7 @@ export function VendorInfoCard({ vendorId }: VendorInfoCardProps) {
 
 	if (!vendor) return null;
 
-	const primaryAccount = vendor.vendor_account.find(
-		(acc) => acc.is_primary
-	);
+	const primaryAccount = vendor.vendor_account.find((acc) => acc.is_primary);
 
 	return (
 		<Card className="border-primary/20 bg-primary/5 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -122,7 +120,7 @@ export function VendorInfoCard({ vendorId }: VendorInfoCardProps) {
 					</Button>
 				</div>
 				<CardDescription className="text-xs">
-					Data otomatis dari master vendor
+					Data Detail Vendor beserta Kelengkapan Dokumen
 				</CardDescription>
 			</CardHeader>
 
@@ -134,10 +132,7 @@ export function VendorInfoCard({ vendorId }: VendorInfoCardProps) {
 							<p className="font-semibold text-base truncate">
 								{vendor.vendor_name}
 							</p>
-							<Badge
-								variant="secondary"
-								className="mt-1 text-xs"
-							>
+							<Badge variant="secondary" className="mt-1 text-xs">
 								{vendor.supplier_type}
 							</Badge>
 						</div>
@@ -204,8 +199,8 @@ export function VendorInfoCard({ vendorId }: VendorInfoCardProps) {
 
 					{vendor.vendor_account.length > 1 && (
 						<p className="text-xs text-muted-foreground italic">
-							+{vendor.vendor_account.length - 1} rekening
-							lainnya tersedia di data vendor
+							+{vendor.vendor_account.length - 1} rekening lainnya
+							tersedia di data vendor
 						</p>
 					)}
 				</CardContent>

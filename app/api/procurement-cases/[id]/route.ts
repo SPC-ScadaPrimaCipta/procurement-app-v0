@@ -102,6 +102,7 @@ export async function GET(
 				// 		in: ["SCAN SURAT MASUK", "RAB", "TOR"],
 				// 	},
 				// },
+				is_active: true,
 			},
 			include: {
 				master_doc_type: true,

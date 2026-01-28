@@ -82,7 +82,7 @@ export function TabSuratMasuk({ data, onDataChange }: TabSuratMasukProps) {
 						</div>
 
 						{/* Documents Section */}
-						<div className="md:col-span-2 space-y-3 pt-4 border-t min-w-0">
+						{/* <div className="md:col-span-2 space-y-3 pt-4 border-t min-w-0">
 							<h3 className="text-sm font-medium text-muted-foreground mb-2">
 								Lampiran Dokumen
 							</h3>
@@ -149,7 +149,7 @@ export function TabSuratMasuk({ data, onDataChange }: TabSuratMasukProps) {
 									Tidak ada dokumen lampiran.
 								</p>
 							)}
-						</div>
+						</div> */}
 					</CardContent>
 				</Card>
 			) : (
