@@ -23,7 +23,7 @@ export function RecentProcurementCard({
 	const router = useRouter();
 
 	return (
-		<Card className="lg:col-span-2">
+		<Card className="lg:col-span-2 col-span-1 2xl:col-span-2">
 			<CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<CardTitle>Pengadaan</CardTitle>
@@ -33,20 +33,24 @@ export function RecentProcurementCard({
 					<ShoppingCart className="h-6 w-6 text-cyan-500" />
 				</div>
 			</CardHeader>
-			<CardContent className="p-0">
-				<div className="px-4">
-					<DataTable
-						columns={columns}
-						data={procurementCases}
-						filterKey="title"
-					/>
-					<Button
-						variant="outline"
-						className="rounded-md text-sm"
-						onClick={() => router.push("/pengadaan")}
-					>
-						Lihat semua pengadaan
-					</Button>
+			<CardContent className="pt-0 w-full">
+				<div className="w-96 sm:w-full">
+					<div className="-mx-4 px-4 overflow-x-auto">
+						<DataTable
+							columns={columns}
+							data={procurementCases}
+							filterKey="title"
+						/>
+					</div>
+					<div className="mt-3 sm:mt-4 flex justify-end">
+						<Button
+							variant="outline"
+							className="rounded-md text-sm w-full sm:w-auto"
+							onClick={() => router.push("/pengadaan")}
+						>
+							Lihat semua pengadaan
+						</Button>
+					</div>
 				</div>
 			</CardContent>
 		</Card>

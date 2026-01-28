@@ -20,8 +20,8 @@ export function InboxCard({ inboxItems }: InboxCardProps) {
 	const router = useRouter();
 
 	return (
-		<Card>
-			<CardHeader className="flex flex-row items-center justify-between">
+		<Card className="lg:col-span-1 2xl:col-span-1">
+			<CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
 				<div>
 					<CardTitle>Kotak Masuk</CardTitle>
 					<CardDescription>Kotak masuk terbaru.</CardDescription>
@@ -51,37 +51,40 @@ export function InboxCard({ inboxItems }: InboxCardProps) {
 								role="button"
 								tabIndex={0}
 							>
-								<CardContent className="flex items-center gap-4 rounded-lg">
-									<div className="shrink-0 rounded-md bg-muted/10">
+								<CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-lg">
+									<div className="shrink-0 rounded-md bg-muted/10 md:p-2">
 										<Mail className="w-5 h-5 text-muted-foreground" />
 									</div>
 									<div className="min-w-0 flex-1">
 										<p className="text-base font-medium truncate">
 											{item.title}
 										</p>
-										<p className="text-sm text-muted-foreground truncate mt-1">
+										<p className="text-xs md:text-sm text-muted-foreground mt-1 truncate">
+											{item.message}
+										</p>
+										<p className="text-xs md:text-sm text-muted-foreground mt-1 truncate">
 											{item.stepName} • {item.requestedBy}
 										</p>
 									</div>
-									<div className="flex flex-col items-end ml-2 pr-4">
+									<div className="mt-2 sm:mt-0 sm:ml-auto sm:text-right shrink-0">
 										<span
-											className={`text-sm font-medium ${
+											className={`md:text-sm text-xs font-medium ${
 												item.status === "PENDING"
 													? "text-amber-500"
 													: "text-emerald-500"
 											}`}
 										>
-											{item.status}
+										{item.status}
 										</span>
-										<span className="text-sm text-muted-foreground mt-1">
-											{item.createdAt
-												? format(
-														new Date(
-															item.createdAt,
-														),
-														"dd MMM yyyy HH:mm",
-													)
-												: ""}
+										<span className="text-xs md:text-sm text-muted-foreground mt-1 block">
+										{item.createdAt
+											? format(
+												new Date(
+													item.createdAt,
+												),
+												"dd MMM yyyy HH:mm",
+											)
+										: ""}
 										</span>
 									</div>
 								</CardContent>

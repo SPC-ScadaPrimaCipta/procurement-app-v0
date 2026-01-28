@@ -15,7 +15,7 @@ export function ShortcutsCard() {
 	const router = useRouter();
 
 	return (
-		<Card>
+		<Card className="lg:col-span-2 2xl:col-span-1">
 			<CardHeader className="flex flex-row items-center justify-between">
 				<div>
 					<CardTitle>Pintasan</CardTitle>
