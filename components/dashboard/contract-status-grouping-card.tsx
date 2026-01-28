@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { useState } from "react";
 import { PieChart as PieChartIcon } from "lucide-react";
+import { useTheme } from "next-themes";
 
 const COLORS = [
 	"#4F46E5", // indigo
@@ -41,6 +42,8 @@ export function ContractStatusGroupingCard({
 	const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
 	const onPieEnter = (_: any, index: number) => setActiveIndex(index);
+
+	const { theme } = useTheme();
 
 	return (
 		<Card>
@@ -84,7 +87,9 @@ export function ContractStatusGroupingCard({
 
 								<Legend
 									formatter={(value) => (
-										<span className="text-primary">
+										<span
+											className={`${theme === "dark" ? "text-white" : "text-black"}`}
+										>
 											{value}
 										</span>
 									)}

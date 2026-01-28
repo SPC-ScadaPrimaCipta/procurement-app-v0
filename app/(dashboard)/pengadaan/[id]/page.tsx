@@ -260,7 +260,7 @@ export default function PengadaanDetailPage() {
 					<Card className="border-l-4 border-l-primary/40">
 						<CardContent className="p-6">
 							<div className="">
-								<div className="flex items-start justify-between gap-4 mb-2">
+								<div className="flex flex-col lg:flex-row items-start justify-between gap-4 mb-5 lg:mb-2">
 									<h2 className="text-2xl font-bold leading-tight">
 										{title}
 									</h2>
@@ -333,12 +333,12 @@ export default function PengadaanDetailPage() {
 							<TabsTrigger value="kontrak" className="gap-2 py-2">
 								<FileCheck className="w-4 h-4" /> Kontrak
 							</TabsTrigger>
-							<TabsTrigger
+							{/* <TabsTrigger
 								value="surat-keluar"
 								className="gap-2 py-2"
 							>
 								<Send className="w-4 h-4" /> Surat Keluar
-							</TabsTrigger>
+							</TabsTrigger> */}
 							<TabsTrigger
 								value="documents"
 								className="gap-2 py-2"
@@ -369,12 +369,12 @@ export default function PengadaanDetailPage() {
 								/>
 							</TabsContent>
 
-							<TabsContent
+							{/* <TabsContent
 								value="surat-keluar"
 								className="animate-in fade-in slide-in-from-left-1"
 							>
 								<TabSuratKeluar data={data} />
-							</TabsContent>
+							</TabsContent> */}
 
 							<TabsContent
 								value="documents"
