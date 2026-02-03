@@ -80,6 +80,7 @@ export const columns: ColumnDef<ProcurementCase>[] = [
 		},
 	},
 	{
+		id: "status",
 		accessorKey: "status.name",
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Status" />
@@ -89,6 +90,11 @@ export const columns: ColumnDef<ProcurementCase>[] = [
 			return (
 				<Badge variant={getStatusColor(status) as any}>{status}</Badge>
 			);
+		},
+		filterFn: (row, id, filterValue) => {
+			if (!filterValue || filterValue.length === 0) return true;
+			const status = row.original.status.name;
+			return filterValue.includes(status);
 		},
 	},
 	{

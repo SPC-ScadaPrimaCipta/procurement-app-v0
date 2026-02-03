@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, CheckSquare } from "lucide-react";
+import { Plus, FileText, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { StatsCard } from "@/components/dashboard/stats-card";
 import { DataTable } from "@/components/datatable/data-table";
 import { columns, DocumentItem } from "./columns";
-import { DocumentSkeleton } from "@/components/skeletons/document-skeleton";
+import { TablePageSkeleton } from "@/components/skeletons/table-page-skeleton";
 
 export default function DokumenPage() {
     const [data, setData] = useState<DocumentItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [totalDocuments, setTotalDocuments] = useState<number>(0);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -24,11 +24,9 @@ export default function DokumenPage() {
                 console.log("Fetched documents:", result);
                 const documents = result?.data ?? result ?? [];
                 setData(Array.isArray(documents) ? documents : []);
-                setTotalDocuments(Array.isArray(documents) ? documents.length : 0);
             } catch (error) {
                 console.error("Error fetching documents:", error);
                 setData([]);
-                setTotalDocuments(0);
             } finally {
                 setIsLoading(false);
             }
@@ -37,8 +35,14 @@ export default function DokumenPage() {
         fetchData();
     }, []);
 
+    // Calculate Stats
+    const stats = {
+        total: data.length,
+        types: [...new Set(data.map((d) => d.ref_type))].length,
+    };
+
     if (isLoading) {
-        return <DocumentSkeleton />;
+        return <TablePageSkeleton showButton={false} />;
     }
 
     return (
@@ -56,18 +60,19 @@ export default function DokumenPage() {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            Total Dokumen
-                        </CardTitle>
-                        <CheckSquare className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{totalDocuments}</div>
-                    </CardContent>
-                </Card>
+            <div className="grid gap-4 md:grid-cols-2">
+                <StatsCard
+                    title="Total Dokumen"
+                    value={stats.total}
+                    icon={FileText}
+                    iconClassName="text-primary"
+                />
+                <StatsCard
+                    title="Tipe Dokumen"
+                    value={stats.types}
+                    icon={Folder}
+                    iconClassName="text-blue-500"
+                />
             </div>
 
             <Card>
@@ -77,6 +82,9 @@ export default function DokumenPage() {
                             columns={columns}
                             data={data}
                             filterKey="doc_name"
+                            statusFilterKey="ref_type"
+                            statusColumnId="ref_type"
+                            statusFilterLabel="Tipe Dokumen"
                         />
                     </div>
                 </CardContent>

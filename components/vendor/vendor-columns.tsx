@@ -59,6 +59,7 @@ export const getVendorColumns = ({
 		},
 	},
 	{
+		id: "supplier_type",
 		accessorKey: "supplier_type.name",
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Tipe Supplier" />
@@ -72,6 +73,11 @@ export const getVendorColumns = ({
 					{row.original.supplier_type?.name || "-"}
 				</div>
 			);
+		},
+		filterFn: (row, id, filterValue) => {
+			if (!filterValue || filterValue.length === 0) return true;
+			const supplierType = row.original.supplier_type?.name || "-";
+			return filterValue.includes(supplierType);
 		},
 	},
 	{
@@ -92,6 +98,7 @@ export const getVendorColumns = ({
 		},
 	},
 	{
+		id: "is_active",
 		accessorKey: "is_active",
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Status" />
@@ -109,8 +116,11 @@ export const getVendorColumns = ({
 				</div>
 			);
 		},
-		filterFn: (row, id, value) => {
-			return value.includes(row.getValue(id));
+		filterFn: (row, id, filterValue) => {
+			if (!filterValue || filterValue.length === 0) return true;
+			const isActive = row.getValue("is_active") as boolean;
+			const statusLabel = isActive ? "Active" : "Inactive";
+			return filterValue.includes(statusLabel);
 		},
 	},
 	{

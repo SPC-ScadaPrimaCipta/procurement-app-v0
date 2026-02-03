@@ -53,6 +53,7 @@ export const createPeraturanColumns = ({
 		),
 	},
 	{
+		id: "type",
 		accessorKey: "type.name",
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Tipe Dokumen" />
@@ -65,5 +66,10 @@ export const createPeraturanColumns = ({
 				{row.original.type.name}
 			</div>
 		),
+		filterFn: (row, id, filterValue) => {
+			if (!filterValue || filterValue.length === 0) return true;
+			const typeName = row.original.type.name;
+			return filterValue.includes(typeName);
+		},
 	},
 ];

@@ -105,6 +105,8 @@ export default function KontrakPage() {
 							columns={columns}
 							data={data}
 							filterKey="contract_number"
+							statusFilterKey="contract_status.name"
+							statusColumnId="contract_status"
 						/>
 					</div>
 				</CardContent>

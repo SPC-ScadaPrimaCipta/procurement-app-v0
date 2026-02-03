@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { DataTable } from "@/components/datatable/data-table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { StatsCard } from "@/components/dashboard/stats-card";
+import { Plus, FileText, Folder } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import {
@@ -14,13 +15,11 @@ import {
 import { PeraturanFormDialog } from "@/components/peraturan/peraturan-form-dialog";
 import { PeraturanDetailDialog } from "@/components/peraturan/peraturan-detail-dialog";
 import { PeraturanDeleteDialog } from "@/components/peraturan/peraturan-delete-dialog";
-import { Card } from "@/components/ui/card";
-import { VendorSkeleton } from "@/components/skeletons/vendor-skeleton";
+import { TablePageSkeleton } from "@/components/skeletons/table-page-skeleton";
 
 export default function PeraturanPage() {
 	const [peraturans, setPeraturans] = useState<Peraturan[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
-	const [searchQuery, setSearchQuery] = useState("");
 
 	// Dialog states
 	const [formDialogOpen, setFormDialogOpen] = useState(false);
@@ -35,20 +34,12 @@ export default function PeraturanPage() {
 
 	useEffect(() => {
 		fetchPeraturans();
-	}, [searchQuery]);
+	}, []);
 
 	const fetchPeraturans = async () => {
 		setIsLoading(true);
 		try {
-			const queryParams = new URLSearchParams({
-				limit: "1000",
-			});
-
-			if (searchQuery) {
-				queryParams.append("search", searchQuery);
-			}
-
-			const response = await fetch(`/api/peraturan?${queryParams}`);
+			const response = await fetch("/api/peraturan?limit=1000");
 			if (!response.ok) throw new Error("Failed to fetch peraturans");
 
 			const data = await response.json();
@@ -83,39 +74,64 @@ export default function PeraturanPage() {
 
 	const columns = createPeraturanColumns({ onViewDetail: handleViewDetail });
 
+	// Calculate Stats - group by type
+	const stats = {
+		total: peraturans.length,
+		types: [...new Set(peraturans.map((p) => p.type.name))].length,
+	};
+
 	if (isLoading) {
-		return <VendorSkeleton />;
+		return <TablePageSkeleton showButton={true} />;
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
 			{/* Header */}
 			<div className="flex items-center justify-between">
-				<h1 className="text-3xl font-bold">Peraturan</h1>
+				<div>
+					<h1 className="text-2xl font-bold tracking-tight">
+						Peraturan
+					</h1>
+					<p className="text-muted-foreground">
+						Kelola dokumen peraturan dan regulasi
+					</p>
+				</div>
 				<Button onClick={handleAddNew}>
 					<Plus className="h-4 w-4 mr-2" />
 					Tambah Peraturan
 				</Button>
 			</div>
 
-			{/* Search */}
-			<Card className="p-6">
-				<div className="flex items-center gap-4">
-					<div className="relative flex-1">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-						<Input
-							placeholder="Cari nomor dokumen atau judul..."
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							className="pl-9"
+			{/* Stat Cards */}
+			<div className="grid gap-4 md:grid-cols-2">
+				<StatsCard
+					title="Total Dokumen"
+					value={stats.total}
+					icon={FileText}
+					iconClassName="text-primary"
+				/>
+				<StatsCard
+					title="Tipe Dokumen"
+					value={stats.types}
+					icon={Folder}
+					iconClassName="text-blue-500"
+				/>
+			</div>
+
+			{/* DataTable wrapped in Card */}
+			<Card>
+				<CardContent className="p-0">
+					<div className="px-4">
+						<DataTable
+							columns={columns}
+							data={peraturans}
+							filterKey="doc_number"
+							statusFilterKey="type.name"
+							statusColumnId="type"
+							statusFilterLabel="Tipe Dokumen"
 						/>
 					</div>
-				</div>
-
-				{/* Data Table */}
-				<div className="mt-6">
-					<DataTable columns={columns} data={peraturans} />
-				</div>
+				</CardContent>
 			</Card>
 
 			{/* Form Dialog */}

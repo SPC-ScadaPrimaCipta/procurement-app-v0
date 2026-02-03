@@ -7,21 +7,18 @@ import {
 	type Reimbursement,
 } from "@/components/reimbursement/reimbursement-columns";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { StatsCard } from "@/components/dashboard/stats-card";
 import { toast } from "sonner";
-import { Plus, Search, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Plus, FileText, Clock, CheckCircle2 } from "lucide-react";
 import { ReimbursementFormDialog } from "@/components/reimbursement/reimbursement-form-dialog";
 import { ReimbursementDetailDialog } from "@/components/reimbursement/reimbursement-detail-dialog";
 import { ReimbursementDeleteDialog } from "@/components/reimbursement/reimbursement-delete-dialog";
-import { NonKontrakSkeleton } from "@/components/skeletons/non-kontrak-skeleton";
+import { TablePageSkeleton } from "@/components/skeletons/table-page-skeleton";
 
 export default function NonKontrakPage() {
 	const [reimbursements, setReimbursements] = useState<Reimbursement[]>([]);
-	const [loading, setLoading] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
-	const [search, setSearch] = useState("");
-	const [statusFilter, setStatusFilter] = useState("");
-	const [showSidebar, setShowSidebar] = useState(true);
 
 	// Dialog states
 	const [showFormDialog, setShowFormDialog] = useState(false);
@@ -33,13 +30,8 @@ export default function NonKontrakPage() {
 
 	// Fetch reimbursements
 	const fetchReimbursements = async () => {
-		setLoading(true);
 		try {
-			const params = new URLSearchParams();
-			if (search) params.append("search", search);
-			if (statusFilter) params.append("status_id", statusFilter);
-
-			const response = await fetch(`/api/reimbursement?${params.toString()}`);
+			const response = await fetch("/api/reimbursement");
 			if (!response.ok) throw new Error("Failed to fetch");
 
 			const data = await response.json();
@@ -48,7 +40,6 @@ export default function NonKontrakPage() {
 			toast.error("Gagal memuat data non kontrak");
 			console.error(error);
 		} finally {
-			setLoading(false);
 			setIsLoading(false);
 		}
 	};
@@ -103,109 +94,80 @@ export default function NonKontrakPage() {
 		toast.success("Data non kontrak berhasil dihapus");
 	};
 
+	// Calculate Stats
+	const stats = {
+		total: reimbursements.length,
+		pending: reimbursements.filter((item) =>
+			["DRAFT", "PENDING", "WAITING"].some((s) =>
+				item.status.name.toUpperCase().includes(s)
+			)
+		).length,
+		completed: reimbursements.filter((item) =>
+			["SELESAI", "COMPLETED", "DONE", "APPROVED"].some((s) =>
+				item.status.name.toUpperCase().includes(s)
+			)
+		).length,
+	};
+
 	if (isLoading) {
-		return <NonKontrakSkeleton />;
+		return <TablePageSkeleton showButton={true} />;
 	}
 
 	return (
-		<div className="flex h-screen overflow-hidden">
-			{/* Sidebar Filter */}
-			{showSidebar && (
-				<aside className="w-64 border-r bg-background p-4 overflow-y-auto transition-all duration-300">
-					<h2 className="font-semibold mb-4">Data Non Kontrak</h2>
-
-					<div className="space-y-4">
-						<div>
-							<label className="text-sm font-medium mb-2 block">
-								Filter Status
-							</label>
-							<select
-								className="w-full border rounded-md p-2 text-sm"
-								value={statusFilter}
-								onChange={(e) => {
-									setStatusFilter(e.target.value);
-									fetchReimbursements();
-								}}
-							>
-								<option value="">Semua Status</option>
-								{/* Status options will be populated dynamically */}
-							</select>
-						</div>
-
-						<Button
-							variant="outline"
-							className="w-full"
-							onClick={() => {
-								setSearch("");
-								setStatusFilter("");
-								fetchReimbursements();
-							}}
-						>
-							Reset Filter
-						</Button>
-					</div>
-				</aside>
-			)}
-
-			{/* Main Content */}
-			<main className="flex-1 overflow-hidden flex flex-col">
-				<div className="p-6 border-b">
-					<div className="flex items-center justify-between mb-4">
-						<div className="flex items-center gap-3">
-							<Button
-								variant="outline"
-								size="icon"
-								onClick={() => setShowSidebar(!showSidebar)}
-								title={showSidebar ? "Sembunyikan Filter" : "Tampilkan Filter"}
-							>
-								{showSidebar ? (
-									<PanelLeftClose className="h-4 w-4" />
-								) : (
-									<PanelLeft className="h-4 w-4" />
-								)}
-							</Button>
-							<div>
-								<h1 className="text-2xl font-bold">Non Kontrak</h1>
-								<p className="text-sm text-muted-foreground">
-									Kelola data reimbursement non kontrak
-								</p>
-							</div>
-						</div>
-						<Button onClick={handleAdd}>
-							<Plus className="mr-2 h-4 w-4" />
-							Tambah Data
-						</Button>
-					</div>
-
-					<div className="flex items-center gap-2">
-						<div className="relative flex-1 max-w-sm">
-							<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-							<Input
-								placeholder="Cari data non kontrak..."
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter") {
-										fetchReimbursements();
-									}
-								}}
-								className="pl-9"
-							/>
-						</div>
-						<Button onClick={fetchReimbursements} variant="secondary">
-							Cari
-						</Button>
-					</div>
+		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
+			{/* Header */}
+			<div className="flex items-center justify-between">
+				<div>
+					<h1 className="text-2xl font-bold tracking-tight">
+						Non Kontrak
+					</h1>
+					<p className="text-muted-foreground">
+						Kelola data reimbursement non kontrak
+					</p>
 				</div>
+				<Button onClick={handleAdd}>
+					<Plus className="mr-2 h-4 w-4" />
+					Tambah Data
+				</Button>
+			</div>
 
-				<div className="flex-1 overflow-auto p-6">
-					<DataTable
-						columns={createReimbursementColumns()}
-						data={reimbursements}
-						onRowClick={handleRowClick}
-					/>
-				</div>
-			</main>
+			{/* Stat Cards */}
+			<div className="grid gap-4 md:grid-cols-3">
+				<StatsCard
+					title="Total Non Kontrak"
+					value={stats.total}
+					icon={FileText}
+					iconClassName="text-primary"
+				/>
+				<StatsCard
+					title="Pending"
+					value={stats.pending}
+					icon={Clock}
+					iconClassName="text-orange-500"
+				/>
+				<StatsCard
+					title="Selesai"
+					value={stats.completed}
+					icon={CheckCircle2}
+					iconClassName="text-green-500"
+				/>
+			</div>
+
+			{/* DataTable wrapped in Card */}
+			<Card>
+				<CardContent className="p-0">
+					<div className="px-4">
+						<DataTable
+							columns={createReimbursementColumns()}
+							data={reimbursements}
+							onRowClick={handleRowClick}
+							filterKey="reimbursement_no"
+							statusFilterKey="status.name"
+							statusColumnId="status"
+						/>
+					</div>
+				</CardContent>
+			</Card>
 
 			{/* Dialogs */}
 			<ReimbursementFormDialog

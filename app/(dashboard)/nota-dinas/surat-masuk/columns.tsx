@@ -84,6 +84,7 @@ export const columns: ColumnDef<NotaDinas>[] = [
 		),
 	},
 	{
+		id: "status",
 		accessorKey: "status",
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Status" />
@@ -93,6 +94,11 @@ export const columns: ColumnDef<NotaDinas>[] = [
 			return (
 				<Badge variant={getStatusColor(status) as any}>{status}</Badge>
 			);
+		},
+		filterFn: (row, id, filterValue) => {
+			if (!filterValue || filterValue.length === 0) return true;
+			const status = row.getValue("status") as string;
+			return filterValue.includes(status);
 		},
 	},
 	{
