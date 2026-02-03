@@ -103,6 +103,7 @@ export const columns: ColumnDef<Contract>[] = [
 		},
 	},
 	{
+		id: "contract_status",
 		accessorKey: "contract_status.name",
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Status" />
@@ -112,6 +113,11 @@ export const columns: ColumnDef<Contract>[] = [
 			return (
 				<Badge variant={getStatusColor(status) as any}>{status}</Badge>
 			);
+		},
+		filterFn: (row, id, filterValue) => {
+			if (!filterValue || filterValue.length === 0) return true;
+			const status = row.original.contract_status?.name || "Unknown";
+			return filterValue.includes(status);
 		},
 	},
 	{

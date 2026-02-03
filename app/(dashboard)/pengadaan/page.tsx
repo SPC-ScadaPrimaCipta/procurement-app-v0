@@ -93,6 +93,8 @@ export default function PengadaanPage() {
 							columns={columns}
 							data={data}
 							filterKey="title"
+							statusFilterKey="status.name"
+							statusColumnId="status"
 						/>
 					</div>
 				</CardContent>

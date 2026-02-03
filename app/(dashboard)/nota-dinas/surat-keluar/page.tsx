@@ -70,7 +70,7 @@ export default function SuratKeluarPage() {
 	return (
 		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
 			{/* Header */}
-			<div className="flex items-center justify-between">
+			<div className="flex lg:items-center flex-col lg:flex-row lg:justify-between">
 				<div>
 					<h1 className="text-2xl font-bold tracking-tight">
 						Surat Keluar
@@ -79,13 +79,12 @@ export default function SuratKeluarPage() {
 						Daftar Surat Keluar yang telah dibuat.
 					</p>
 				</div>
-				{/* Optional: Add creation button later if needed. Usually created from Case */}
-				{/* <Button asChild>
+				<Button asChild className="mt-2 lg:mt-0">
 					<Link href="/nota-dinas/surat-keluar/new">
 						<Plus className="mr-2 h-4 w-4" />
-						Buat Surat Keluar
+						Tambah Surat Keluar
 					</Link>
-				</Button> */}
+				</Button>
 			</div>
 
 			{/* Stat Cards */}

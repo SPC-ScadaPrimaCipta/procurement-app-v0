@@ -110,12 +110,18 @@ export const createReimbursementColumns = (): ColumnDef<Reimbursement>[] => [
 		},
 	},
 	{
+		id: "status",
 		accessorKey: "status.name",
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Status" />
 		),
 		cell: ({ row }) => {
 			return <Badge variant="outline">{row.original.status.name}</Badge>;
+		},
+		filterFn: (row, id, filterValue) => {
+			if (!filterValue || filterValue.length === 0) return true;
+			const status = row.original.status.name;
+			return filterValue.includes(status);
 		},
 	},
 	{

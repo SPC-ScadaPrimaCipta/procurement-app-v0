@@ -133,6 +133,8 @@ export default function NotaDinasPage() {
 							columns={columns}
 							data={data}
 							filterKey="subject"
+							statusFilterKey="status"
+							statusColumnId="status"
 						/>
 					</div>
 				</CardContent>

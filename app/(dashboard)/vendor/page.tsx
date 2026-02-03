@@ -6,30 +6,24 @@ import { getVendorColumns, Vendor } from "@/components/vendor/vendor-columns";
 import { VendorDeleteDialog } from "@/components/vendor/vendor-delete-dialog";
 import { VendorDetailDialog } from "@/components/vendor/vendor-detail-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { StatsCard } from "@/components/dashboard/stats-card";
+import { Plus, Users, UserCheck, UserX } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { VendorSkeleton } from "@/components/skeletons/vendor-skeleton";
+import { TablePageSkeleton } from "@/components/skeletons/table-page-skeleton";
 
 export default function VendorPage() {
 	const [vendors, setVendors] = useState<Vendor[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
-	const [searchQuery, setSearchQuery] = useState("");
 	const [deleteVendor, setDeleteVendor] = useState<Vendor | null>(null);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [detailVendorId, setDetailVendorId] = useState<string | null>(null);
 	const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
 	const fetchVendors = async () => {
-		setIsLoading(true);
 		try {
-			const params = new URLSearchParams();
-			if (searchQuery) {
-				params.append("search", searchQuery);
-			}
-
-			const response = await fetch(`/api/vendors?${params.toString()}`);
+			const response = await fetch("/api/vendors");
 			if (!response.ok) {
 				throw new Error("Failed to fetch vendors");
 			}
@@ -46,7 +40,7 @@ export default function VendorPage() {
 
 	useEffect(() => {
 		fetchVendors();
-	}, [searchQuery]);
+	}, []);
 
 	const handleDelete = (vendor: Vendor) => {
 		setDeleteVendor(vendor);
@@ -67,16 +61,25 @@ export default function VendorPage() {
 		onViewDetail: handleViewDetail,
 	});
 
+	// Calculate Stats
+	const stats = {
+		total: vendors.length,
+		active: vendors.filter((vendor) => vendor.is_active).length,
+		inactive: vendors.filter((vendor) => !vendor.is_active).length,
+	};
+
 	if (isLoading) {
-		return <VendorSkeleton />;
+		return <TablePageSkeleton showButton={true} />;
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="md:p-6 space-y-6 animate-in fade-in duration-500">
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-3xl font-bold tracking-tight">Vendor</h1>
+					<h1 className="text-2xl font-bold tracking-tight">
+						Vendor
+					</h1>
 					<p className="text-muted-foreground">
 						Kelola data vendor dan supplier
 					</p>
@@ -89,27 +92,43 @@ export default function VendorPage() {
 				</Button>
 			</div>
 
-			{/* Search and Filters */}
-			<div className="flex items-center gap-4">
-				<div className="relative flex-1 max-w-sm">
-					<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-					<Input
-						placeholder="Cari nama vendor atau NPWP..."
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
-						className="pl-9"
-					/>
-				</div>
-			</div>
-
-			{/* Data Table */}
-			<div className="rounded-lg border bg-card p-6">
-				<DataTable
-					columns={columns}
-					data={vendors}
-					filterKey="vendor_name"
+			{/* Stat Cards */}
+			<div className="grid gap-4 md:grid-cols-3">
+				<StatsCard
+					title="Total Vendor"
+					value={stats.total}
+					icon={Users}
+					iconClassName="text-primary"
+				/>
+				<StatsCard
+					title="Active"
+					value={stats.active}
+					icon={UserCheck}
+					iconClassName="text-green-500"
+				/>
+				<StatsCard
+					title="Inactive"
+					value={stats.inactive}
+					icon={UserX}
+					iconClassName="text-orange-500"
 				/>
 			</div>
+
+			{/* DataTable wrapped in Card */}
+			<Card>
+				<CardContent className="p-0">
+					<div className="px-4">
+						<DataTable
+							columns={columns}
+							data={vendors}
+							filterKey="vendor_name"
+							statusFilterKey="supplier_type.name"
+							statusColumnId="supplier_type"
+							statusFilterLabel="Tipe Supplier"
+						/>
+					</div>
+				</CardContent>
+			</Card>
 
 			{/* Delete Dialog */}
 			<VendorDeleteDialog
